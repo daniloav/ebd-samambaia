@@ -1,0 +1,22 @@
+# Sobe apenas o PostgreSQL para desenvolvimento local.
+# Uso: docker compose -f docker-compose.dev.yml up -d
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ebd-postgres-dev
+    environment:
+      POSTGRES_DB: ebd
+      POSTGRES_USER: ebd
+      POSTGRES_PASSWORD: ebd
+    ports:
+      - "5432:5432"
+    volumes:
+      - ebd_pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ebd -d ebd"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ebd_pgdata_dev:

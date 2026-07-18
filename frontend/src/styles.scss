@@ -1,0 +1,171 @@
+/* ============================================================
+   Design system — EBD Adultos (ICEV Samambaia)
+   ============================================================ */
+:root {
+  --azul: #1e3a5f;
+  --azul-claro: #2c5282;
+  --dourado: #c9a24b;
+  --dourado-claro: #e0c884;
+  --verde: #2f855a;
+  --vermelho: #c53030;
+  --cinza-bg: #f4f6f9;
+  --cinza-borda: #e2e8f0;
+  --cinza-texto: #4a5568;
+  --branco: #ffffff;
+  --sombra: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --sombra-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --raio: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--cinza-bg);
+  color: #1a202c;
+  font-size: 15px;
+}
+
+h1, h2, h3, h4 { color: var(--azul); margin: 0 0 .5rem; }
+a { color: var(--azul-claro); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- Botões ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: none;
+  border-radius: 8px;
+  padding: .55rem 1.1rem;
+  font-size: .92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter .15s, transform .05s;
+  background: var(--azul);
+  color: #fff;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-dourado { background: var(--dourado); color: #3a2e10; }
+.btn-verde { background: var(--verde); }
+.btn-perigo { background: var(--vermelho); }
+.btn-outline {
+  background: transparent;
+  color: var(--azul);
+  border: 1.5px solid var(--cinza-borda);
+}
+.btn-sm { padding: .35rem .7rem; font-size: .82rem; }
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--branco);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 1.5rem;
+}
+.card + .card { margin-top: 1.25rem; }
+
+/* ---------- Formulários ---------- */
+.form-group { margin-bottom: 1rem; display: flex; flex-direction: column; gap: .35rem; }
+label { font-weight: 600; font-size: .85rem; color: var(--cinza-texto); }
+input[type=text], input[type=password], input[type=tel], input[type=date],
+input[type=number], select, textarea {
+  padding: .55rem .7rem;
+  border: 1.5px solid var(--cinza-borda);
+  border-radius: 8px;
+  font-size: .92rem;
+  font-family: inherit;
+  background: #fff;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--azul-claro);
+  box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.12);
+}
+.erro-campo { color: var(--vermelho); font-size: .78rem; }
+
+/* ---------- Tabelas ---------- */
+.tabela { width: 100%; border-collapse: collapse; }
+.tabela th, .tabela td {
+  padding: .7rem .8rem;
+  text-align: left;
+  border-bottom: 1px solid var(--cinza-borda);
+  font-size: .9rem;
+}
+.tabela th {
+  background: #f7fafc;
+  color: var(--cinza-texto);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: .74rem;
+  letter-spacing: .03em;
+}
+.tabela tbody tr:hover, .tabela tr:hover { background: #fafbfc; }
+.tabela-scroll { overflow-x: auto; }
+
+/* ---------- Badges / chips ---------- */
+.badge {
+  display: inline-block;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-size: .74rem;
+  font-weight: 700;
+}
+.badge-verde { background: #c6f6d5; color: #22543d; }
+.badge-cinza { background: #e2e8f0; color: #4a5568; }
+.badge-dourado { background: #faf089; color: #744210; }
+
+/* ---------- Checkbox ---------- */
+input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--azul); }
+
+/* ---------- Utilitários ---------- */
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap { gap: 1rem; }
+.mt { margin-top: 1rem; }
+.text-center { text-align: center; }
+.muted { color: var(--cinza-texto); font-size: .88rem; }
+.spinner-wrap { display: flex; justify-content: center; padding: 2rem; }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: .8rem 1.2rem;
+  border-radius: 8px;
+  color: #fff;
+  box-shadow: var(--sombra-md);
+  z-index: 2000;
+  font-weight: 600;
+  animation: slidein .2s ease;
+}
+.toast-ok { background: var(--verde); }
+.toast-erro { background: var(--vermelho); }
+@keyframes slidein { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1500; padding: 1rem;
+}
+.modal {
+  background: #fff; border-radius: var(--raio);
+  width: 100%; max-width: 480px;
+  box-shadow: var(--sombra-md);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--cinza-borda); }
+.modal-body { padding: 1.5rem; }
+.modal-footer {
+  padding: 1rem 1.5rem; border-top: 1px solid var(--cinza-borda);
+  display: flex; justify-content: flex-end; gap: .6rem;
+}
