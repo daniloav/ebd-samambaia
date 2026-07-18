@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/Users/danilooliveira/claude-trabalho/**)",
+      "Edit(/Users/danilooliveira/claude-trabalho/**)",
+      "Bash(cd /Users/danilooliveira/claude-trabalho)"
+    ],
+    "deny": [
+      "Read",
+      "Edit"
+    ]
+  }
+}

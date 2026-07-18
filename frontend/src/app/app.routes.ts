@@ -1,0 +1,46 @@
+import { Routes } from '@angular/router';
+import { authGuard, adminGuard } from './core/guards';
+
+export const routes: Routes = [
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    path: '',
+    loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
+    canActivate: [authGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'painel' },
+      {
+        path: 'painel',
+        loadComponent: () => import('./pages/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+      },
+      {
+        path: 'alunos',
+        loadComponent: () => import('./pages/alunos/alunos.component').then((m) => m.AlunosComponent),
+      },
+      {
+        path: 'chamada',
+        loadComponent: () => import('./pages/chamada/chamada.component').then((m) => m.ChamadaComponent),
+      },
+      {
+        path: 'relatorio',
+        loadComponent: () => import('./pages/relatorio/relatorio.component').then((m) => m.RelatorioComponent),
+      },
+      {
+        path: 'provas',
+        loadComponent: () => import('./pages/provas/provas.component').then((m) => m.ProvasComponent),
+      },
+      {
+        path: 'provas/:id/notas',
+        loadComponent: () => import('./pages/notas/notas.component').then((m) => m.NotasComponent),
+      },
+      {
+        path: 'desafios',
+        loadComponent: () => import('./pages/desafios/desafios.component').then((m) => m.DesafiosComponent),
+      },
+    ],
+  },
+  { path: '**', redirectTo: '' },
+];
