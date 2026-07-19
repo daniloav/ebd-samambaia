@@ -65,11 +65,13 @@ claude-trabalho/
 │       ├── core/                  ← auth.service, api.service, guards, auth.interceptor, toast.service, models.ts
 │       ├── layout/shell.component.ts   ← menu lateral + outlet
 │       └── pages/                 ← login, dashboard, alunos, chamada, relatorio, provas, notas, desafios
+├── .github/workflows/             ← CI (build + SAST/segurança) e CD (deploy OCI)
 ├── scripts/                       ← automação de deploy OCI (ver seção 8)
 └── docs/
     ├── ARQUITETURA.md             ← modelo de dados, camadas, decisões (LER para mudanças estruturais)
     ├── API.md                     ← referência de endpoints com exemplos
     ├── ROADMAP.md                 ← backlog e limitações conhecidas
+    ├── CICD.md                    ← esteira GitHub Actions (CI segurança + CD OCI)
     └── deploy-oracle.md           ← passo a passo de deploy na VM
 ```
 
@@ -130,7 +132,12 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   - `oci-descobrir.sh` — lista OCIDs (compartment, AD, imagem, subnet).
   - `oci-a1-retry.sh` — cria a VM com retry no "Out of capacity" (lê `scripts/.oci-launch.env`).
   - `gen-jwt-keys.sh` — gera as chaves JWT do backend.
+  - `oci-bootstrap.sh` — roda NA VM: instala Docker/Compose e libera portas 80/443.
   - `.oci-launch.env` (local, ignorado) — OCIDs reais; modelo em `.oci-launch.env.example`.
+- **CI/CD** (GitHub Actions, ver [`docs/CICD.md`](docs/CICD.md)):
+  - `ci.yml` — build backend/frontend + segurança (Semgrep SAST, Trivy deps/IaC, gitleaks segredos).
+  - `codeql.yml` — CodeQL `security-and-quality` (só roda em repo público/GHAS; pulado no privado).
+  - `cd.yml` — deploy no OCI via rsync+SSH; **modo mock** até cadastrar os secrets `OCI_*`.
 - **Uso persistente do retry** (sobrevive a fechar o terminal):
   ```bash
   nohup ./scripts/oci-a1-retry.sh > ~/ebd-launch.log 2>&1 &

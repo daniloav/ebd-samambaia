@@ -1,0 +1,112 @@
+name: CD · Deploy OCI
+
+# Faz o deploy no VM da Oracle Cloud via SSH (rsync do código + docker compose na VM).
+# Enquanto os secrets OCI_* não estiverem cadastrados, roda em MODO MOCK (não faz deploy),
+# apenas registra os passos — útil até a VM ser provisionada.
+
+on:
+  workflow_dispatch: {}          # disparo manual
+  workflow_run:                  # após o CI passar na main
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-oci
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy na VM OCI
+    runs-on: ubuntu-latest
+    # roda no dispatch manual, ou quando o CI terminou com sucesso
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    env:
+      OCI_HOST: ${{ secrets.OCI_SSH_HOST }}
+      OCI_USER: ${{ secrets.OCI_SSH_USER }}
+      OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+      OCI_ENV: ${{ secrets.OCI_ENV_FILE }}
+      APP_DIR: ebd-samambaia
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar se os secrets OCI existem
+        id: cfg
+        run: |
+          if [ -n "$OCI_HOST" ] && [ -n "$OCI_USER" ] && [ -n "$OCI_SSH_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---------------- MODO MOCK ----------------
+      - name: MOCK — recursos OCI ainda não provisionados
+        if: steps.cfg.outputs.ready != 'true'
+        run: |
+          echo "::notice title=Deploy em modo MOCK::Secrets OCI ausentes; nenhum deploy real executado."
+          cat <<'EOF'
+          ─────────────────────────────────────────────────────────────
+          MODO MOCK — a VM/credenciais ainda não existem.
+          Quando a VM estiver pronta, cadastre em Settings → Secrets → Actions:
+            • OCI_SSH_HOST   = IP público da VM (ex.: 140.238.x.x)
+            • OCI_SSH_USER   = ubuntu
+            • OCI_SSH_KEY    = conteúdo da chave PRIVADA de deploy
+            • OCI_ENV_FILE   = (opcional) conteúdo do .env de produção
+          Passos que SERIAM executados:
+            1) Configurar SSH e known_hosts
+            2) (opcional) enviar .env de produção para a VM
+            3) rsync do código → ~/ebd-samambaia na VM
+            4) docker compose up -d --build
+            5) healthcheck em http://$OCI_HOST/q/health
+          ─────────────────────────────────────────────────────────────
+          EOF
+
+      # ---------------- DEPLOY REAL ----------------
+      - name: Configurar SSH
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$OCI_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$OCI_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Enviar .env de produção (se configurado)
+        if: steps.cfg.outputs.ready == 'true' && env.OCI_ENV != ''
+        run: |
+          ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p ~/$APP_DIR"
+          printf '%s' "$OCI_ENV" | ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > ~/$APP_DIR/.env"
+
+      - name: Enviar código para a VM (rsync)
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          rsync -az --delete \
+            --exclude '.git' --exclude 'node_modules' --exclude 'target' \
+            --exclude '.env' --exclude 'dist' --exclude '.angular' \
+            -e "ssh -i ~/.ssh/id_deploy" ./ "$OCI_USER@$OCI_HOST:~/$APP_DIR/"
+
+      - name: Subir stack na VM (docker compose)
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "
+            cd ~/$APP_DIR &&
+            docker compose up -d --build &&
+            docker compose ps
+          "
+
+      - name: Healthcheck
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          echo 'Aguardando o backend responder...'
+          for i in $(seq 1 12); do
+            if curl -fsS "http://$OCI_HOST/q/health" >/dev/null; then
+              echo "✅ Aplicação no ar em http://$OCI_HOST"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "❌ Healthcheck falhou após ~2min"; exit 1

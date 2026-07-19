@@ -1,0 +1,53 @@
+name: CodeQL
+
+# ATENÇÃO: CodeQL / Code Scanning é GRATUITO apenas em repositórios PÚBLICOS
+# (ou privados com GitHub Advanced Security). Enquanto o repo for privado sem GHAS,
+# o job é PULADO automaticamente (condição `if` abaixo) para não falhar a esteira.
+# Ao tornar o repo público, ele passa a rodar sozinho com o pacote security-and-quality.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    if: ${{ github.event.repository.private == false }}
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-and-quality
+
+      - name: Build do backend (Java)
+        if: matrix.language == 'java-kotlin'
+        run: |
+          bash scripts/gen-jwt-keys.sh
+          cd backend && mvn -B -ntp -DskipTests package
+
+      - name: Analisar
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
