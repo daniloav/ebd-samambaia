@@ -6,12 +6,14 @@ Dados e comandos do ambiente de produção (VM na Oracle Cloud).
 
 | O quê | Valor |
 |---|---|
-| **URL do site** | http://163.176.181.38 |
-| **Swagger da API** | http://163.176.181.38/q/swagger-ui |
-| **Health** | http://163.176.181.38/q/health |
+| **URL do site** | **https://ebd-ices.duckdns.org** (IP direto: 163.176.181.38) |
+| **Swagger da API** | https://ebd-ices.duckdns.org/q/swagger-ui |
+| **Health** | https://ebd-ices.duckdns.org/q/health |
 | **Login** | usuários `admin` e `professor` — senhas no seu **gerenciador de senhas** (ver [`senhas-e-secrets.md`](senhas-e-secrets.md)) |
 
-> Ainda é **HTTP** (sem HTTPS). Colocar TLS + domínio está no [ROADMAP](ROADMAP.md).
+> **HTTPS ativo** via Caddy + Let's Encrypt (dominio DuckDNS ebd-ices.duckdns.org), com renovacao automatica do certificado e redirect HTTP->HTTPS.
+>
+> AVISO: o IP publico da VM e efemero — se voce parar e iniciar a instancia (reboot nao conta), o IP pode mudar; entao atualize o IP no DuckDNS.
 
 ## A VM
 
