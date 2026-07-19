@@ -20,5 +20,8 @@ COPY --from=build /app/target/quarkus-app/lib/ ./lib/
 COPY --from=build /app/target/quarkus-app/*.jar ./
 COPY --from=build /app/target/quarkus-app/app/ ./app/
 COPY --from=build /app/target/quarkus-app/quarkus/ ./quarkus/
+# Roda como usuário não-root (boa prática de segurança)
+RUN groupadd --system --gid 1001 appuser && useradd --system --uid 1001 --gid appuser appuser
+USER 1001
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]
