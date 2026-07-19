@@ -48,8 +48,9 @@ Pré-requisitos: **JDK 17+**, **Maven**, **Node 18.13+**, **Docker**.
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-**2. Backend** (porta 8080) — em `backend/`:
+**2. Backend** (porta 8080):
 ```bash
+./scripts/gen-jwt-keys.sh    # gera as chaves JWT (só na 1ª vez)
 cd backend
 mvn quarkus:dev
 ```
@@ -89,6 +90,18 @@ cp .env.example .env
 | GET/POST/PUT/DELETE | `/api/provas` | leitura: ambos · escrita: ADMIN |
 | GET/PUT | `/api/provas/{id}/notas` | ambos |
 | GET | `/api/desafios/rankings` | ambos |
+
+## 🔒 Segredos e chaves
+
+Nada sensível é versionado. Antes de rodar:
+
+- **Chaves JWT** (`backend/src/main/resources/privateKey.pem` / `publicKey.pem`):
+  geradas por `./scripts/gen-jwt-keys.sh`. No Docker, o `backend/Dockerfile`
+  gera automaticamente se não existirem.
+- **Config de lançamento OCI** (`scripts/.oci-launch.env`): copie de
+  `scripts/.oci-launch.env.example` e preencha (usado só pelos scripts de deploy).
+
+Ambos estão no `.gitignore`.
 
 ## ☁️ Deploy na Oracle Cloud
 
