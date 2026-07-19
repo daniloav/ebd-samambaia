@@ -3,7 +3,9 @@ package br.com.ice.ebd.bootstrap;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
+import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.repository.AlunoRepository;
+import br.com.ice.ebd.repository.ClasseRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import io.quarkus.runtime.StartupEvent;
@@ -23,6 +25,7 @@ public class DataInitializer {
 
     @Inject UsuarioRepository usuarioRepository;
     @Inject AlunoRepository alunoRepository;
+    @Inject ClasseRepository classeRepository;
 
     @ConfigProperty(name = "ebd.seed.admin.username") String adminUser;
     @ConfigProperty(name = "ebd.seed.admin.password") String adminPass;
@@ -58,6 +61,14 @@ public class DataInitializer {
         if (alunoRepository.count() > 0) {
             return;
         }
+        Classe classe = classeRepository.listarAtivas().stream().findFirst().orElseGet(() -> {
+            Classe c = new Classe();
+            c.setNome("Adultos");
+            c.setDescricao("Classe de adultos");
+            c.setAtivo(true);
+            classeRepository.persist(c);
+            return c;
+        });
         List<String> nomes = List.of(
                 "Ana Beatriz Souza", "Carlos Eduardo Lima", "Débora Martins",
                 "Fernando Alves", "Joana Ribeiro", "Marcos Vinícius Silva");
@@ -65,6 +76,7 @@ public class DataInitializer {
             Aluno a = new Aluno();
             a.setNome(nome);
             a.setAtivo(true);
+            a.setClasse(classe);
             alunoRepository.persist(a);
         }
         LOG.infof("%d alunos de exemplo criados.", nomes.size());

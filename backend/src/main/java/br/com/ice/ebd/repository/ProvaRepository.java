@@ -12,4 +12,8 @@ public class ProvaRepository implements PanacheRepository<Prova> {
     public List<Prova> listarOrdenadoPorData() {
         return listAll(Sort.by("data").descending());
     }
+
+    public List<Prova> listarPorClasse(Long classeId) {
+        return list("classe.id = ?1 order by data desc", classeId);
+    }
 }

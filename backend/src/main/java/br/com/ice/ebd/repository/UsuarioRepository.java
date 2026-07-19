@@ -11,4 +11,8 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
     public Optional<Usuario> findByUsername(String username) {
         return find("username", username).firstResultOptional();
     }
+
+    public java.util.List<Usuario> listarOrdenado() {
+        return list("order by username");
+    }
 }

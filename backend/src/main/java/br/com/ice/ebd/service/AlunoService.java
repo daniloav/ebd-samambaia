@@ -16,8 +16,17 @@ public class AlunoService {
     @Inject
     AlunoRepository repository;
 
-    public List<AlunoResponse> listar(boolean apenasAtivos) {
-        List<Aluno> alunos = apenasAtivos ? repository.listarAtivos() : repository.listarOrdenadoPorNome();
+    @Inject
+    ClasseService classeService;
+
+    public List<AlunoResponse> listar(Long classeId, boolean apenasAtivos) {
+        List<Aluno> alunos;
+        if (classeId != null) {
+            alunos = apenasAtivos ? repository.listarAtivosPorClasse(classeId)
+                                  : repository.listarPorClasse(classeId);
+        } else {
+            alunos = apenasAtivos ? repository.listarAtivos() : repository.listarOrdenadoPorNome();
+        }
         return alunos.stream().map(AlunoResponse::de).toList();
     }
 
@@ -59,5 +68,6 @@ public class AlunoService {
         a.setTelefone(req.telefone());
         a.setDataNascimento(req.dataNascimento());
         a.setAtivo(req.ativo() == null ? true : req.ativo());
+        a.setClasse(classeService.obter(req.classeId()));
     }
 }

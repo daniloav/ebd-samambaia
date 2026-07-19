@@ -19,7 +19,7 @@ public class DesafiosResource {
     @GET
     @Path("/rankings")
     @RolesAllowed({"ADMIN", "PROFESSOR"})
-    public DesafiosResponse rankings() {
-        return service.gerar();
+    public DesafiosResponse rankings(@jakarta.ws.rs.QueryParam("classeId") Long classeId) {
+        return service.gerar(classeId);
     }
 }
