@@ -45,7 +45,10 @@ Testar a chave de deploy:
 ssh -i ~/.ssh/ebd_deploy ubuntu@SEU_IP 'echo ok, deploy key funciona'
 ```
 
-## 3. Cadastrar os secrets no GitHub (via `gh`, já autenticado)
+## 3. Atualizar os secrets no GitHub (via `gh`, já autenticado)
+
+> Os 4 secrets **já existem** com placeholder `CHANGEME` (o CD fica em mock até você trocar
+> `OCI_SSH_HOST` e `OCI_SSH_KEY`). `gh secret set` **sobrescreve** o valor existente.
 
 Rode no diretório do projeto (`~/claude-trabalho`):
 ```bash

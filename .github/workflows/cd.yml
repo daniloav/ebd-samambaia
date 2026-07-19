@@ -35,10 +35,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verificar se os secrets OCI existem
+      - name: Verificar se os secrets OCI estão preenchidos (não-placeholder)
         id: cfg
         run: |
-          if [ -n "$OCI_HOST" ] && [ -n "$OCI_USER" ] && [ -n "$OCI_SSH_KEY" ]; then
+          if [ -n "$OCI_HOST" ] && [ "$OCI_HOST" != "CHANGEME" ] \
+             && [ -n "$OCI_USER" ] \
+             && [ -n "$OCI_SSH_KEY" ] && [ "$OCI_SSH_KEY" != "CHANGEME" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -48,13 +50,13 @@ jobs:
       - name: MOCK — recursos OCI ainda não provisionados
         if: steps.cfg.outputs.ready != 'true'
         run: |
-          echo "::notice title=Deploy em modo MOCK::Secrets OCI ausentes; nenhum deploy real executado."
+          echo "::notice title=Deploy em modo MOCK::Secrets OCI com placeholder (CHANGEME); nenhum deploy real executado."
           cat <<'EOF'
           ─────────────────────────────────────────────────────────────
-          MODO MOCK — a VM/credenciais ainda não existem.
-          Quando a VM estiver pronta, cadastre em Settings → Secrets → Actions:
+          MODO MOCK — os secrets existem, mas com valor placeholder (CHANGEME).
+          Quando a VM estiver pronta, ATUALIZE os secrets com os valores reais:
             • OCI_SSH_HOST   = IP público da VM (ex.: 140.238.x.x)
-            • OCI_SSH_USER   = ubuntu
+            • OCI_SSH_USER   = ubuntu (já definido)
             • OCI_SSH_KEY    = conteúdo da chave PRIVADA de deploy
             • OCI_ENV_FILE   = (opcional) conteúdo do .env de produção
           Passos que SERIAM executados:
