@@ -7,7 +7,7 @@
 ## 1. O que é
 
 Hotsite para gestão da **Escola Bíblica Dominical (EBD) — classe de adultos** da
-**Igreja Cristã Evangélica em Samambaia (ICEV)**. Dono/desenvolvedor: **Danilo** (`danilo.av@gmail.com`).
+**Igreja Cristã Evangélica em Samambaia (ICE)**. Dono/desenvolvedor: **Danilo** (`danilo.av@gmail.com`).
 
 Dois módulos no MVP:
 
@@ -42,11 +42,11 @@ claude-trabalho/
 ├── docker-compose.yml             ← stack completo (prod/VM): db + backend + frontend
 ├── docker-compose.dev.yml         ← só Postgres (dev)
 ├── .env.example                   ← credenciais do compose de produção
-├── backend/                       ← API Quarkus (pacote br.com.icev.ebd)
+├── backend/                       ← API Quarkus (pacote br.com.ice.ebd)
 │   ├── pom.xml
 │   ├── Dockerfile                 ← multi-stage; gera chaves JWT se ausentes
 │   └── src/main/
-│       ├── java/br/com/icev/ebd/
+│       ├── java/br/com/ice/ebd/
 │       │   ├── model/             ← entidades JPA (Aluno, Aula, Presenca, Prova, NotaProva, Usuario, Role)
 │       │   ├── repository/        ← Panache repositories
 │       │   ├── service/           ← regra de negócio (Auth, Aluno, Aula, Chamada, Relatorio, Prova, Desafios)

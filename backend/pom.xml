@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>br.com.icev.ebd</groupId>
+    <groupId>br.com.ice.ebd</groupId>
     <artifactId>ebd-backend</artifactId>
     <version>1.0.0</version>
     <name>EBD Backend</name>
-    <description>API da Escola Bíblica Dominical - Classe de Adultos (ICEV Samambaia)</description>
+    <description>API da Escola Bíblica Dominical - Classe de Adultos (ICE Samambaia)</description>
 
     <properties>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>

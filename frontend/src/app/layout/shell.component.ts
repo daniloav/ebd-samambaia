@@ -52,7 +52,7 @@ import { AuthService } from '../core/auth.service';
         <div class="marca flex-between">
           <div>
             <h1>EBD Adultos</h1>
-            <span>ICEV Samambaia</span>
+            <span>ICE Samambaia</span>
           </div>
           <button class="btn-sair topo-mobile" style="width:auto;padding:.3rem .6rem"
                   (click)="menuAberto.set(!menuAberto())">☰</button>
