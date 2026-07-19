@@ -20,7 +20,7 @@ public class RelatorioService {
     @Inject AlunoRepository alunoRepository;
 
     /** Guarda os totais somados por aluno no período. */
-    private record Totais(long presencas, long biblia, long revista, long licao) {}
+    private record Totais(long presencas, long biblia, long revista, long licao, long visitante) {}
 
     public RelatorioPresencaResponse gerar(LocalDate inicio, LocalDate fim) {
         LocalDate ini = inicio != null ? inicio : LocalDate.of(2000, 1, 1);
@@ -38,7 +38,8 @@ public class RelatorioService {
                         "sum(case when p.presente = true then 1 else 0 end), " +
                         "sum(case when p.trouxeBiblia = true then 1 else 0 end), " +
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
-                        "sum(case when p.estudouLicao = true then 1 else 0 end) " +
+                        "sum(case when p.estudouLicao = true then 1 else 0 end), " +
+                        "sum(case when p.trouxeVisitante = true then 1 else 0 end) " +
                         "from Presenca p where p.aula.data between :ini and :fim " +
                         "group by p.aluno.id", Object[].class)
                 .setParameter("ini", ini)
@@ -48,12 +49,12 @@ public class RelatorioService {
         for (Object[] l : linhas) {
             Long alunoId = (Long) l[0];
             porAluno.put(alunoId, new Totais(
-                    toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4])));
+                    toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]), toLong(l[5])));
         }
 
         List<RelatorioPresencaItem> itens = new ArrayList<>();
         for (Aluno aluno : alunoRepository.listarAtivos()) {
-            Totais t = porAluno.getOrDefault(aluno.getId(), new Totais(0, 0, 0, 0));
+            Totais t = porAluno.getOrDefault(aluno.getId(), new Totais(0, 0, 0, 0, 0));
             long presencas = t.presencas();
             long faltas = Math.max(0, totalAulas - presencas);
             double percentual = totalAulas > 0
@@ -61,7 +62,7 @@ public class RelatorioService {
                     : 0.0;
             itens.add(new RelatorioPresencaItem(aluno.getId(), aluno.getNome(),
                     totalAulas, presencas, faltas, percentual,
-                    t.biblia(), t.revista(), t.licao()));
+                    t.biblia(), t.revista(), t.licao(), t.visitante()));
         }
 
         return new RelatorioPresencaResponse(ini, f, totalAulas, itens);

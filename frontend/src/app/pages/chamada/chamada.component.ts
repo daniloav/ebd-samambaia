@@ -65,6 +65,7 @@ import { Aula, PresencaItem } from '../../core/models';
                 <th class="chk">Bíblia</th>
                 <th class="chk">Revista</th>
                 <th class="chk">Estudou a lição</th>
+                <th class="chk">Visitante</th>
               </tr>
             </thead>
             <tbody>
@@ -75,6 +76,7 @@ import { Aula, PresencaItem } from '../../core/models';
                   <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeBiblia" /></td>
                   <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeRevista" /></td>
                   <td class="chk"><input type="checkbox" [(ngModel)]="i.estudouLicao" /></td>
+                  <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeVisitante" /></td>
                 </tr>
               }
             </tbody>
@@ -86,6 +88,7 @@ import { Aula, PresencaItem } from '../../core/models';
           <span>Bíblias: <b>{{ contar('trouxeBiblia') }}</b></span>
           <span>Revistas: <b>{{ contar('trouxeRevista') }}</b></span>
           <span>Estudaram: <b>{{ contar('estudouLicao') }}</b></span>
+          <span>Visitantes: <b>{{ contar('trouxeVisitante') }}</b></span>
         </div>
 
         <div class="mt">
@@ -175,6 +178,7 @@ export class ChamadaComponent {
       trouxeBiblia: i.trouxeBiblia,
       trouxeRevista: i.trouxeRevista,
       estudouLicao: i.estudouLicao,
+      trouxeVisitante: i.trouxeVisitante,
     }));
     this.api.salvarChamada(this.aulaSelecionadaId, payload).subscribe({
       next: () => { this.toast.sucesso('Chamada salva com sucesso!'); this.salvando.set(false); },

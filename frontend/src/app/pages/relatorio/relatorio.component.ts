@@ -50,6 +50,7 @@ import { RelatorioPresencaResponse } from '../../core/models';
                 <th class="num">Bíblia</th>
                 <th class="num">Revista</th>
                 <th class="num">Lição</th>
+                <th class="num">Visitante</th>
               </tr>
             </thead>
             <tbody>
@@ -66,6 +67,7 @@ import { RelatorioPresencaResponse } from '../../core/models';
                   <td class="num">{{ i.trouxeBiblia }}</td>
                   <td class="num">{{ i.trouxeRevista }}</td>
                   <td class="num">{{ i.estudouLicao }}</td>
+                  <td class="num">{{ i.trouxeVisitante }}</td>
                 </tr>
               }
             </tbody>

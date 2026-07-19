@@ -10,5 +10,6 @@ public record RelatorioPresencaItem(
         double percentualPresenca,
         long trouxeBiblia,
         long trouxeRevista,
-        long estudouLicao) {
+        long estudouLicao,
+        long trouxeVisitante) {
 }

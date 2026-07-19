@@ -41,6 +41,7 @@ export interface PresencaItem {
   trouxeBiblia: boolean;
   trouxeRevista: boolean;
   estudouLicao: boolean;
+  trouxeVisitante: boolean;
 }
 
 export interface ChamadaResponse {
@@ -87,6 +88,7 @@ export interface RelatorioPresencaItem {
   trouxeBiblia: number;
   trouxeRevista: number;
   estudouLicao: number;
+  trouxeVisitante: number;
 }
 
 export interface RelatorioPresencaResponse {
@@ -111,5 +113,7 @@ export interface DesafiosResponse {
   maisTrouxeBiblia: RankingItem[];
   maisTrouxeRevista: RankingItem[];
   maisEstudouLicao: RankingItem[];
+  maisTrouxeVisitante: RankingItem[];
   melhoresNotas: RankingItem[];
+  classificacaoGeral: RankingItem[];
 }
