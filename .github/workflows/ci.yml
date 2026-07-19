@@ -78,13 +78,13 @@ jobs:
       - name: Relatório HIGH/CRITICAL (não bloqueia)
         run: |
           docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs \
-            --scanners vuln,secret,misconfig \
+            --scanners vuln,secret,misconfig --offline-scan \
             --severity HIGH,CRITICAL --no-progress \
             --format table /repo | tee trivy-report.txt
       - name: Gate — falha em CRITICAL
         run: |
           docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs \
-            --scanners vuln,secret,misconfig \
+            --scanners vuln,secret,misconfig --offline-scan \
             --severity CRITICAL --no-progress --exit-code 1 /repo
       - name: Guardar relatório
         if: always()
