@@ -151,12 +151,15 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 - ✅ MVP completo (backend + frontend + infra + scripts + docs).
 - ✅ Backend passa no `mvn package`; frontend passa no `ng build`.
 - ✅ Código no GitHub: `git@github.com:daniloav/ebd-samambaia.git` (repo **privado**), branch `main`.
-- ✅ Segredos removidos do versionamento.
+- ✅ Segredos removidos do versionamento. CI/CD verde (CD em mock até secrets reais).
+- ✅ **Runtime VALIDADO (2026-07-19)** — smoke test ponta-a-ponta OK: Flyway migrou, seed criou
+  usuários/alunos, login JWT, chamada (upsert), provas+notas, rankings e relatório responderam
+  contra Postgres real; login pela UI navega ao painel com dados reais.
+- 🐳 **Docker local não funciona neste Mac** (daemon trava — `docker ps` pendura). Para dev local,
+  use **Postgres nativo** em vez do `docker-compose.dev.yml`:
+  `brew services start postgresql@16` + role/db `ebd` (senha `ebd`) na porta 5432.
+  Na VM (deploy) o Docker é limpo e funciona normalmente.
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
-- ⚠️ **PENDENTE: validar runtime com Postgres de verdade.** Ainda não foi feito o teste
-  ponta-a-ponta (migrations Flyway executando, seed, login JWT, queries de relatório/rankings),
-  porque nas sessões anteriores o Docker local ficou indisponível. **Fazer isso assim que
-  possível** (subir `docker-compose.dev.yml`, `mvn quarkus:dev`, smoke test).
 
 ## 10. Como pedir evoluções (dica para o Danilo)
 
