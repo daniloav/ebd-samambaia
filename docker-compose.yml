@@ -5,6 +5,8 @@ services:
     image: postgres:16-alpine
     container_name: ebd-postgres
     restart: unless-stopped
+    mem_limit: 256m
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=30"]
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ebd}
       POSTGRES_USER: ${POSTGRES_USER:-ebd}
@@ -24,6 +26,7 @@ services:
       context: ./backend
     container_name: ebd-backend
     restart: unless-stopped
+    mem_limit: 512m
     depends_on:
       db:
         condition: service_healthy
@@ -44,6 +47,7 @@ services:
       context: ./frontend
     container_name: ebd-frontend
     restart: unless-stopped
+    mem_limit: 96m
     depends_on:
       - backend
     ports:

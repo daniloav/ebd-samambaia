@@ -24,4 +24,5 @@ COPY --from=build /app/target/quarkus-app/quarkus/ ./quarkus/
 RUN groupadd --system --gid 1001 appuser && useradd --system --uid 1001 --gid appuser appuser
 USER 1001
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]
+# Heap proporcional à RAM do container + GC serial (bom p/ VM pequena de 1 vCPU)
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=60.0", "-XX:+UseSerialGC", "-jar", "quarkus-run.jar"]

@@ -30,6 +30,7 @@ DISPLAY_NAME="${DISPLAY_NAME:-ebd-server}"
 OCPUS="${OCPUS:-1}"
 MEM_GB="${MEM_GB:-6}"
 SLEEP_SECONDS="${SLEEP_SECONDS:-60}"
+SHAPE="${SHAPE:-VM.Standard.A1.Flex}"
 # ============================================================
 
 ERR_LOG="$(mktemp)"
@@ -47,9 +48,18 @@ if [[ -z "${ADS[0]:-}" || "${ADS[0]}" == COLE_AQUI* ]]; then
   exit 1
 fi
 
+# shape-config só existe em shapes Flex; shapes fixos (ex.: E2.1.Micro) não usam
+if [[ "$SHAPE" == *Flex* ]]; then
+  SHAPE_CONFIG_ARGS=(--shape-config "{\"ocpus\":${OCPUS},\"memoryInGBs\":${MEM_GB}}")
+  SHAPE_DESC="${OCPUS} OCPU / ${MEM_GB}GB"
+else
+  SHAPE_CONFIG_ARGS=()
+  SHAPE_DESC="shape fixo"
+fi
+
 attempt=0
 idx=0
-echo "🚀 Iniciando tentativas de criar '$DISPLAY_NAME' (A1.Flex ${OCPUS} OCPU / ${MEM_GB}GB)"
+echo "🚀 Iniciando tentativas de criar '$DISPLAY_NAME' ($SHAPE · $SHAPE_DESC)"
 echo "   Pressione Ctrl+C para parar. Log de erro em: $ERR_LOG"
 echo
 
@@ -63,8 +73,8 @@ while true; do
   if oci compute instance launch \
       --compartment-id "$COMPARTMENT_ID" \
       --availability-domain "$AD" \
-      --shape "VM.Standard.A1.Flex" \
-      --shape-config "{\"ocpus\":${OCPUS},\"memoryInGBs\":${MEM_GB}}" \
+      --shape "$SHAPE" \
+      "${SHAPE_CONFIG_ARGS[@]}" \
       --image-id "$IMAGE_ID" \
       --subnet-id "$SUBNET_ID" \
       --assign-public-ip true \

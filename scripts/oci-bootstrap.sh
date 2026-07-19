@@ -29,6 +29,16 @@ if ! command -v netfilter-persistent >/dev/null 2>&1; then
 fi
 sudo netfilter-persistent save 2>/dev/null || true
 
+echo "▶ Criando swap de 3 GB (essencial em VM de 1 GB, ex.: E2.1.Micro)..."
+if ! sudo swapon --show | grep -q '/swapfile'; then
+  sudo fallocate -l 3G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=3072
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+fi
+sudo swapon --show || true
+
 echo
 echo "✅ VM preparada!"
 echo "   Saia e entre de novo no SSH para o grupo 'docker' passar a valer:"
