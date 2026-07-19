@@ -50,13 +50,30 @@ services:
     mem_limit: 96m
     depends_on:
       - backend
+    networks:
+      - ebd-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ebd-caddy
+    restart: unless-stopped
+    mem_limit: 96m
+    depends_on:
+      - frontend
     ports:
-      - "80:8080"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     networks:
       - ebd-net
 
 volumes:
   ebd_pgdata:
+  caddy_data:
+  caddy_config:
 
 networks:
   ebd-net:
