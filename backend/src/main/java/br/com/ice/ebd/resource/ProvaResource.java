@@ -30,8 +30,8 @@ public class ProvaResource {
 
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR"})
-    public List<ProvaResponse> listar() {
-        return service.listar();
+    public List<ProvaResponse> listar(@jakarta.ws.rs.QueryParam("classeId") Long classeId) {
+        return service.listar(classeId);
     }
 
     @GET

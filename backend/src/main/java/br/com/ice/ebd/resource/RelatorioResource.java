@@ -23,7 +23,8 @@ public class RelatorioResource {
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public RelatorioPresencaResponse presencas(
             @QueryParam("inicio") LocalDate inicio,
-            @QueryParam("fim") LocalDate fim) {
-        return service.gerar(inicio, fim);
+            @QueryParam("fim") LocalDate fim,
+            @QueryParam("classeId") Long classeId) {
+        return service.gerar(inicio, fim, classeId);
     }
 }

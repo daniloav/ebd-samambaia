@@ -26,13 +26,16 @@ import java.util.Map;
 public class ProvaService {
 
     @Inject ProvaRepository provaRepository;
+    @Inject ClasseService classeService;
     @Inject NotaProvaRepository notaRepository;
     @Inject AlunoRepository alunoRepository;
 
     // ---------- CRUD da prova ----------
 
-    public List<ProvaResponse> listar() {
-        return provaRepository.listarOrdenadoPorData().stream().map(ProvaResponse::de).toList();
+    public List<ProvaResponse> listar(Long classeId) {
+        var provas = classeId != null ? provaRepository.listarPorClasse(classeId)
+                                       : provaRepository.listarOrdenadoPorData();
+        return provas.stream().map(ProvaResponse::de).toList();
     }
 
     public ProvaResponse buscar(Long id) {
@@ -69,7 +72,7 @@ public class ProvaService {
         for (NotaProva n : notaRepository.listarPorProva(provaId)) {
             notasPorAluno.put(n.getAluno().getId(), n.getNota());
         }
-        List<NotaItem> itens = alunoRepository.listarAtivos().stream()
+        List<NotaItem> itens = alunoRepository.listarAtivosPorClasse(prova.getClasse().getId()).stream()
                 .map(a -> new NotaItem(a.getId(), a.getNome(), notasPorAluno.get(a.getId())))
                 .toList();
         return new NotasProvaResponse(prova.getId(), prova.getTitulo(), prova.getData(),
@@ -127,6 +130,7 @@ public class ProvaService {
     }
 
     private void aplicar(Prova p, ProvaRequest req) {
+        p.setClasse(classeService.obter(req.classeId()));
         p.setTitulo(req.titulo().trim());
         p.setData(req.data());
         p.setNotaMaxima(req.notaMaxima());

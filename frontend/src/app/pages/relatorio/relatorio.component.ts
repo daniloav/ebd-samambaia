@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ClasseContextService } from '../../core/classe-context.service';
 import { RelatorioPresencaResponse } from '../../core/models';
 
 @Component({
@@ -82,6 +83,7 @@ import { RelatorioPresencaResponse } from '../../core/models';
 export class RelatorioComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private classeCtx = inject(ClasseContextService);
 
   inicio = '';
   fim = '';
@@ -89,12 +91,12 @@ export class RelatorioComponent {
   carregando = signal(false);
 
   constructor() {
-    this.gerar();
+    effect(() => { this.classeCtx.selecionadaId(); this.gerar(); }, { allowSignalWrites: true });
   }
 
   gerar(): void {
     this.carregando.set(true);
-    this.api.relatorioPresencas(this.inicio || undefined, this.fim || undefined).subscribe({
+    this.api.relatorioPresencas(this.inicio || undefined, this.fim || undefined, this.classeCtx.selecionadaId()).subscribe({
       next: (r) => { this.dados.set(r); this.carregando.set(false); },
       error: () => { this.toast.erro('Falha ao gerar relatório.'); this.carregando.set(false); },
     });

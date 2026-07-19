@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
+import { ClasseContextService } from '../../core/classe-context.service';
 import { Prova, ProvaRequest } from '../../core/models';
 
 @Component({
@@ -78,6 +79,7 @@ export class ProvasComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   auth = inject(AuthService);
+  private classeCtx = inject(ClasseContextService);
 
   provas = signal<Prova[]>([]);
   carregando = signal(true);
@@ -86,7 +88,7 @@ export class ProvasComponent {
   editando = signal<Prova | null>(null);
   form: ProvaRequest = this.formVazio();
 
-  constructor() { this.carregar(); }
+  constructor() { effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true }); }
 
   private formVazio(): ProvaRequest {
     return { titulo: '', data: '', notaMaxima: 10 };
@@ -94,7 +96,7 @@ export class ProvasComponent {
 
   carregar(): void {
     this.carregando.set(true);
-    this.api.listarProvas().subscribe({
+    this.api.listarProvas(this.classeCtx.selecionadaId()).subscribe({
       next: (l) => { this.provas.set(l); this.carregando.set(false); },
       error: () => { this.toast.erro('Falha ao carregar provas.'); this.carregando.set(false); },
     });
@@ -110,9 +112,12 @@ export class ProvasComponent {
 
   salvar(): void {
     if (!this.form.titulo?.trim() || !this.form.data) { this.toast.erro('Preencha título e data.'); return; }
+    const classeId = this.classeCtx.selecionadaId();
+    if (!classeId) { this.toast.erro('Selecione uma turma no menu.'); return; }
     this.salvando.set(true);
+    const payload = { ...this.form, classeId };
     const alvo = this.editando();
-    const req$ = alvo ? this.api.atualizarProva(alvo.id, this.form) : this.api.criarProva(this.form);
+    const req$ = alvo ? this.api.atualizarProva(alvo.id, payload) : this.api.criarProva(payload);
     req$.subscribe({
       next: () => {
         this.toast.sucesso(alvo ? 'Prova atualizada!' : 'Prova criada!');

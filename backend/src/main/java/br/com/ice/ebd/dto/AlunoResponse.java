@@ -10,10 +10,13 @@ public record AlunoResponse(
         String telefone,
         LocalDate dataNascimento,
         boolean ativo,
-        LocalDateTime dataCadastro) {
+        LocalDateTime dataCadastro,
+        Long classeId,
+        String classeNome) {
 
     public static AlunoResponse de(Aluno a) {
         return new AlunoResponse(a.getId(), a.getNome(), a.getTelefone(),
-                a.getDataNascimento(), a.isAtivo(), a.getDataCadastro());
+                a.getDataNascimento(), a.isAtivo(), a.getDataCadastro(),
+                a.getClasse().getId(), a.getClasse().getNome());
     }
 }

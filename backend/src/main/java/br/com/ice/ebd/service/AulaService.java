@@ -19,8 +19,12 @@ public class AulaService {
     @Inject
     AulaRepository repository;
 
-    public List<AulaResponse> listar() {
-        return repository.listarOrdenadoPorData().stream().map(AulaResponse::de).toList();
+    @Inject
+    ClasseService classeService;
+
+    public List<AulaResponse> listar(Long classeId) {
+        var aulas = classeId != null ? repository.listarPorClasse(classeId) : repository.listarOrdenadoPorData();
+        return aulas.stream().map(AulaResponse::de).toList();
     }
 
     public AulaResponse buscar(Long id) {
@@ -29,8 +33,10 @@ public class AulaService {
 
     @Transactional
     public AulaResponse criar(AulaRequest req) {
-        validarDataUnica(req.data(), null);
+        var classe = classeService.obter(req.classeId());
+        validarDataUnica(classe.getId(), req.data(), null);
         Aula a = new Aula();
+        a.setClasse(classe);
         a.setData(req.data());
         a.setTema(req.tema());
         repository.persist(a);
@@ -40,7 +46,9 @@ public class AulaService {
     @Transactional
     public AulaResponse atualizar(Long id, AulaRequest req) {
         Aula a = obter(id);
-        validarDataUnica(req.data(), id);
+        var classe = classeService.obter(req.classeId());
+        validarDataUnica(classe.getId(), req.data(), id);
+        a.setClasse(classe);
         a.setData(req.data());
         a.setTema(req.tema());
         return AulaResponse.de(a);
@@ -60,10 +68,10 @@ public class AulaService {
         return a;
     }
 
-    private void validarDataUnica(java.time.LocalDate data, Long idAtual) {
-        Optional<Aula> existente = repository.findByData(data);
+    private void validarDataUnica(Long classeId, java.time.LocalDate data, Long idAtual) {
+        Optional<Aula> existente = repository.findByClasseAndData(classeId, data);
         if (existente.isPresent() && !existente.get().getId().equals(idAtual)) {
-            throw new WebApplicationException("Já existe uma aula cadastrada nesta data.",
+            throw new WebApplicationException("Já existe uma aula desta classe nesta data.",
                     Response.Status.CONFLICT);
         }
     }

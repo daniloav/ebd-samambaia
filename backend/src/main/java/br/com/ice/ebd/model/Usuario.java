@@ -7,6 +7,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
@@ -33,6 +36,10 @@ public class Usuario {
 
     @Column(name = "data_cadastro", nullable = false)
     private LocalDateTime dataCadastro = LocalDateTime.now();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "aluno_id")
+    private Aluno aluno;
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -51,4 +58,7 @@ public class Usuario {
 
     public LocalDateTime getDataCadastro() { return dataCadastro; }
     public void setDataCadastro(LocalDateTime dataCadastro) { this.dataCadastro = dataCadastro; }
+
+    public Aluno getAluno() { return aluno; }
+    public void setAluno(Aluno aluno) { this.aluno = aluno; }
 }

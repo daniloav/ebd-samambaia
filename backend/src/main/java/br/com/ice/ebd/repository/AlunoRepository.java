@@ -16,4 +16,12 @@ public class AlunoRepository implements PanacheRepository<Aluno> {
     public List<Aluno> listarAtivos() {
         return list("ativo = true order by nome");
     }
+
+    public List<Aluno> listarPorClasse(Long classeId) {
+        return list("classe.id = ?1 order by nome", classeId);
+    }
+
+    public List<Aluno> listarAtivosPorClasse(Long classeId) {
+        return list("classe.id = ?1 and ativo = true order by nome", classeId);
+    }
 }

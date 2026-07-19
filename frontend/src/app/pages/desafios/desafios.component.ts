@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ClasseContextService } from '../../core/classe-context.service';
 import { DesafiosResponse, RankingItem } from '../../core/models';
 
 interface Categoria {
@@ -96,6 +97,7 @@ interface Categoria {
 export class DesafiosComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private classeCtx = inject(ClasseContextService);
 
   dados = signal<DesafiosResponse | null>(null);
   categorias = signal<Categoria[]>([]);
@@ -103,7 +105,12 @@ export class DesafiosComponent {
   carregando = signal(true);
 
   constructor() {
-    this.api.rankings().subscribe({
+    effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true });
+  }
+
+  carregar(): void {
+    this.carregando.set(true);
+    this.api.rankings(this.classeCtx.selecionadaId()).subscribe({
       next: (d) => {
         this.dados.set(d);
         this.geral.set(d.classificacaoGeral);

@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'PROFESSOR';
+export type Role = 'ADMIN' | 'PROFESSOR' | 'ALUNO';
 
 export interface LoginResponse {
   token: string;
@@ -14,10 +14,13 @@ export interface Aluno {
   dataNascimento?: string | null;
   ativo: boolean;
   dataCadastro?: string;
+  classeId: number;
+  classeNome?: string;
 }
 
 export interface AlunoRequest {
   nome: string;
+  classeId?: number;
   telefone?: string | null;
   dataNascimento?: string | null;
   ativo?: boolean;
@@ -27,9 +30,12 @@ export interface Aula {
   id: number;
   data: string;
   tema?: string | null;
+  classeId?: number;
+  classeNome?: string;
 }
 
 export interface AulaRequest {
+  classeId?: number;
   data: string;
   tema?: string | null;
 }
@@ -56,9 +62,12 @@ export interface Prova {
   titulo: string;
   data: string;
   notaMaxima: number;
+  classeId?: number;
+  classeNome?: string;
 }
 
 export interface ProvaRequest {
+  classeId?: number;
   titulo: string;
   data: string;
   notaMaxima: number;
@@ -116,4 +125,34 @@ export interface DesafiosResponse {
   maisTrouxeVisitante: RankingItem[];
   melhoresNotas: RankingItem[];
   classificacaoGeral: RankingItem[];
+}
+
+export interface Classe {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  ativo: boolean;
+}
+
+export interface ClasseRequest {
+  nome: string;
+  descricao?: string | null;
+  ativo?: boolean;
+}
+
+export interface Usuario {
+  id: number;
+  username: string;
+  role: Role;
+  ativo: boolean;
+  alunoId?: number | null;
+  alunoNome?: string | null;
+}
+
+export interface UsuarioRequest {
+  username: string;
+  senha?: string | null;
+  role: Role;
+  alunoId?: number | null;
+  ativo?: boolean;
 }

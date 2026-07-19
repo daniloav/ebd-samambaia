@@ -1,9 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
+import { ClasseContextService } from '../../core/classe-context.service';
 import { Aluno, AlunoRequest } from '../../core/models';
 
 @Component({
@@ -93,6 +94,7 @@ export class AlunosComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
   auth = inject(AuthService);
+  private classeCtx = inject(ClasseContextService);
 
   alunos = signal<Aluno[]>([]);
   carregando = signal(true);
@@ -102,7 +104,7 @@ export class AlunosComponent {
   form: AlunoRequest = this.formVazio();
 
   constructor() {
-    this.carregar();
+    effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true });
   }
 
   private formVazio(): AlunoRequest {
@@ -111,7 +113,7 @@ export class AlunosComponent {
 
   carregar(): void {
     this.carregando.set(true);
-    this.api.listarAlunos().subscribe({
+    this.api.listarAlunos(false, this.classeCtx.selecionadaId()).subscribe({
       next: (l) => { this.alunos.set(l); this.carregando.set(false); },
       error: () => { this.toast.erro('Falha ao carregar alunos.'); this.carregando.set(false); },
     });
@@ -134,8 +136,11 @@ export class AlunosComponent {
   salvar(): void {
     if (!this.form.nome?.trim()) { this.toast.erro('Informe o nome do aluno.'); return; }
     this.salvando.set(true);
+    const classeId = this.classeCtx.selecionadaId();
+    if (!classeId) { this.toast.erro('Selecione uma turma no menu.'); this.salvando.set(false); return; }
     const payload: AlunoRequest = {
       nome: this.form.nome.trim(),
+      classeId,
       telefone: this.form.telefone || null,
       dataNascimento: this.form.dataNascimento || null,
       ativo: this.form.ativo,
