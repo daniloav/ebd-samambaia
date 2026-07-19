@@ -127,9 +127,12 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 - **Região**: `sa-saopaulo-1` (uma única AD). **Rede já criada** via CLI: VCN pública +
   Internet Gateway + rota `0.0.0.0/0` + subnet pública + Security List liberando portas 22 e 80.
-- **VM alvo**: `ebd-server`, shape `VM.Standard.A1.Flex` **1 OCPU / 6 GB** (Always Free), Ubuntu 22.04 ARM.
-- **Bloqueio atual**: `Out of capacity` do A1 em São Paulo (comum). O script
-  `scripts/oci-a1-retry.sh` fica tentando até conseguir.
+- **VM alvo (atual)**: `ebd-server`, shape **`VM.Standard.E2.1.Micro`** (x86, **1 OCPU / 1 GB**, Always Free),
+  Ubuntu 22.04. Mudança do A1.Flex (6 GB) por "Out of capacity" persistente do A1 em São Paulo.
+  Como é 1 GB: `oci-bootstrap.sh` cria **3 GB de swap**, `docker-compose` tem `mem_limit` por serviço
+  e o backend usa `-XX:MaxRAMPercentage`. Voltar ao A1 (6 GB) via **Pay As You Go** está no ROADMAP.
+- O script `scripts/oci-a1-retry.sh` é **agnóstico ao shape** (lê `SHAPE` do `.oci-launch.env`)
+  e tenta com retry no "Out of capacity".
 - Scripts (em `scripts/`):
   - `oci-descobrir.sh` — lista OCIDs (compartment, AD, imagem, subnet).
   - `oci-a1-retry.sh` — cria a VM com retry no "Out of capacity" (lê `scripts/.oci-launch.env`).

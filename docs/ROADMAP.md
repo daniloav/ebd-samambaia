@@ -35,6 +35,10 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [ ] **Chaves JWT persistentes** via volume (hoje o Docker gera novas a cada build).
 - [ ] (Opcional) **Purga de histórico do Git** para remover a chave JWT antiga, se o repo virar público.
 - [ ] **Budget/alerta de custo** na OCI (garantia extra contra cobrança).
+- [ ] **Avaliar upgrade para "Pay As You Go"** para destravar capacidade do **A1** (ARM, 6 GB).
+      Contas Free Trial têm baixa prioridade na fila do A1 ("Out of capacity"); o upgrade
+      costuma liberar, e os recursos **Always Free continuam US$ 0**. Precisa cadastrar cartão
+      (blindar com Budget). Alternativa ao E2.1.Micro (1 GB) que estamos usando agora.
 
 ## 💡 Ideias maiores (longo prazo)
 
