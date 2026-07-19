@@ -74,7 +74,7 @@ while true; do
       --compartment-id "$COMPARTMENT_ID" \
       --availability-domain "$AD" \
       --shape "$SHAPE" \
-      "${SHAPE_CONFIG_ARGS[@]}" \
+      ${SHAPE_CONFIG_ARGS[@]+"${SHAPE_CONFIG_ARGS[@]}"} \
       --image-id "$IMAGE_ID" \
       --subnet-id "$SUBNET_ID" \
       --assign-public-ip true \
