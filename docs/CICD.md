@@ -29,11 +29,15 @@ O CD só dispara via `workflow_run` **filtrado para a `main`** — nunca para a 
 
 ### Proteção da `main`
 
-Configurada (Settings → Branches, ou via `gh api`):
+> ⚠️ **Proteção de branch em repo PRIVADO exige GitHub Pro** (ou tornar o repo público).
+> No plano free-privado a trava técnica não pode ser ativada. Enquanto isso, o fluxo
+> `develop → PR → main` é seguido por **convenção** (o CI ainda valida os PRs).
+
+Regras desejadas (aplicar quando houver Pro / repo público — via `gh api PUT .../branches/main/protection`):
 - **Exige Pull Request** antes de mergear (0 aprovações — ok para 1 dev só).
 - **Exige os checks do CI passando**: Backend, Frontend, SAST · Semgrep, Trivy, gitleaks.
 - **Sem push direto**, sem force-push, sem deleção da branch.
-- Admin **não** é bloqueado (`enforce_admins=false`) — você pode contornar em emergência.
+- Admin **não** bloqueado (`enforce_admins=false`).
 
 ### Dia a dia
 
