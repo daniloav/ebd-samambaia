@@ -34,6 +34,7 @@ claude-trabalho/
 | [`docs/API.md`](docs/API.md) | Referência de endpoints com exemplos |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Backlog e limitações conhecidas |
 | [`docs/CICD.md`](docs/CICD.md) | Esteira GitHub Actions (CI de segurança + CD para OCI) |
+| [`docs/pos-vm.md`](docs/pos-vm.md) | Runbook: colocar o site no ar quando a VM subir |
 | [`docs/deploy-oracle.md`](docs/deploy-oracle.md) | Passo a passo do deploy na Oracle Cloud |
 
 ## 🔐 Perfis de acesso
