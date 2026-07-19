@@ -71,6 +71,7 @@ claude-trabalho/
     ├── ARQUITETURA.md             ← modelo de dados, camadas, decisões (LER para mudanças estruturais)
     ├── API.md                     ← referência de endpoints com exemplos
     ├── ROADMAP.md                 ← backlog e limitações conhecidas
+    ├── rodar-local.md             ← como rodar localmente (dev, passo a passo)
     ├── CICD.md                    ← esteira GitHub Actions (CI segurança + CD OCI)
     ├── pos-vm.md                  ← runbook: deploy quando a VM subir (bootstrap + secrets)
     └── deploy-oracle.md           ← passo a passo de deploy na VM
