@@ -9,6 +9,26 @@ Guia passo a passo para subir a aplicação na sua máquina. São **3 serviços*
 
 ---
 
+## ⚡ Jeito fácil: um comando só
+
+Depois de ter **Java, Maven, Node e Homebrew** instalados, é só:
+
+```bash
+cd ~/claude-trabalho
+./scripts/dev-up.sh      # sobe banco + backend + frontend (idempotente)
+./scripts/dev-down.sh    # para backend e frontend
+```
+
+O `dev-up.sh` instala o Postgres se faltar, cria o banco `ebd`, gera as chaves JWT,
+instala as dependências do front, sobe tudo e espera ficar pronto — aí abre
+**http://localhost:4200** (login `admin` / `admin123`).
+
+Logs: `tail -f /tmp/ebd-backend.log` e `tail -f /tmp/ebd-frontend.log`.
+
+> Prefere entender/fazer manualmente? Continue lendo as partes abaixo.
+
+---
+
 ## Parte 1 — Configuração (só na PRIMEIRA vez)
 
 ### 1.1 Pré-requisitos (já instalados na sua máquina)
