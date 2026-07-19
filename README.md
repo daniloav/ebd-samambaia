@@ -33,6 +33,7 @@ claude-trabalho/
 | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Modelo de dados, camadas e decisões técnicas |
 | [`docs/API.md`](docs/API.md) | Referência de endpoints com exemplos |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Backlog e limitações conhecidas |
+| [`docs/CICD.md`](docs/CICD.md) | Esteira GitHub Actions (CI de segurança + CD para OCI) |
 | [`docs/deploy-oracle.md`](docs/deploy-oracle.md) | Passo a passo do deploy na Oracle Cloud |
 
 ## 🔐 Perfis de acesso
