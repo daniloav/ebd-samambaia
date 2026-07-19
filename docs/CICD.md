@@ -2,6 +2,54 @@
 
 Três workflows em `.github/workflows/`.
 
+## Fluxo de branches (develop → main)
+
+```
+  feature/dev ──▶ push develop ──▶ CI + CodeQL (validam)  [NÃO faz deploy]
+                       │
+                       ▼  (testar local com ./scripts/dev-up.sh)
+                    Pull Request ──▶ CI roda no PR (precisa passar p/ poder mergear)
+                       │
+                       ▼  merge na main ──▶ CI + CD ──▶ deploy em produção 🚀
+```
+
+- **`develop`** — branch de trabalho. Todo dia-a-dia vai aqui.
+- **`main`** — protegida; só recebe código via **Pull Request** com o CI verde. Merge na main
+  **dispara o deploy** (CD) para a VM.
+
+### Onde cada workflow roda
+
+| Workflow | develop | main | Pull Request |
+|---|:--:|:--:|:--:|
+| **CI** (build + Semgrep/Trivy/gitleaks) | ✅ | ✅ | ✅ |
+| **CodeQL** | ✅ | ✅ | ✅ (pulado em repo privado) |
+| **CD** (deploy OCI) | ❌ | ✅ | ❌ |
+
+O CD só dispara via `workflow_run` **filtrado para a `main`** — nunca para a develop.
+
+### Proteção da `main`
+
+Configurada (Settings → Branches, ou via `gh api`):
+- **Exige Pull Request** antes de mergear (0 aprovações — ok para 1 dev só).
+- **Exige os checks do CI passando**: Backend, Frontend, SAST · Semgrep, Trivy, gitleaks.
+- **Sem push direto**, sem force-push, sem deleção da branch.
+- Admin **não** é bloqueado (`enforce_admins=false`) — você pode contornar em emergência.
+
+### Dia a dia
+
+```bash
+git checkout develop
+git pull
+# ... trabalha, commita ...
+git push                              # CI roda na develop (sem deploy)
+./scripts/dev-up.sh                   # testa local
+gh pr create --base main --head develop --fill   # abre o PR
+# CI roda no PR; quando verde, faça o merge (pela UI ou:)
+gh pr merge --squash --delete-branch=false        # merge → CD faz o deploy
+```
+
+
+
 ## CI (`ci.yml`) — a cada push/PR na `main`
 
 | Job | O que faz | Bloqueia? |

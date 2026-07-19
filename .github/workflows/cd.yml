@@ -6,10 +6,10 @@ name: CD · Deploy OCI
 
 on:
   workflow_dispatch: {}          # disparo manual
-  workflow_run:                  # após o CI passar na main
+  workflow_run:                  # SÓ na main: dispara após o CI concluir na main
     workflows: ["CI"]
     types: [completed]
-    branches: [main]
+    branches: [main]            # <- deploy nunca roda para a develop
 
 permissions:
   contents: read

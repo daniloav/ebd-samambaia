@@ -35,6 +35,7 @@ claude-trabalho/
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Backlog e limitações conhecidas |
 | [`docs/rodar-local.md`](docs/rodar-local.md) | **Como rodar o projeto localmente** (passo a passo) |
 | [`docs/CICD.md`](docs/CICD.md) | Esteira GitHub Actions (CI de segurança + CD para OCI) |
+| [`docs/senhas-e-secrets.md`](docs/senhas-e-secrets.md) | Onde ficam as senhas/secrets e como consultá-las |
 | [`docs/pos-vm.md`](docs/pos-vm.md) | Runbook: colocar o site no ar quando a VM subir |
 | [`docs/deploy-oracle.md`](docs/deploy-oracle.md) | Passo a passo do deploy na Oracle Cloud |
 
