@@ -12,15 +12,18 @@ const CHAVE_ROLE = 'ebd_role';
 export class AuthService {
   private readonly api = environment.apiUrl;
 
+  // token reativo (signal) para que `logado` recalcule após login/logout.
+  private readonly tokenSignal = signal<string | null>(localStorage.getItem(CHAVE_TOKEN));
+
   readonly username = signal<string | null>(localStorage.getItem(CHAVE_USER));
   readonly role = signal<Role | null>(localStorage.getItem(CHAVE_ROLE) as Role | null);
-  readonly logado = computed(() => !!this.token());
+  readonly logado = computed(() => this.tokenSignal() !== null);
   readonly isAdmin = computed(() => this.role() === 'ADMIN');
 
   constructor(private http: HttpClient) {}
 
   token(): string | null {
-    return localStorage.getItem(CHAVE_TOKEN);
+    return this.tokenSignal();
   }
 
   login(username: string, senha: string): Observable<LoginResponse> {
@@ -29,6 +32,7 @@ export class AuthService {
         localStorage.setItem(CHAVE_TOKEN, res.token);
         localStorage.setItem(CHAVE_USER, res.username);
         localStorage.setItem(CHAVE_ROLE, res.role);
+        this.tokenSignal.set(res.token);
         this.username.set(res.username);
         this.role.set(res.role);
       })
@@ -39,6 +43,7 @@ export class AuthService {
     localStorage.removeItem(CHAVE_TOKEN);
     localStorage.removeItem(CHAVE_USER);
     localStorage.removeItem(CHAVE_ROLE);
+    this.tokenSignal.set(null);
     this.username.set(null);
     this.role.set(null);
   }
