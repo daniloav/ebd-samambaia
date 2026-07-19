@@ -22,12 +22,14 @@ public class RelatorioService {
     /** Guarda os totais somados por aluno no período. */
     private record Totais(long presencas, long biblia, long revista, long licao, long visitante) {}
 
-    public RelatorioPresencaResponse gerar(LocalDate inicio, LocalDate fim) {
+    public RelatorioPresencaResponse gerar(LocalDate inicio, LocalDate fim, Long classeId) {
         LocalDate ini = inicio != null ? inicio : LocalDate.of(2000, 1, 1);
         LocalDate f = fim != null ? fim : LocalDate.now();
+        String fAula = classeId != null ? " and a.classe.id = " + classeId : "";
+        String fPres = classeId != null ? " and p.aula.classe.id = " + classeId : "";
 
         long totalAulas = em.createQuery(
-                        "select count(a) from Aula a where a.data between :ini and :fim", Long.class)
+                        "select count(a) from Aula a where a.data between :ini and :fim" + fAula, Long.class)
                 .setParameter("ini", ini)
                 .setParameter("fim", f)
                 .getSingleResult();
@@ -40,7 +42,7 @@ public class RelatorioService {
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
                         "sum(case when p.estudouLicao = true then 1 else 0 end), " +
                         "sum(case when p.trouxeVisitante = true then 1 else 0 end) " +
-                        "from Presenca p where p.aula.data between :ini and :fim " +
+                        "from Presenca p where p.aula.data between :ini and :fim" + fPres + " " +
                         "group by p.aluno.id", Object[].class)
                 .setParameter("ini", ini)
                 .setParameter("fim", f)
@@ -53,7 +55,7 @@ public class RelatorioService {
         }
 
         List<RelatorioPresencaItem> itens = new ArrayList<>();
-        for (Aluno aluno : alunoRepository.listarAtivos()) {
+        for (Aluno aluno : (classeId != null ? alunoRepository.listarAtivosPorClasse(classeId) : alunoRepository.listarAtivos())) {
             Totais t = porAluno.getOrDefault(aluno.getId(), new Totais(0, 0, 0, 0, 0));
             long presencas = t.presencas();
             long faltas = Math.max(0, totalAulas - presencas);

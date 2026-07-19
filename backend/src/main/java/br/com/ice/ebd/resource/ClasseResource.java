@@ -1,8 +1,8 @@
 package br.com.ice.ebd.resource;
 
-import br.com.ice.ebd.dto.AlunoRequest;
-import br.com.ice.ebd.dto.AlunoResponse;
-import br.com.ice.ebd.service.AlunoService;
+import br.com.ice.ebd.dto.ClasseRequest;
+import br.com.ice.ebd.dto.ClasseResponse;
+import br.com.ice.ebd.service.ClasseService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -20,40 +20,37 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 
-@Path("/api/alunos")
+@Path("/api/classes")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class AlunoResource {
+public class ClasseResource {
 
     @Inject
-    AlunoService service;
+    ClasseService service;
 
     @GET
-    @RolesAllowed({"ADMIN", "PROFESSOR"})
-    public List<AlunoResponse> listar(
-            @QueryParam("classeId") Long classeId,
-            @QueryParam("apenasAtivos") @DefaultValue("false") boolean apenasAtivos) {
-        return service.listar(classeId, apenasAtivos);
+    @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
+    public List<ClasseResponse> listar(@QueryParam("apenasAtivas") @DefaultValue("false") boolean apenasAtivas) {
+        return service.listar(apenasAtivas);
     }
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "PROFESSOR"})
-    public AlunoResponse buscar(@PathParam("id") Long id) {
+    @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
+    public ClasseResponse buscar(@PathParam("id") Long id) {
         return service.buscar(id);
     }
 
     @POST
     @RolesAllowed("ADMIN")
-    public Response criar(@Valid AlunoRequest request) {
-        AlunoResponse criado = service.criar(request);
-        return Response.status(Response.Status.CREATED).entity(criado).build();
+    public Response criar(@Valid ClasseRequest request) {
+        return Response.status(Response.Status.CREATED).entity(service.criar(request)).build();
     }
 
     @PUT
     @Path("/{id}")
     @RolesAllowed("ADMIN")
-    public AlunoResponse atualizar(@PathParam("id") Long id, @Valid AlunoRequest request) {
+    public ClasseResponse atualizar(@PathParam("id") Long id, @Valid ClasseRequest request) {
         return service.atualizar(id, request);
     }
 

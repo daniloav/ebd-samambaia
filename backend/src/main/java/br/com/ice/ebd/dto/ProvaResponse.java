@@ -8,9 +8,12 @@ public record ProvaResponse(
         Long id,
         String titulo,
         LocalDate data,
-        BigDecimal notaMaxima) {
+        BigDecimal notaMaxima,
+        Long classeId,
+        String classeNome) {
 
     public static ProvaResponse de(Prova p) {
-        return new ProvaResponse(p.getId(), p.getTitulo(), p.getData(), p.getNotaMaxima());
+        return new ProvaResponse(p.getId(), p.getTitulo(), p.getData(), p.getNotaMaxima(),
+                p.getClasse().getId(), p.getClasse().getNome());
     }
 }

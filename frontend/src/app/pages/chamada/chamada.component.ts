@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ClasseContextService } from '../../core/classe-context.service';
 import { Aula, PresencaItem } from '../../core/models';
 
 @Component({
@@ -105,6 +106,7 @@ import { Aula, PresencaItem } from '../../core/models';
 export class ChamadaComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private classeCtx = inject(ClasseContextService);
 
   aulas = signal<Aula[]>([]);
   itens = signal<PresencaItem[]>([]);
@@ -118,11 +120,16 @@ export class ChamadaComponent {
   salvandoAula = signal(false);
 
   constructor() {
-    this.carregarAulas();
+    effect(() => {
+      this.classeCtx.selecionadaId();
+      this.aulaSelecionadaId = null;
+      this.itens.set([]);
+      this.carregarAulas();
+    }, { allowSignalWrites: true });
   }
 
   carregarAulas(selecionar?: number): void {
-    this.api.listarAulas().subscribe({
+    this.api.listarAulas(this.classeCtx.selecionadaId()).subscribe({
       next: (l) => {
         this.aulas.set(l);
         if (selecionar) {
@@ -146,7 +153,7 @@ export class ChamadaComponent {
   criarAula(): void {
     if (!this.novaData) { this.toast.erro('Informe a data da aula.'); return; }
     this.salvandoAula.set(true);
-    this.api.criarAula({ data: this.novaData, tema: this.novoTema || null }).subscribe({
+    this.api.criarAula({ classeId: this.classeCtx.selecionadaId() ?? undefined, data: this.novaData, tema: this.novoTema || null }).subscribe({
       next: (a) => {
         this.toast.sucesso('Aula criada!');
         this.salvandoAula.set(false);

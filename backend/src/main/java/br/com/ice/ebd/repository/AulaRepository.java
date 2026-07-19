@@ -15,7 +15,11 @@ public class AulaRepository implements PanacheRepository<Aula> {
         return listAll(Sort.by("data").descending());
     }
 
-    public Optional<Aula> findByData(LocalDate data) {
-        return find("data", data).firstResultOptional();
+    public List<Aula> listarPorClasse(Long classeId) {
+        return list("classe.id = ?1 order by data desc", classeId);
+    }
+
+    public Optional<Aula> findByClasseAndData(Long classeId, LocalDate data) {
+        return find("classe.id = ?1 and data = ?2", classeId, data).firstResultOptional();
     }
 }
