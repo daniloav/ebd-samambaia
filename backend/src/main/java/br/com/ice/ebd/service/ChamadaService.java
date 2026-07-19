@@ -40,10 +40,11 @@ public class ChamadaService {
                     Presenca p = porAluno.get(aluno.getId());
                     if (p == null) {
                         return new PresencaItem(aluno.getId(), aluno.getNome(),
-                                false, false, false, false);
+                                false, false, false, false, false);
                     }
                     return new PresencaItem(aluno.getId(), aluno.getNome(),
-                            p.isPresente(), p.isTrouxeBiblia(), p.isTrouxeRevista(), p.isEstudouLicao());
+                            p.isPresente(), p.isTrouxeBiblia(), p.isTrouxeRevista(), p.isEstudouLicao(),
+                            p.isTrouxeVisitante());
                 })
                 .toList();
 
@@ -75,6 +76,7 @@ public class ChamadaService {
             p.setTrouxeBiblia(item.trouxeBiblia());
             p.setTrouxeRevista(item.trouxeRevista());
             p.setEstudouLicao(item.estudouLicao());
+            p.setTrouxeVisitante(item.trouxeVisitante());
             presencaRepository.persist(p);
         }
 

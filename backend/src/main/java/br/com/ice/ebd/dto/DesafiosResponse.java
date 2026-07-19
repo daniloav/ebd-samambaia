@@ -10,5 +10,7 @@ public record DesafiosResponse(
         List<RankingItem> maisTrouxeBiblia,
         List<RankingItem> maisTrouxeRevista,
         List<RankingItem> maisEstudouLicao,
-        List<RankingItem> melhoresNotas) {
+        List<RankingItem> maisTrouxeVisitante,
+        List<RankingItem> melhoresNotas,
+        List<RankingItem> classificacaoGeral) {
 }
