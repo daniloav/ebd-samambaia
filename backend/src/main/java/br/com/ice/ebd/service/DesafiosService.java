@@ -26,8 +26,7 @@ public class DesafiosService {
     private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante) {}
 
     public DesafiosResponse gerar(Long classeId) {
-        String fPres = classeId != null ? " where p.aula.classe.id = " + classeId : "";
-        String fNota = classeId != null ? " where n.prova.classe.id = " + classeId : "";
+        long cid = classeId != null ? classeId : -1L;
         Map<Long, String> nomes = new LinkedHashMap<>();
         var alunos = classeId != null ? alunoRepository.listarAtivosPorClasse(classeId)
                                        : alunoRepository.listarAtivos();
@@ -35,11 +34,11 @@ public class DesafiosService {
             nomes.put(a.getId(), a.getNome());
         }
 
-        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a" + (classeId != null ? " where a.classe.id = " + classeId : "")).getSingleResult()).longValue();
-        long totalProvas = ((Number) em.createQuery("select count(p) from Prova p" + (classeId != null ? " where p.classe.id = " + classeId : "")).getSingleResult()).longValue();
+        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where (:cid = -1 or a.classe.id = :cid)").setParameter("cid", cid).getSingleResult()).longValue();
+        long totalProvas = ((Number) em.createQuery("select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid)").setParameter("cid", cid).getSingleResult()).longValue();
 
-        Map<Long, MetricasPresenca> presenca = carregarPresencas(fPres);
-        Map<Long, Double> medias = carregarMediasNotas(fNota);
+        Map<Long, MetricasPresenca> presenca = carregarPresencas(cid);
+        Map<Long, Double> medias = carregarMediasNotas(cid);
 
         List<RankingItem> menosFaltou = ranking(nomes, presenca,
                 m -> (double) m.presencas(),
@@ -68,7 +67,7 @@ public class DesafiosService {
 
         List<RankingItem> melhoresNotas = rankingNotas(nomes, medias);
 
-        Map<Long, Double> notasPontos = carregarNotasPontos(fNota);
+        Map<Long, Double> notasPontos = carregarNotasPontos(cid);
         List<RankingItem> classificacaoGeral = classificacaoGeral(nomes, presenca, notasPontos);
 
         return new DesafiosResponse(totalAulas, totalProvas,
@@ -76,7 +75,7 @@ public class DesafiosService {
                 melhoresNotas, classificacaoGeral);
     }
 
-    private Map<Long, MetricasPresenca> carregarPresencas(String fPres) {
+    private Map<Long, MetricasPresenca> carregarPresencas(long cid) {
         Map<Long, MetricasPresenca> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
                         "select p.aluno.id, " +
@@ -85,7 +84,8 @@ public class DesafiosService {
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
                         "sum(case when p.estudouLicao = true then 1 else 0 end), " +
                         "sum(case when p.trouxeVisitante = true then 1 else 0 end) " +
-                        "from Presenca p" + fPres + " group by p.aluno.id", Object[].class)
+                        "from Presenca p where (:cid = -1 or p.aula.classe.id = :cid) group by p.aluno.id", Object[].class)
+                .setParameter("cid", cid)
                 .getResultList();
         for (Object[] l : linhas) {
             mapa.put((Long) l[0], new MetricasPresenca(
@@ -94,10 +94,11 @@ public class DesafiosService {
         return mapa;
     }
 
-    private Map<Long, Double> carregarMediasNotas(String fNota) {
+    private Map<Long, Double> carregarMediasNotas(long cid) {
         Map<Long, Double> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
-                        "select n.aluno.id, avg(n.nota) from NotaProva n" + fNota + " group by n.aluno.id", Object[].class)
+                        "select n.aluno.id, avg(n.nota) from NotaProva n where (:cid = -1 or n.prova.classe.id = :cid) group by n.aluno.id", Object[].class)
+                .setParameter("cid", cid)
                 .getResultList();
         for (Object[] l : linhas) {
             double media = Math.round(((Number) l[1]).doubleValue() * 100.0) / 100.0;
@@ -157,11 +158,12 @@ public class DesafiosService {
     }
 
     /** Pontos de notas por aluno: soma de (nota/notaMaxima) * 5 sobre as provas. */
-    private Map<Long, Double> carregarNotasPontos(String fNota) {
+    private Map<Long, Double> carregarNotasPontos(long cid) {
         Map<Long, Double> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
-                        "select n.aluno.id, sum(n.nota / n.prova.notaMaxima) from NotaProva n" + fNota + " group by n.aluno.id",
+                        "select n.aluno.id, sum(n.nota / n.prova.notaMaxima) from NotaProva n where (:cid = -1 or n.prova.classe.id = :cid) group by n.aluno.id",
                         Object[].class)
+                .setParameter("cid", cid)
                 .getResultList();
         for (Object[] l : linhas) {
             mapa.put((Long) l[0], ((Number) l[1]).doubleValue() * 5.0);
