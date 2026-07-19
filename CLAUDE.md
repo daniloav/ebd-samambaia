@@ -72,6 +72,7 @@ claude-trabalho/
     ├── API.md                     ← referência de endpoints com exemplos
     ├── ROADMAP.md                 ← backlog e limitações conhecidas
     ├── CICD.md                    ← esteira GitHub Actions (CI segurança + CD OCI)
+    ├── pos-vm.md                  ← runbook: deploy quando a VM subir (bootstrap + secrets)
     └── deploy-oracle.md           ← passo a passo de deploy na VM
 ```
 
