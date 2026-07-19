@@ -102,13 +102,15 @@ jobs:
 
       - name: Healthcheck
         if: steps.cfg.outputs.ready == 'true'
+        env:
+          URL: ${{ vars.PROD_URL || format('http://{0}', secrets.OCI_SSH_HOST) }}
         run: |
-          echo 'Aguardando o backend responder...'
-          for i in $(seq 1 12); do
-            if curl -fsS "http://$OCI_HOST/q/health" >/dev/null; then
-              echo "✅ Aplicação no ar em http://$OCI_HOST"
+          echo "Aguardando a aplicação responder em $URL ..."
+          for i in $(seq 1 18); do
+            if curl -fsS "$URL/q/health" >/dev/null 2>&1; then
+              echo "✅ Aplicação no ar em $URL"
               exit 0
             fi
             sleep 10
           done
-          echo "❌ Healthcheck falhou após ~2min"; exit 1
+          echo "❌ Healthcheck falhou após ~3min"; exit 1
