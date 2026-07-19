@@ -1,5 +1,5 @@
 -- ============================================================
--- Schema inicial da EBD Adultos (ICEV Samambaia)
+-- Schema inicial da EBD Adultos (ICE Samambaia)
 -- ============================================================
 
 -- Usuários do sistema (login / perfis)

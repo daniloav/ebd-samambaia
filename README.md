@@ -1,4 +1,4 @@
-# EBD Adultos — ICEV Samambaia 📖
+# EBD Adultos — ICE Samambaia 📖
 
 Hotsite para gestão da **Escola Bíblica Dominical (classe de adultos)** da Igreja Cristã Evangélica em Samambaia.
 
@@ -18,7 +18,7 @@ Dois módulos no MVP:
 
 ```
 claude-trabalho/
-├── backend/     API Quarkus  (br.com.icev.ebd)
+├── backend/     API Quarkus  (br.com.ice.ebd)
 ├── frontend/    App Angular
 ├── docker-compose.yml       stack completo (prod / VM)
 ├── docker-compose.dev.yml   só o Postgres (dev)

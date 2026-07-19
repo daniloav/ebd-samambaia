@@ -1,4 +1,4 @@
-# Arquitetura — EBD Adultos (ICEV Samambaia)
+# Arquitetura — EBD Adultos (ICE Samambaia)
 
 Documento de referência técnica. Leia antes de mudanças estruturais (novas entidades,
 mudanças de modelo, novos módulos).
