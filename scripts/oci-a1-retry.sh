@@ -3,42 +3,47 @@
 # Retry automático para lançar a VM A1.Flex (Always Free) na
 # Oracle Cloud, contornando o erro "Out of capacity".
 #
-# Preencha a seção CONFIG abaixo (rode antes o ./oci-descobrir.sh)
-# e execute:   ./oci-a1-retry.sh
+# Configuração fica em scripts/.oci-launch.env (NÃO versionado).
+#   cp scripts/.oci-launch.env.example scripts/.oci-launch.env  (e preencha)
+# Depois execute:   ./oci-a1-retry.sh
 # Deixe rodando; ele tenta até conseguir capacidade.
 # ============================================================
 set -uo pipefail
 
-# ======================= CONFIG =============================
-COMPARTMENT_ID="ocid1.tenancy.oc1..aaaaaaaaztcw5svgyo77oav5ci3rfiuyd3fkc35qloskxrq3sx2syzdmxgdq"
-SUBNET_ID="ocid1.subnet.oc1.sa-saopaulo-1.aaaaaaaakermpppvs6gkppcozrebcpnxmzrrsp2jm3sdlsu52dqsxw5htiwq"  # subnet PÚBLICA
-IMAGE_ID="ocid1.image.oc1.sa-saopaulo-1.aaaaaaaaemf52b7af7ncncxz6pdc6hrlkdmylvwejfzpwnpbuhlfxwhrno6a"  # Ubuntu 22.04 ARM
-SSH_KEY_FILE="$HOME/.ssh/id_ed25519.pub"    # sua chave pública
-DISPLAY_NAME="ebd-server"
+# ================= CONFIG (arquivo local) ===================
+# Os valores ficam em scripts/.oci-launch.env, que NÃO é versionado,
+# para não expor OCIDs no repositório.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.oci-launch.env"
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "❌ Configuração não encontrada: $ENV_FILE"
+  echo "   Crie a partir do exemplo e preencha:"
+  echo "   cp scripts/.oci-launch.env.example scripts/.oci-launch.env"
+  exit 1
+fi
+# shellcheck source=/dev/null
+source "$ENV_FILE"
 
-OCPUS=1          # 1 OCPU costuma achar capacidade mais fácil
-MEM_GB=6         # 6 GB é folgado para este projeto
-
-# Availability Domains a alternar. Cole os nomes reais do oci-descobrir.sh.
-# Em regiões com 1 AD, deixe só uma. Ex.:
-# ADS=("abcd:SA-SAOPAULO-1-AD-1")
-ADS=("xiXO:SA-SAOPAULO-1-AD-1")
-
-SLEEP_SECONDS=60 # espera entre tentativas
+# padrões (sobrescreva no .oci-launch.env se quiser)
+SSH_KEY_FILE="${SSH_KEY_FILE:-$HOME/.ssh/id_ed25519.pub}"
+DISPLAY_NAME="${DISPLAY_NAME:-ebd-server}"
+OCPUS="${OCPUS:-1}"
+MEM_GB="${MEM_GB:-6}"
+SLEEP_SECONDS="${SLEEP_SECONDS:-60}"
 # ============================================================
 
 ERR_LOG="$(mktemp)"
 trap 'rm -f "$ERR_LOG"' EXIT
 
-# validação básica
+# validação básica: obrigatórios preenchidos
 for v in COMPARTMENT_ID SUBNET_ID IMAGE_ID; do
-  if [[ "${!v}" == COLE_AQUI* ]]; then
-    echo "❌ Preencha a variável $v no topo do script (use ./oci-descobrir.sh)."
+  if [[ -z "${!v:-}" || "${!v}" == COLE_AQUI* ]]; then
+    echo "❌ Defina $v em $ENV_FILE (use ./scripts/oci-descobrir.sh)."
     exit 1
   fi
 done
-if [[ "${ADS[0]}" == COLE_AQUI* ]]; then
-  echo "❌ Preencha o array ADS com o(s) nome(s) da(s) Availability Domain(s)."
+if [[ -z "${ADS[0]:-}" || "${ADS[0]}" == COLE_AQUI* ]]; then
+  echo "❌ Defina o array ADS em $ENV_FILE."
   exit 1
 fi
 
@@ -74,14 +79,20 @@ while true; do
     exit 0
   fi
 
-  if grep -qiE "out of (host )?capacity|capacity|500" "$ERR_LOG"; then
-    echo "   ⏳ Sem capacidade. Nova tentativa em ${SLEEP_SECONDS}s..."
-    sleep "$SLEEP_SECONDS"
-  else
-    echo "   ❌ Erro que NÃO é de capacidade — verifique e corrija:"
+  # Aborta apenas em erros REAIS de config/permissão/quota.
+  # Capacidade, timeouts de rede, throttling e 5xx são transitórios -> continua tentando.
+  if grep -qiE "NotAuthenticated|NotAuthorized|not authorized|InvalidParameter|Invalid.*[Pp]arameter|LimitExceeded|QuotaExceeded|already exists|CannotParseRequest" "$ERR_LOG"; then
+    echo "   ❌ Erro de configuração/permissão — precisa corrigir:"
     echo "   ----------------------------------------------------"
     cat "$ERR_LOG"
     echo "   ----------------------------------------------------"
     exit 1
   fi
+
+  if grep -qiE "capacity" "$ERR_LOG"; then
+    echo "   ⏳ Sem capacidade. Nova tentativa em ${SLEEP_SECONDS}s..."
+  else
+    echo "   ⚠️  Erro transitório (rede/timeout/throttling). Nova tentativa em ${SLEEP_SECONDS}s..."
+  fi
+  sleep "$SLEEP_SECONDS"
 done

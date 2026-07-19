@@ -80,11 +80,9 @@ cat backup.sql | docker exec -i ebd-postgres psql -U ebd -d ebd
 ## Notas de segurança
 
 - Troque **todas** as senhas padrão (`.env`) antes de expor na internet.
-- Regenere o par de chaves JWT do backend para produção:
-  ```bash
-  cd backend/src/main/resources
-  openssl genrsa -out privateKey.pem 2048
-  openssl rsa -in privateKey.pem -pubout -out publicKey.pem
-  ```
-  (ou monte as chaves via volume/secret e ajuste `application.properties`).
-- Considere não versionar `privateKey.pem` em repositório público.
+- As **chaves JWT** não são versionadas. No deploy com Docker, o `backend/Dockerfile`
+  **gera um par novo automaticamente** durante o build — não precisa fazer nada.
+  (Se rodar o backend fora do Docker, gere com `./scripts/gen-jwt-keys.sh`.)
+- Cada rebuild da imagem gera novas chaves (os usuários só precisam logar de novo).
+  Se quiser chaves fixas, gere uma vez e monte via volume apontando para
+  `privateKey.pem`/`publicKey.pem`.

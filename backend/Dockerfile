@@ -5,6 +5,12 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn -q -B dependency:go-offline
 COPY src ./src
+# As chaves JWT não são versionadas: gera se não vierem no contexto de build.
+RUN if [ ! -f src/main/resources/privateKey.pem ]; then \
+      (command -v openssl >/dev/null 2>&1 || (apt-get update && apt-get install -y openssl)) && \
+      openssl genrsa -out src/main/resources/privateKey.pem 2048 && \
+      openssl rsa -in src/main/resources/privateKey.pem -pubout -out src/main/resources/publicKey.pem ; \
+    fi
 RUN mvn -q -B package -DskipTests
 
 # ---------- Estágio 2: runtime ----------
