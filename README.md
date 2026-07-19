@@ -25,6 +25,16 @@ claude-trabalho/
 └── docs/deploy-oracle.md    passo a passo na Oracle Cloud
 ```
 
+## 📚 Documentação
+
+| Documento | Para quê |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | Contexto completo do projeto (lido pelo Claude Code a cada sessão) |
+| [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Modelo de dados, camadas e decisões técnicas |
+| [`docs/API.md`](docs/API.md) | Referência de endpoints com exemplos |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Backlog e limitações conhecidas |
+| [`docs/deploy-oracle.md`](docs/deploy-oracle.md) | Passo a passo do deploy na Oracle Cloud |
+
 ## 🔐 Perfis de acesso
 
 | Perfil | Pode |
