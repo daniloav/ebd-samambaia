@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { ClasseContextService } from '../../core/classe-context.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -58,16 +59,22 @@ import { AuthService } from '../../core/auth.service';
 export class DashboardComponent {
   private api = inject(ApiService);
   auth = inject(AuthService);
+  private classeCtx = inject(ClasseContextService);
 
   totalAlunos = signal(0);
   totalAulas = signal(0);
   totalProvas = signal(0);
 
   constructor() {
+    effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true });
+  }
+
+  private carregar(): void {
+    const cid = this.classeCtx.selecionadaId();
     forkJoin({
-      alunos: this.api.listarAlunos(true),
-      aulas: this.api.listarAulas(),
-      provas: this.api.listarProvas(),
+      alunos: this.api.listarAlunos(true, cid),
+      aulas: this.api.listarAulas(cid),
+      provas: this.api.listarProvas(cid),
     }).subscribe({
       next: (r) => {
         this.totalAlunos.set(r.alunos.length);

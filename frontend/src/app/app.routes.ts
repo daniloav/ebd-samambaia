@@ -40,6 +40,16 @@ export const routes: Routes = [
         path: 'desafios',
         loadComponent: () => import('./pages/desafios/desafios.component').then((m) => m.DesafiosComponent),
       },
+      {
+        path: 'classes',
+        loadComponent: () => import('./pages/classes/classes.component').then((m) => m.ClassesComponent),
+        canActivate: [adminGuard],
+      },
+      {
+        path: 'usuarios',
+        loadComponent: () => import('./pages/usuarios/usuarios.component').then((m) => m.UsuariosComponent),
+        canActivate: [adminGuard],
+      },
     ],
   },
   { path: '**', redirectTo: '' },

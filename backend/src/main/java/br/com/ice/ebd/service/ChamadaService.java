@@ -35,7 +35,7 @@ public class ChamadaService {
             porAluno.put(p.getAluno().getId(), p);
         }
 
-        List<PresencaItem> itens = alunoRepository.listarAtivos().stream()
+        List<PresencaItem> itens = alunoRepository.listarAtivosPorClasse(aula.getClasse().getId()).stream()
                 .map(aluno -> {
                     Presenca p = porAluno.get(aluno.getId());
                     if (p == null) {
