@@ -72,7 +72,8 @@ claude-trabalho/
     ├── API.md                     ← referência de endpoints com exemplos
     ├── ROADMAP.md                 ← backlog e limitações conhecidas
     ├── rodar-local.md             ← como rodar localmente (dev, passo a passo)
-    ├── CICD.md                    ← esteira GitHub Actions (CI segurança + CD OCI)
+    ├── CICD.md                    ← esteira GitHub Actions (CI segurança + CD OCI) + fluxo de branches
+    ├── senhas-e-secrets.md        ← onde ficam senhas/secrets e como consultar
     ├── pos-vm.md                  ← runbook: deploy quando a VM subir (bootstrap + secrets)
     └── deploy-oracle.md           ← passo a passo de deploy na VM
 ```
