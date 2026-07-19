@@ -25,13 +25,13 @@ public class RelatorioService {
     public RelatorioPresencaResponse gerar(LocalDate inicio, LocalDate fim, Long classeId) {
         LocalDate ini = inicio != null ? inicio : LocalDate.of(2000, 1, 1);
         LocalDate f = fim != null ? fim : LocalDate.now();
-        String fAula = classeId != null ? " and a.classe.id = " + classeId : "";
-        String fPres = classeId != null ? " and p.aula.classe.id = " + classeId : "";
+        long cid = classeId != null ? classeId : -1L;
 
         long totalAulas = em.createQuery(
-                        "select count(a) from Aula a where a.data between :ini and :fim" + fAula, Long.class)
+                        "select count(a) from Aula a where a.data between :ini and :fim and (:cid = -1 or a.classe.id = :cid)", Long.class)
                 .setParameter("ini", ini)
                 .setParameter("fim", f)
+                .setParameter("cid", cid)
                 .getSingleResult();
 
         Map<Long, Totais> porAluno = new HashMap<>();
@@ -42,10 +42,11 @@ public class RelatorioService {
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
                         "sum(case when p.estudouLicao = true then 1 else 0 end), " +
                         "sum(case when p.trouxeVisitante = true then 1 else 0 end) " +
-                        "from Presenca p where p.aula.data between :ini and :fim" + fPres + " " +
+                        "from Presenca p where p.aula.data between :ini and :fim and (:cid = -1 or p.aula.classe.id = :cid) " +
                         "group by p.aluno.id", Object[].class)
                 .setParameter("ini", ini)
                 .setParameter("fim", f)
+                .setParameter("cid", cid)
                 .getResultList();
 
         for (Object[] l : linhas) {
