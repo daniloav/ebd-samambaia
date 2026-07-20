@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/rou
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
 import { ClasseContextService } from '../core/classe-context.service';
+import { APP_VERSION } from '../version';
 
 @Component({
   selector: 'app-shell',
@@ -59,8 +60,8 @@ import { ClasseContextService } from '../core/classe-context.service';
       <aside class="sidebar" [class.fechado]="!menuAberto()">
         <div class="marca flex-between">
           <div>
-            <h1>EBD Adultos</h1>
-            <span>ICE Samambaia</span>
+            <h1>EBD ICES</h1>
+            <span>ICE Samambaia · v{{ versao }}</span>
           </div>
           <button class="btn-sair topo-mobile" style="width:auto;padding:.3rem .6rem"
                   (click)="menuAberto.set(!menuAberto())">☰</button>
@@ -116,6 +117,7 @@ export class ShellComponent implements OnInit {
   classeCtx = inject(ClasseContextService);
   private router = inject(Router);
   menuAberto = signal(true);
+  versao = APP_VERSION;
 
   ngOnInit(): void {
     if (!this.auth.isAluno()) {
