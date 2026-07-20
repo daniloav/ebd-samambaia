@@ -42,14 +42,14 @@ public class ProvaResource {
     }
 
     @POST
-    @RolesAllowed("ADMIN")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
     public Response criar(@Valid ProvaRequest request) {
         return Response.status(Response.Status.CREATED).entity(service.criar(request)).build();
     }
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed("ADMIN")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
     public ProvaResponse atualizar(@PathParam("id") Long id, @Valid ProvaRequest request) {
         return service.atualizar(id, request);
     }
