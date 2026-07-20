@@ -102,3 +102,56 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest \
             detect --no-git --source /repo --redact --verbose --exit-code 1
+
+  # ---------------- Migrations contra Postgres real ----------------
+  migrations:
+    name: Migrations · app real (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ebd
+          POSTGRES_PASSWORD: ebd
+          POSTGRES_DB: ebd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ebd -d ebd"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Gerar chaves JWT (o app precisa para subir)
+        run: bash scripts/gen-jwt-keys.sh
+      - name: Empacotar backend
+        working-directory: backend
+        run: mvn -B -ntp package -DskipTests
+      - name: Subir o app contra Postgres (aplica migrations + valida startup)
+        env:
+          QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://localhost:5432/ebd
+          QUARKUS_DATASOURCE_USERNAME: ebd
+          QUARKUS_DATASOURCE_PASSWORD: ebd
+        run: |
+          java -jar backend/target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
+          APP_PID=$!
+          ok=""
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8080/q/health 2>/dev/null | grep -q '"status": "UP"'; then ok=1; break; fi
+            if ! kill -0 "$APP_PID" 2>/dev/null; then echo "o app encerrou antes de ficar UP"; break; fi
+            sleep 3
+          done
+          kill "$APP_PID" 2>/dev/null || true
+          if [ -z "$ok" ]; then
+            echo "::error title=Migrations::App não subiu — migration quebrada ou schema/entidade divergente"
+            echo "----- últimas linhas do log -----"; tail -n 60 app.log
+            exit 1
+          fi
+          echo "✅ Migrations aplicadas e app subiu."
+          grep -iE "Migrating schema|Successfully applied|Installed features" app.log | tail -n 20 || true
