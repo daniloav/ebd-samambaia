@@ -50,6 +50,7 @@ public class AlunoService {
     @Transactional
     public AlunoResponse atualizar(Long id, AlunoRequest req) {
         Aluno a = obter(id);
+        escopo.assertClasse(a.getClasse().getId());
         aplicar(a, req);
         return AlunoResponse.de(a);
     }
@@ -69,6 +70,7 @@ public class AlunoService {
     }
 
     private void aplicar(Aluno a, AlunoRequest req) {
+        escopo.assertClasse(req.classeId());
         a.setNome(req.nome().trim());
         a.setTelefone(req.telefone());
         a.setDataNascimento(req.dataNascimento());
