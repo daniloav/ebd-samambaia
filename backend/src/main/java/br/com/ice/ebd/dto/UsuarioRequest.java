@@ -17,5 +17,6 @@ public record UsuarioRequest(
         Long alunoId,
         /** Turmas vinculadas ao professor (RBAC). Ignorado para ADMIN/ALUNO. */
         List<Long> classeIds,
+        String email,
         Boolean ativo) {
 }

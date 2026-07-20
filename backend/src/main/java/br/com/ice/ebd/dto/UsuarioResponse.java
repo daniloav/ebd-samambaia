@@ -11,6 +11,7 @@ public record UsuarioResponse(
         boolean ativo,
         Long alunoId,
         String alunoNome,
+        String email,
         List<ClasseResumo> classes) {
 
     /** Turma vinculada ao professor (só id + nome, para a UI). */
@@ -26,6 +27,7 @@ public record UsuarioResponse(
                 u.getId(), u.getUsername(), u.getRole().name(), u.isAtivo(),
                 u.getAluno() != null ? u.getAluno().getId() : null,
                 u.getAluno() != null ? u.getAluno().getNome() : null,
+                u.getEmail(),
                 cs);
     }
 }
