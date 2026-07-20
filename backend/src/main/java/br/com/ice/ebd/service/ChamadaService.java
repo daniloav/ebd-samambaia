@@ -19,6 +19,8 @@ import java.util.Map;
 @ApplicationScoped
 public class ChamadaService {
 
+    @Inject EscopoService escopo;
+
     @Inject AlunoRepository alunoRepository;
     @Inject PresencaRepository presencaRepository;
     @Inject AulaService aulaService;
@@ -29,6 +31,7 @@ public class ChamadaService {
      */
     public ChamadaResponse obterChamada(Long aulaId) {
         Aula aula = aulaService.obter(aulaId);
+        escopo.assertClasse(aula.getClasse().getId());
 
         Map<Long, Presenca> porAluno = new LinkedHashMap<>();
         for (Presenca p : presencaRepository.listarPorAula(aulaId)) {
@@ -55,6 +58,7 @@ public class ChamadaService {
     @Transactional
     public ChamadaResponse salvarChamada(Long aulaId, SalvarChamadaRequest req) {
         Aula aula = aulaService.obter(aulaId);
+        escopo.assertClasse(aula.getClasse().getId());
 
         Map<Long, Presenca> existentes = new LinkedHashMap<>();
         for (Presenca p : presencaRepository.listarPorAula(aulaId)) {

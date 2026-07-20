@@ -17,6 +17,8 @@ import java.util.function.Function;
 @ApplicationScoped
 public class DesafiosService {
 
+    @Inject EscopoService escopo;
+
     private static final int TOP_N = 5;
 
     @Inject EntityManager em;
@@ -26,6 +28,7 @@ public class DesafiosService {
     private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante) {}
 
     public DesafiosResponse gerar(Long classeId) {
+        escopo.assertClasse(classeId);
         long cid = classeId != null ? classeId : -1L;
         Map<Long, String> nomes = new LinkedHashMap<>();
         var alunos = classeId != null ? alunoRepository.listarAtivosPorClasse(classeId)
