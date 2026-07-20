@@ -50,6 +50,23 @@ cd backend && mvn quarkus:dev
 #   psql -d ebd -c "select version, description, success from flyway_schema_history order by installed_rank;"
 ```
 
+## Backup e restauração (produção)
+
+A cada deploy, o CD faz um **backup automático** do banco **antes** de aplicar migrations
+(`scripts/backup-db.sh`): um `pg_dump` gzipado em `~/ebd-samambaia/backups/` na VM (mantém
+os 10 mais recentes). Se o backup falhar, o deploy é **abortado** — sem ponto de restauração
+é arriscado subir migration.
+
+**Restaurar** um backup (na VM, em `~/ebd-samambaia`):
+
+```bash
+gzip -dc backups/ebd-AAAAMMDD-HHMMSS.sql.gz \
+  | docker compose exec -T db sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+> Restaurar sobrescreve os dados atuais. Se uma migration der problema: restaure o dump,
+> corrija com uma **nova** migration (nunca edite a já aplicada) e deploie de novo.
+
 ## Config relevante (`application.properties`)
 
 ```properties
