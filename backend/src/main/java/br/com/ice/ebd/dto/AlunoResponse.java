@@ -12,11 +12,14 @@ public record AlunoResponse(
         boolean ativo,
         LocalDateTime dataCadastro,
         Long classeId,
-        String classeNome) {
+        String classeNome,
+        String email,
+        boolean recebeNotificacoes) {
 
     public static AlunoResponse de(Aluno a) {
         return new AlunoResponse(a.getId(), a.getNome(), a.getTelefone(),
                 a.getDataNascimento(), a.isAtivo(), a.getDataCadastro(),
-                a.getClasse().getId(), a.getClasse().getNome());
+                a.getClasse().getId(), a.getClasse().getNome(),
+                a.getEmail(), a.isRecebeNotificacoes());
     }
 }
