@@ -19,6 +19,8 @@ export class AuthService {
   readonly role = signal<Role | null>(localStorage.getItem(CHAVE_ROLE) as Role | null);
   readonly logado = computed(() => this.tokenSignal() !== null);
   readonly isAdmin = computed(() => this.role() === 'ADMIN');
+  readonly isProfessor = computed(() => this.role() === 'PROFESSOR');
+  readonly isAluno = computed(() => this.role() === 'ALUNO');
 
   constructor(private http: HttpClient) {}
 
