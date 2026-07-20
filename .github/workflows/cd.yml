@@ -12,7 +12,7 @@ on:
     branches: [main]            # <- deploy nunca roda para a develop
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: deploy-oci
@@ -34,6 +34,10 @@ jobs:
       APP_DIR: ebd-samambaia
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: main
 
       - name: Verificar se os secrets OCI estão preenchidos (não-placeholder)
         id: cfg
@@ -76,6 +80,23 @@ jobs:
           printf '%s\n' "$OCI_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "$OCI_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Bump de versão (SemVer por commit) + tag
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          NEW="$(bash scripts/bump-version.sh)"
+          echo "::notice title=Versão::Deployando v$NEW"
+          if [ -n "$(git status --porcelain frontend/src/app/version.ts frontend/package.json)" ]; then
+            git add frontend/src/app/version.ts frontend/package.json
+            git commit -m "chore(release): v$NEW [skip ci]"
+            git push origin HEAD:main
+          fi
+          if ! git rev-parse -q --verify "refs/tags/v$NEW" >/dev/null; then
+            git tag "v$NEW"
+            git push origin "v$NEW"
+          fi
 
       - name: Enviar .env de produção (se configurado)
         if: steps.cfg.outputs.ready == 'true' && env.OCI_ENV != ''
