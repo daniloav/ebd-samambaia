@@ -22,6 +22,9 @@ public class ChamadaResource {
     @Inject
     ChamadaService service;
 
+    @Inject
+    br.com.ice.ebd.service.NotificacaoService notificacaoService;
+
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public ChamadaResponse obter(@PathParam("aulaId") Long aulaId) {
@@ -31,6 +34,8 @@ public class ChamadaResource {
     @PUT
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public ChamadaResponse salvar(@PathParam("aulaId") Long aulaId, @Valid SalvarChamadaRequest request) {
-        return service.salvarChamada(aulaId, request);
+        ChamadaResponse resp = service.salvarChamada(aulaId, request);
+        notificacaoService.notificarChamada(aulaId);
+        return resp;
     }
 }

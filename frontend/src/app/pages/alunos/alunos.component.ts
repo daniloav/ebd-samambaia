@@ -74,6 +74,14 @@ import { Aluno, AlunoRequest } from '../../core/models';
               <label>Data de nascimento</label>
               <input type="date" [(ngModel)]="form.dataNascimento" />
             </div>
+            <div class="form-group">
+              <label>E-mail</label>
+              <input type="email" [(ngModel)]="form.email" maxlength="150" placeholder="aluno@email.com" />
+            </div>
+            <div class="form-group" style="flex-direction:row;align-items:center;gap:.5rem">
+              <input type="checkbox" id="notif" [(ngModel)]="form.recebeNotificacoes" />
+              <label for="notif" style="margin:0">Receber alertas de chamada por e-mail</label>
+            </div>
             <div class="form-group" style="flex-direction:row;align-items:center;gap:.5rem">
               <input type="checkbox" id="ativo" [(ngModel)]="form.ativo" />
               <label for="ativo" style="margin:0">Aluno ativo</label>
@@ -108,7 +116,7 @@ export class AlunosComponent {
   }
 
   private formVazio(): AlunoRequest {
-    return { nome: '', telefone: '', dataNascimento: null, ativo: true };
+    return { nome: '', telefone: '', dataNascimento: null, email: '', recebeNotificacoes: false, ativo: true };
   }
 
   carregar(): void {
@@ -127,7 +135,7 @@ export class AlunosComponent {
 
   editar(a: Aluno): void {
     this.editando.set(a);
-    this.form = { nome: a.nome, telefone: a.telefone ?? '', dataNascimento: a.dataNascimento ?? null, ativo: a.ativo };
+    this.form = { nome: a.nome, telefone: a.telefone ?? '', dataNascimento: a.dataNascimento ?? null, email: a.email ?? '', recebeNotificacoes: a.recebeNotificacoes ?? false, ativo: a.ativo };
     this.modalAberto.set(true);
   }
 
@@ -143,6 +151,8 @@ export class AlunosComponent {
       classeId,
       telefone: this.form.telefone || null,
       dataNascimento: this.form.dataNascimento || null,
+      email: this.form.email || null,
+      recebeNotificacoes: this.form.recebeNotificacoes,
       ativo: this.form.ativo,
     };
     const alvo = this.editando();
