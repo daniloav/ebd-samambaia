@@ -73,6 +73,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/campanhas/campanhas.component').then((m) => m.CampanhasComponent),
         canActivate: [adminGuard],
       },
+      {
+        path: 'relatorio-geral',
+        loadComponent: () => import('./pages/relatorio-geral/relatorio-geral.component').then((m) => m.RelatorioGeralComponent),
+        canActivate: [adminGuard],
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -5,7 +5,8 @@ import { environment } from '../../environments/environment';
 import {
   Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
-  RelatorioPresencaResponse, Usuario, UsuarioRequest,
+  RelatorioGeralResponse, RelatorioPresencaResponse, Usuario, UsuarioRequest,
+  Visitante, VisitanteRequest,
 } from './models';
 
 /** Cliente único para todos os endpoints da API. */
@@ -132,5 +133,22 @@ export class ApiService {
   // ---------- Aluno (visão própria) ----------
   minhaFrequencia(): Observable<MinhaFrequenciaResponse> {
     return this.http.get<MinhaFrequenciaResponse>(`${this.api}/me/frequencia`);
+  }
+  // ---------- Visitantes ----------
+  listarVisitantes(aulaId: number): Observable<Visitante[]> {
+    return this.http.get<Visitante[]>(`${this.api}/visitantes`, { params: new HttpParams().set('aulaId', aulaId) });
+  }
+  adicionarVisitante(aulaId: number, v: VisitanteRequest): Observable<Visitante> {
+    return this.http.post<Visitante>(`${this.api}/visitantes`, v, { params: new HttpParams().set('aulaId', aulaId) });
+  }
+  removerVisitante(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.api}/visitantes/${id}`);
+  }
+
+  // ---------- Relatório geral (dia, consolidado) ----------
+  relatorioGeral(data?: string): Observable<RelatorioGeralResponse> {
+    let params = new HttpParams();
+    if (data) params = params.set('data', data);
+    return this.http.get<RelatorioGeralResponse>(`${this.api}/relatorios/geral`, { params });
   }
 }
