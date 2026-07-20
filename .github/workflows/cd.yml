@@ -109,8 +109,13 @@ jobs:
         run: |
           rsync -az --delete \
             --exclude '.git' --exclude 'node_modules' --exclude 'target' \
-            --exclude '.env' --exclude 'dist' --exclude '.angular' \
+            --exclude '.env' --exclude 'dist' --exclude '.angular' --exclude 'backups' \
             -e "ssh -i ~/.ssh/id_deploy" ./ "$OCI_USER@$OCI_HOST:~/$APP_DIR/"
+
+      - name: Backup do banco antes do deploy (pg_dump)
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cd ~/$APP_DIR && bash scripts/backup-db.sh"
 
       - name: Subir stack na VM (docker compose)
         if: steps.cfg.outputs.ready == 'true'
