@@ -25,6 +25,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/chamada/chamada.component').then((m) => m.ChamadaComponent),
       },
       {
+        path: 'aulas',
+        loadComponent: () => import('./pages/aulas/aulas.component').then((m) => m.AulasComponent),
+      },
+      {
         path: 'relatorio',
         loadComponent: () => import('./pages/relatorio/relatorio.component').then((m) => m.RelatorioComponent),
       },
