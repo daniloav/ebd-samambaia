@@ -15,10 +15,26 @@
             "outputPath": "dist/ebd-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
-            "assets": [],
-            "styles": ["src/styles.scss"],
+            "assets": [
+              "src/assets",
+              {
+                "glob": "manifest.webmanifest",
+                "input": "src",
+                "output": "."
+              },
+              {
+                "glob": "sw.js",
+                "input": "src",
+                "output": "."
+              }
+            ],
+            "styles": [
+              "src/styles.scss"
+            ],
             "scripts": []
           },
           "configurations": {

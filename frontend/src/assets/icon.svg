@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="EBD Adultos">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#24507a"/>
+      <stop offset="1" stop-color="#16324f"/>
+    </linearGradient>
+  </defs>
+  <!-- fundo (com margem segura p/ ícone maskable) -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- livro aberto -->
+  <g transform="translate(96 150)">
+    <path d="M160 26 C120 2 52 2 12 20 L12 250 C52 232 120 232 160 256 Z" fill="#f4f6f9"/>
+    <path d="M160 26 C200 2 268 2 308 20 L308 250 C268 232 200 232 160 256 Z" fill="#dfe6ee"/>
+    <!-- linhas -->
+    <g stroke="#9db0c4" stroke-width="8" stroke-linecap="round">
+      <line x1="44" y1="70" x2="132" y2="82"/>
+      <line x1="44" y1="110" x2="132" y2="122"/>
+      <line x1="44" y1="150" x2="132" y2="162"/>
+      <line x1="188" y1="82" x2="276" y2="70"/>
+      <line x1="188" y1="122" x2="276" y2="110"/>
+      <line x1="188" y1="162" x2="276" y2="150"/>
+    </g>
+    <!-- lombada -->
+    <rect x="154" y="24" width="12" height="232" rx="6" fill="#c9a24b"/>
+  </g>
+  <!-- EBD -->
+  <text x="256" y="452" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="86" font-weight="700" letter-spacing="6" fill="#c9a24b">EBD</text>
+</svg>
