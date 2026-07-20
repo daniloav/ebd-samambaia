@@ -69,5 +69,7 @@ public class AlunoService {
         a.setDataNascimento(req.dataNascimento());
         a.setAtivo(req.ativo() == null ? true : req.ativo());
         a.setClasse(classeService.obter(req.classeId()));
+        a.setEmail(req.email() != null && !req.email().isBlank() ? req.email().trim() : null);
+        a.setRecebeNotificacoes(req.recebeNotificacoes() != null && req.recebeNotificacoes());
     }
 }

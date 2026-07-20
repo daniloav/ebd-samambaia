@@ -65,6 +65,12 @@
             <artifactId>quarkus-hibernate-validator</artifactId>
         </dependency>
 
+        <!-- Envio de e-mail (alertas de chamada) -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-mailer</artifactId>
+        </dependency>
+
         <!-- Segurança / JWT -->
         <dependency>
             <groupId>io.quarkus</groupId>
