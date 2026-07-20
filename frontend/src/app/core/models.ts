@@ -160,3 +160,20 @@ export interface UsuarioRequest {
   alunoId?: number | null;
   ativo?: boolean;
 }
+
+export interface Campanha {
+  id: number;
+  titulo: string;
+  mensagem: string;
+  classeId?: number | null;
+  classeNome?: string;
+  totalEnviados: number;
+  criadoPor?: string | null;
+  dataEnvio: string;
+}
+
+export interface CampanhaRequest {
+  titulo: string;
+  mensagem: string;
+  classeId?: number | null;
+}

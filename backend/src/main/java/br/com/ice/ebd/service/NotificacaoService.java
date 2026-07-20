@@ -11,20 +11,22 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 /**
- * Envia alertas por e-mail aos alunos quando a chamada de uma aula é salva.
- * Só envia para alunos que optaram por receber (opt-in) e têm e-mail cadastrado.
- * Controlado pelo toggle {@code ebd.notificacoes.enabled}.
+ * Envia alertas por e-mail aos alunos quando a chamada de uma aula é salva,
+ * e também os e-mails em massa das campanhas. Só envia para alunos que optaram
+ * por receber (opt-in) e têm e-mail cadastrado. Controlado pelo toggle
+ * {@code ebd.notificacoes.enabled}.
  *
- * <p>O conteúdo é ramificado pela presença:
+ * <p>Na chamada o conteúdo é ramificado pela presença:
  * <ul>
  *   <li><b>Presente</b> — e-mail de agradecimento + resumo dos itens da aula.</li>
  *   <li><b>Ausente</b> — e-mail de engajamento, convidando para o próximo encontro.</li>
  * </ul>
- * Ambos são HTML (com alternativa em texto puro para clientes sem HTML).
+ * Todos são HTML (com alternativa em texto puro para clientes sem HTML).
  */
 @ApplicationScoped
 public class NotificacaoService {
@@ -39,6 +41,11 @@ public class NotificacaoService {
 
     @ConfigProperty(name = "ebd.notificacoes.enabled", defaultValue = "false")
     boolean habilitado;
+
+    /** Expõe o toggle para outros serviços (ex.: campanhas) validarem antes de enviar. */
+    public boolean isNotificacaoHabilitada() {
+        return habilitado;
+    }
 
     /**
      * Notifica os alunos da chamada da aula. Nunca lança exceção para o chamador:
@@ -84,6 +91,34 @@ public class NotificacaoService {
         }
     }
 
+    /**
+     * Envia uma campanha (e-mail em massa) aos destinatários informados. Retorna quantos
+     * e-mails foram efetivamente enviados. Falhas individuais viram log e não interrompem o lote.
+     * Roda dentro da transação do chamador (CampanhaService).
+     */
+    public int enviarCampanha(String titulo, String mensagem, List<Aluno> destinatarios, String turmaLabel) {
+        if (!habilitado) {
+            return 0;
+        }
+        int enviados = 0;
+        for (Aluno a : destinatarios) {
+            if (a.getEmail() == null || a.getEmail().isBlank()) {
+                continue;
+            }
+            try {
+                String html = htmlCampanha(a, titulo, mensagem, turmaLabel);
+                String texto = "Olá " + a.getNome() + ",\n\n" + mensagem
+                        + "\n\nEscola Bíblica Dominical — ICE Samambaia";
+                mailer.send(Mail.withHtml(a.getEmail(), titulo, html).setText(texto));
+                enviados++;
+            } catch (Exception e) {
+                LOG.warnf("Falha ao enviar campanha para %s: %s", a.getEmail(), e.getMessage());
+            }
+        }
+        LOG.infof("Campanha '%s' (%s): %d e-mail(s) enviado(s).", titulo, turmaLabel, enviados);
+        return enviados;
+    }
+
     // ---------- HTML ----------
 
     private String htmlPresente(Aluno a, Aula aula, String quando, Presenca p) {
@@ -99,7 +134,7 @@ public class NotificacaoService {
                 + linhaItem("Estudou a lição", p.isEstudouLicao())
                 + "</table>"
                 + "<p style=\"margin:0;\">Continue firme na caminhada — Deus abençoe! 🙏</p>";
-        return shell(aula, corpo);
+        return shell(nomeTurma(aula), corpo);
     }
 
     private String htmlAusente(Aluno a, Aula aula, String quando) {
@@ -113,11 +148,21 @@ public class NotificacaoService {
                 + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">"
                 + "Te esperamos no próximo domingo</a></p>"
                 + "<p style=\"margin:0;\">Com carinho, sua classe da EBD. 🙏</p>";
-        return shell(aula, corpo);
+        return shell(nomeTurma(aula), corpo);
+    }
+
+    private String htmlCampanha(Aluno a, String titulo, String mensagem, String turmaLabel) {
+        String texto = esc(mensagem).replace("\n", "<br>");
+        String corpo = ""
+                + "<h1 style=\"margin:0 0 14px;font-size:20px;color:#1b3a5b;\">" + esc(titulo) + "</h1>"
+                + "<p style=\"margin:0 0 14px;\">Olá, " + esc(a.getNome()) + "!</p>"
+                + "<p style=\"margin:0 0 18px;\">" + texto + "</p>"
+                + "<p style=\"margin:0;color:#556;\">Escola Bíblica Dominical — ICE Samambaia 🙏</p>";
+        return shell(turmaLabel, corpo);
     }
 
     /** Moldura HTML comum (cabeçalho + rodapé), compatível com clientes de e-mail (tabelas + estilo inline). */
-    private String shell(Aula aula, String corpo) {
+    private String shell(String turmaLabel, String corpo) {
         return ""
                 + "<!doctype html><html lang=\"pt-br\"><head><meta charset=\"utf-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head>"
@@ -129,8 +174,8 @@ public class NotificacaoService {
                 + "font-family:Arial,Helvetica,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.08);\">"
                 + "<tr><td style=\"background:#1b3a5b;padding:22px 28px;\">"
                 + "<div style=\"color:#ffffff;font-size:18px;font-weight:bold;\">Escola Bíblica Dominical</div>"
-                + "<div style=\"color:#c9a24b;font-size:13px;letter-spacing:.5px;\">ICE Samambaia · Classe "
-                + esc(nomeTurma(aula)) + "</div></td></tr>"
+                + "<div style=\"color:#c9a24b;font-size:13px;letter-spacing:.5px;\">ICE Samambaia · "
+                + esc(turmaLabel) + "</div></td></tr>"
                 + "<tr><td style=\"height:4px;background:#c9a24b;line-height:4px;font-size:0;\">&nbsp;</td></tr>"
                 + "<tr><td style=\"padding:28px;color:#2d3748;font-size:15px;line-height:1.6;\">" + corpo + "</td></tr>"
                 + "<tr><td style=\"padding:18px 28px;background:#f7f7f5;color:#8a94a6;font-size:12px;text-align:center;\">"
@@ -187,7 +232,7 @@ public class NotificacaoService {
         return b ? "Sim" : "Não";
     }
 
-    /** Escapa caracteres que quebrariam o HTML (nome/tema vêm de input do usuário). */
+    /** Escapa caracteres que quebrariam o HTML (nome/tema/mensagem vêm de input do usuário). */
     private String esc(String s) {
         if (s == null) {
             return "";
