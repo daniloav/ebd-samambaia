@@ -41,7 +41,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 ## 🔵 Infra e segurança
 
 ### Segurança de migrations (evitar dor em produção)
-- [ ] **Backup do banco antes de cada deploy** — `pg_dump` na VM antes do `docker compose up` (no `cd.yml`). Ponto de restauração se uma migration der errado. **Prioridade alta.**
+- [x] **Backup do banco antes de cada deploy** — `scripts/backup-db.sh` chamado pelo `cd.yml` faz `pg_dump` gzipado na VM antes do `docker compose up`; valida o dump e **aborta o deploy se falhar**; retenção dos 10 últimos em `~/ebd-samambaia/backups/`. Restauração em [`migrations.md`](migrations.md).
 - [ ] **CI rodando as migrations contra um Postgres real** — job com `services: postgres` que sobe o Flyway e falha se alguma migration quebrar. Pega SQL de migration ruim **antes** de chegar em produção.
 - [ ] **Travar o `clean` do Flyway** em prod: `quarkus.flyway.clean-disabled=true` (garante que nada zere o schema por engano).
 - [ ] **Regra de rollback**: nunca voltar o app para uma versão anterior às migrations já aplicadas sem restaurar o backup do banco correspondente — documentar em [`migrations.md`](migrations.md).
