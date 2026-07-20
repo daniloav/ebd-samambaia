@@ -4,6 +4,7 @@ import br.com.ice.ebd.model.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 /** senha é obrigatória na criação; no update, se vier em branco, mantém a atual. */
 public record UsuarioRequest(
@@ -14,5 +15,7 @@ public record UsuarioRequest(
         @NotNull(message = "O perfil é obrigatório")
         Role role,
         Long alunoId,
+        /** Turmas vinculadas ao professor (RBAC). Ignorado para ADMIN/ALUNO. */
+        List<Long> classeIds,
         Boolean ativo) {
 }
