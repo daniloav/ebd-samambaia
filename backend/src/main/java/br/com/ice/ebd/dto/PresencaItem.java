@@ -7,6 +7,5 @@ public record PresencaItem(
         boolean presente,
         boolean trouxeBiblia,
         boolean trouxeRevista,
-        boolean estudouLicao,
-        boolean trouxeVisitante) {
+        boolean estudouLicao) {
 }
