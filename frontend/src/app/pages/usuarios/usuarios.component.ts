@@ -58,6 +58,8 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
               <label>Senha {{ editando() ? '(deixe em branco para manter)' : '*' }}</label>
               <input type="password" [(ngModel)]="form.senha" autocomplete="new-password" />
             </div>
+            <div class="form-group"><label>E-mail {{ form.role === 'PROFESSOR' ? '(recebe avisos de visitantes)' : '' }}</label>
+              <input type="email" [(ngModel)]="form.email" maxlength="150" autocomplete="off" /></div>
             <div class="form-group"><label>Perfil *</label>
               <select [(ngModel)]="form.role">
                 <option value="ADMIN">Administrador</option>
@@ -135,7 +137,7 @@ export class UsuariosComponent {
   }
 
   private vazio(): UsuarioRequest {
-    return { username: '', senha: '', role: 'PROFESSOR', alunoId: null, classeIds: [], ativo: true };
+    return { username: '', senha: '', role: 'PROFESSOR', alunoId: null, classeIds: [], email: '', ativo: true };
   }
 
   rotulo(r: Role): string {
@@ -176,6 +178,7 @@ export class UsuariosComponent {
       username: u.username, senha: '', role: u.role,
       alunoId: u.alunoId ?? null,
       classeIds: (u.classes ?? []).map((c) => c.id),
+      email: u.email ?? '',
       ativo: u.ativo,
     };
     this.modalAberto.set(true);
@@ -192,6 +195,7 @@ export class UsuariosComponent {
       role: this.form.role,
       alunoId: this.form.role === 'ALUNO' ? (this.form.alunoId ?? null) : null,
       classeIds: this.form.role === 'PROFESSOR' ? (this.form.classeIds ?? []) : null,
+      email: this.form.email || null,
       ativo: this.form.ativo,
     };
     const alvo = this.editando();

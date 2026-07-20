@@ -74,6 +74,7 @@ public class UsuarioService {
     private void aplicarComuns(Usuario u, UsuarioRequest req) {
         u.setRole(req.role());
         u.setAtivo(req.ativo() == null ? true : req.ativo());
+        u.setEmail(req.email() != null && !req.email().isBlank() ? req.email().trim() : null);
 
         // Vínculo com aluno: só faz sentido para a role ALUNO.
         if (req.role() == Role.ALUNO && req.alunoId() != null) {
