@@ -93,7 +93,7 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
   | **Telegram Bot** | **grátis** | fácil | 100% free; aluno inicia o bot (opt-in) — próximo candidato |
   | **Push (FCM)** | grátis | média | precisa do app/PWA (item 4) |
   | **WhatsApp Cloud API (Meta)** | quase grátis p/ *utility* | **burocrático** | número Business + templates aprovados; pode gerar custo |
-  | **SMS** | **pago** | média | sem tier free sustentável no BR |
+  | **SMS (Brevo)** | **pago** (sem free) | fácil (mesma conta) | Brevo TEM API de SMS transacional (`POST /v3/transactionalSMS/sms`) — dá pra reusar a conta/chave. Porém consome **créditos SMS pagos** (BR ~€0,03–0,05/msg, sem tier grátis) e exige remetente aprovado. Viável tecnicamente; decisão é de **custo**. |
 
 ### ✅ 5. Módulo de Campanhas (envio em massa) — CONCLUÍDO
 - CRUD de campanha (título, mensagem, público-alvo por classe/filtro) → dispara pelo canal do item 2
