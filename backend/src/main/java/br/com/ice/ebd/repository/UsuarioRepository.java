@@ -33,4 +33,12 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
                 .setParameter("un", username)
                 .getResultStream().findFirst().orElse(null);
     }
+
+    /** E-mails dos professores ativos (para avisos de novos visitantes). */
+    public java.util.List<String> emailsDeProfessoresAtivos() {
+        return getEntityManager().createQuery(
+                "select u.email from Usuario u where u.role = br.com.ice.ebd.model.Role.PROFESSOR "
+                        + "and u.ativo = true and u.email is not null and u.email <> ''", String.class)
+                .getResultList();
+    }
 }

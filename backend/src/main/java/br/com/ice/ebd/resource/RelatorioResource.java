@@ -1,6 +1,8 @@
 package br.com.ice.ebd.resource;
 
+import br.com.ice.ebd.dto.RelatorioGeralResponse;
 import br.com.ice.ebd.dto.RelatorioPresencaResponse;
+import br.com.ice.ebd.service.RelatorioGeralService;
 import br.com.ice.ebd.service.RelatorioService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -18,6 +20,9 @@ public class RelatorioResource {
     @Inject
     RelatorioService service;
 
+    @Inject
+    RelatorioGeralService geralService;
+
     @GET
     @Path("/presencas")
     @RolesAllowed({"ADMIN", "PROFESSOR"})
@@ -26,5 +31,13 @@ public class RelatorioResource {
             @QueryParam("fim") LocalDate fim,
             @QueryParam("classeId") Long classeId) {
         return service.gerar(inicio, fim, classeId);
+    }
+
+    /** Relatório geral consolidado de um dia (todas as turmas). Só ADMIN/superintendência. */
+    @GET
+    @Path("/geral")
+    @RolesAllowed("ADMIN")
+    public RelatorioGeralResponse geral(@QueryParam("data") LocalDate data) {
+        return geralService.gerarDoDia(data);
     }
 }

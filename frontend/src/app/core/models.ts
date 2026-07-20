@@ -151,6 +151,7 @@ export interface Usuario {
   ativo: boolean;
   alunoId?: number | null;
   alunoNome?: string | null;
+  email?: string | null;
   classes?: { id: number; nome: string }[];
 }
 
@@ -160,6 +161,7 @@ export interface UsuarioRequest {
   role: Role;
   alunoId?: number | null;
   classeIds?: number[] | null;
+  email?: string | null;
   ativo?: boolean;
 }
 
@@ -196,4 +198,39 @@ export interface MinhaFrequenciaResponse {
   faltas: number;
   percentualPresenca: number;
   itens: MinhaFrequenciaItem[];
+}
+
+export interface Visitante {
+  id: number;
+  nome: string;
+  email?: string | null;
+  telefone?: string | null;
+  trazidoPorId?: number | null;
+  trazidoPorNome?: string | null;
+  dataCadastro: string;
+}
+
+export interface VisitanteRequest {
+  nome: string;
+  email?: string | null;
+  telefone?: string | null;
+  trazidoPorAlunoId?: number | null;
+}
+
+export interface RelatorioGeralLinha {
+  classeId: number;
+  classeNome: string;
+  tema?: string | null;
+  presentes: number; faltosos: number; biblias: number; revistas: number; licoes: number; visitantes: number;
+}
+
+export interface RelatorioGeralTotais {
+  presentes: number; faltosos: number; biblias: number; revistas: number; licoes: number; visitantes: number;
+}
+
+export interface RelatorioGeralResponse {
+  data: string;
+  totalTurmas: number;
+  totais: RelatorioGeralTotais;
+  turmas: RelatorioGeralLinha[];
 }
