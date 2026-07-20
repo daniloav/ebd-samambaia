@@ -49,7 +49,7 @@ claude-trabalho/
 │       ├── java/br/com/ice/ebd/
 │       │   ├── model/             ← entidades JPA (Aluno, Aula, Presenca, Prova, NotaProva, Usuario, Role)
 │       │   ├── repository/        ← Panache repositories
-│       │   ├── service/           ← regra de negócio (Auth, Aluno, Aula, Chamada, Relatorio, Prova, Desafios)
+│       │   ├── service/           ← regra de negócio (Auth, Aluno, Aula, Chamada, Relatorio, Prova, Desafios, Notificacao)
 │       │   ├── resource/          ← endpoints REST (JAX-RS) + ErrorMapper + MeResource
 │       │   ├── dto/               ← records de request/response
 │       │   ├── security/          ← TokenService (emite JWT)
@@ -165,6 +165,9 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   use **Postgres nativo** em vez do `docker-compose.dev.yml`:
   `brew services start postgresql@16` + role/db `ebd` (senha `ebd`) na porta 5432.
   Na VM (deploy) o Docker é limpo e funciona normalmente.
+- 📧 **Alertas por e-mail** (roadmap item 2): ao salvar a chamada, envia e-mail aos alunos com opt-in
+  (`recebe_notificacoes` + `email`, migration V4). Toggle `ebd.notificacoes.enabled` (off em prod até
+  configurar SMTP). Validado em dev com mailer *mock*. Guia: [`docs/notificacoes-email.md`](docs/notificacoes-email.md).
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
 
 ## 10. Como pedir evoluções (dica para o Danilo)

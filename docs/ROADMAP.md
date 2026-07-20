@@ -59,7 +59,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
   define papel e vincula a um Aluno). Aluno logado vê a própria frequência/notas.
 - Base para notificações/campanhas/app (o aluno precisa existir como usuário/contato). Esforço: **médio**.
 
-### 2. Alertas por mensagem (presença/falta na chamada)
+### 2. Alertas por mensagem (presença/falta na chamada) — ✅ e-mail implementado
 - Notifica o aluno (ou responsável) quando a chamada é lançada. **Depende de canal + consentimento (LGPD)**.
 - **Opções de canal (do mais free/fácil ao mais "desejado"):**
   | Canal | Custo | Facilidade | Observação |
@@ -71,6 +71,11 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
   | **SMS** | **pago** | média | sem tier free sustentável no BR |
 - Recomendação: começar por **Telegram** ou **e-mail** (grátis de verdade); WhatsApp depois se valer a pena.
 - Implementação: `NotificacaoService` disparado no `salvarChamada` (assíncrono), com opt-in por aluno.
+- **Feito (canal e-mail):** `Aluno` ganhou `email` + `recebe_notificacoes` (opt-in/LGPD, migration V4);
+  `NotificacaoService` envia um e-mail a cada aluno que optou, ao salvar a chamada (`ChamadaResource`).
+  Toggle `ebd.notificacoes.enabled` (padrão **off**; **on** em dev com mailer em *mock*). Config SMTP por env.
+  **Para ligar em produção**, ver [`docs/notificacoes-email.md`](notificacoes-email.md) (SMTP Brevo grátis).
+- **Pendente/roadmap:** envio **assíncrono** (hoje é síncrono na transação da chamada) e outros canais (Telegram/WhatsApp).
 
 ### 5. Módulo de Campanhas (envio em massa)
 - CRUD de campanha (título, mensagem, público-alvo por classe/filtro) → dispara pelo canal do item 2
