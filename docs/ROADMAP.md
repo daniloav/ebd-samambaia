@@ -2,37 +2,44 @@
 
 Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione novas ideias.
 
-## 🔴 Prioridade imediata
+## ✅ Concluído
 
-- [ ] **Validar o runtime com Postgres real** (migrations, seed, login, chamada, rankings).
-      Ainda não executado ponta-a-ponta. Ver CLAUDE.md §9.
-- [ ] **Concluir o deploy na OCI** (aguardando capacidade A1; retry rodando) e publicar o site.
-- [ ] Após deploy: **trocar as senhas padrão** (`admin`/`professor`) e as credenciais do banco.
+> Atualizado em 2026-07-20.
+
+- [x] **MVP completo** (chamada, desafios/provas, relatório) — backend + frontend + infra.
+- [x] **Runtime validado ponta-a-ponta** com Postgres real (migrations, seed, login JWT, chamada, provas/notas, rankings, relatório).
+- [x] **Deploy na OCI + site no ar**: **https://ebd-ices.duckdns.org**. VM `E2.1.Micro` (x86, 1 GB Always Free) + swap 3 GB; stack Docker (db, backend, frontend, caddy).
+- [x] **HTTPS** com domínio (DuckDNS) via **Caddy + Let's Encrypt** (auto-renova; redirect HTTP→HTTPS).
+- [x] **CI/CD** (GitHub Actions): CI (build back/front + Semgrep/Trivy/gitleaks) e CodeQL nas branches; **CD real** faz deploy no merge da `main` (rsync + `docker compose up -d --build`, reescreve o `.env` a partir do secret `OCI_ENV_FILE`).
+- [x] **Senhas padrão trocadas** em produção (admin/professor + credenciais do banco definidas via secret).
+- [x] **Multi-turma (Classes)** — entidade `Classe`, `Aluno/Aula/Prova` por classe; chamada, rankings e relatório **filtram por turma**; seletor de turma na UI (migration V3).
+- [x] **Perfis/roles + CRUD de Usuários** na UI — role **ALUNO** adicionada (ADMIN/PROFESSOR/ALUNO); tela de gestão de usuários (ADMIN).
+- [x] **CRUD de Aulas** na UI — listar por turma, editar data/tema, excluir (ADMIN), atalho "fazer chamada".
+- [x] **Alertas por e-mail na chamada** — opt-in por aluno (`email` + `recebe_notificacoes`, migration V4, LGPD); e-mail **HTML** com mensagem **diferente para presente (agradecimento) e ausente (engajamento p/ próximo domingo)**. SMTP **Brevo** em produção (remetente validado `danilo.av@gmail.com`); toggle `ebd.notificacoes.enabled`; mock em dev. Guia: [`notificacoes-email.md`](notificacoes-email.md).
 
 ## 🟡 Evoluções funcionais (curto prazo)
 
 - [ ] **Dashboard com gráficos** (frequência ao longo do tempo, distribuição de presença).
 - [ ] **Exportar relatório** de presenças para PDF/Excel.
-- [ ] **Filtro por trimestre/período letivo** em relatórios e rankings.
+- [ ] **Filtro por trimestre/período letivo** em relatórios e rankings (hoje já filtra por turma, falta o recorte de período).
 - [ ] **Histórico da chamada** por aluno (linha do tempo de presença/itens).
-- [ ] **Gestão de usuários** na UI (hoje só via seed): tela de CRUD de `Usuario` (ADMIN).
 - [ ] **Aniversariantes do mês** (já temos `data_nascimento`).
 - [ ] **Observações por aula/aluno** (campo de texto livre na chamada).
 
 ## 🟢 Qualidade e robustez
 
 - [ ] **Testes automatizados**: `@QuarkusTest` para `ChamadaService`, `RelatorioService`,
-      `DesafiosService`; testes de fluxo de autenticação.
+      `DesafiosService`, `NotificacaoService`; testes de fluxo de autenticação.
 - [ ] **Testes de front** (ao menos smoke dos serviços/guards).
-- [ ] **CI** (GitHub Actions): build backend + frontend a cada push.
+- [ ] **Envio de e-mail assíncrono** — hoje o `NotificacaoService` envia **de forma síncrona** dentro da transação da chamada; migrar para assíncrono (evento/`@Blocking`/fila) para não segurar o salvamento em turmas grandes.
 - [ ] **Soft-delete de aluno** (preservar histórico usando `ativo`, sem cascata destrutiva).
 - [ ] **Paginação** nas listas quando crescer o volume.
 
 ## 🔵 Infra e segurança
 
-- [ ] **HTTPS** na VM (Caddy ou certbot) com domínio próprio.
 - [ ] **Backups automáticos** do Postgres (cron + `pg_dump`).
 - [ ] **Chaves JWT persistentes** via volume (hoje o Docker gera novas a cada build).
+- [ ] **Rotacionar a chave SMTP da Brevo** (a atual foi compartilhada em chat durante a config).
 - [ ] (Opcional) **Purga de histórico do Git** para remover a chave JWT antiga, se o repo virar público.
 - [ ] **Budget/alerta de custo** na OCI (garantia extra contra cobrança).
 - [ ] **Proteção de branch na `main`** (bloquear push direto, exigir PR + CI verde).
@@ -45,58 +52,50 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 ## 🧭 Módulos planejados pós-MVP (avaliados em 2026-07-19)
 
-> Ordem sugerida: **1 → 3 → (canal de mensagens) → 2 → 5 → 4**. Os itens 2, 4 e 5 dependem
-> de contatos/consentimento (LGPD) e de usuários com papel de aluno (item 3).
+> Ordem sugerida original: **1 → 3 → (canal de mensagens) → 2 → 5 → 4**.
+> **Status:** 1, 3 e 2 (canal e-mail) concluídos — ver seção ✅. Faltam 5 e 4.
 
-### 1. CRUD de Classes (multi-turma)  — *fundacional*
-- Hoje o app é implicitamente "Adultos". Criar entidade **Classe** (nome, descrição, ativo) e
-  vincular **Aluno → Classe**; **Aula/Chamada, Provas, Rankings e Relatório passam a ser por classe**.
-- Migration `V3` (tabela + FKs), seed de uma classe "Adultos" para os dados atuais, seletor de
-  classe na UI. Esforço: **médio-alto**. É base para escalar o sistema para a igreja toda.
+### ✅ 1. CRUD de Classes (multi-turma) — CONCLUÍDO
+Entidade `Classe`, `Aluno → Classe`, tudo por turma, seletor na UI (migration V3).
 
-### 3. Perfis/roles + CRUD de Usuários  — *fundacional*
-- Add role **ALUNO** (hoje há ADMIN/PROFESSOR); tela de **CRUD de usuários** (admin cria/edita,
-  define papel e vincula a um Aluno). Aluno logado vê a própria frequência/notas.
-- Base para notificações/campanhas/app (o aluno precisa existir como usuário/contato). Esforço: **médio**.
+### ✅ 3. Perfis/roles + CRUD de Usuários — CONCLUÍDO
+Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campanhas/app.
 
-### 2. Alertas por mensagem (presença/falta na chamada) — ✅ e-mail implementado
-- Notifica o aluno (ou responsável) quando a chamada é lançada. **Depende de canal + consentimento (LGPD)**.
-- **Opções de canal (do mais free/fácil ao mais "desejado"):**
+### ✅ 2. Alertas por mensagem (presença/falta na chamada) — CONCLUÍDO (canal e-mail)
+- Feito: opt-in por aluno (migration V4), `NotificacaoService` disparado ao salvar a chamada,
+  e-mail **HTML** com conteúdo distinto para **presente** e **ausente**, em produção via Brevo.
+- **Ainda em aberto:** envio **assíncrono** (ver Qualidade) e **outros canais** (Telegram grátis / WhatsApp).
+  Tabela de canais avaliados:
   | Canal | Custo | Facilidade | Observação |
   |---|---|---|---|
-  | **Telegram Bot** | **grátis** | fácil | 100% free; aluno precisa iniciar o bot (opt-in) |
-  | **E-mail** (Brevo/SMTP) | grátis (300/dia) | fácil | confiável, menos "instantâneo" |
-  | **Push (FCM)** | grátis | média | precisa do app/PWA (itens 4/5) |
+  | **E-mail** (Brevo/SMTP) | grátis (300/dia) | fácil | ✅ **implementado** |
+  | **Telegram Bot** | **grátis** | fácil | 100% free; aluno inicia o bot (opt-in) — próximo candidato |
+  | **Push (FCM)** | grátis | média | precisa do app/PWA (item 4) |
   | **WhatsApp Cloud API (Meta)** | quase grátis p/ *utility* | **burocrático** | número Business + templates aprovados; pode gerar custo |
   | **SMS** | **pago** | média | sem tier free sustentável no BR |
-- Recomendação: começar por **Telegram** ou **e-mail** (grátis de verdade); WhatsApp depois se valer a pena.
-- Implementação: `NotificacaoService` disparado no `salvarChamada` (assíncrono), com opt-in por aluno.
-- **Feito (canal e-mail):** `Aluno` ganhou `email` + `recebe_notificacoes` (opt-in/LGPD, migration V4);
-  `NotificacaoService` envia um e-mail a cada aluno que optou, ao salvar a chamada (`ChamadaResource`).
-  Toggle `ebd.notificacoes.enabled` (padrão **off**; **on** em dev com mailer em *mock*). Config SMTP por env.
-  **Para ligar em produção**, ver [`docs/notificacoes-email.md`](notificacoes-email.md) (SMTP Brevo grátis).
-- **Pendente/roadmap:** envio **assíncrono** (hoje é síncrono na transação da chamada) e outros canais (Telegram/WhatsApp).
 
-### 5. Módulo de Campanhas (envio em massa)
+### 5. Módulo de Campanhas (envio em massa) — *pendente*
 - CRUD de campanha (título, mensagem, público-alvo por classe/filtro) → dispara pelo canal do item 2
-  (ou push do app). Reaproveita o `NotificacaoService`. Esforço: **médio**. Depende de 2 e 3.
+  (ou push do app). Reaproveita o `NotificacaoService`. Esforço: **médio**. Depende de 2 e 3 (ambos prontos).
 
-### 4. App Android/iOS
-- As APIs REST+JWT já servem um app. Opções:
-  - **PWA** (transformar o Angular atual em instalável/offline): **sem custo de loja**, reaproveita o código — bom **primeiro passo**.
-  - **Flutter** (1 código p/ iOS+Android) ou React Native: app nativo "de verdade", porém publicar exige **Apple Developer US$99/ano** e **Google Play US$25** (única vez).
-- Recomendação: **PWA primeiro**, nativo depois se necessário. Esforço nativo: **alto**.
+### 4. App Android/iOS — *pendente (PWA primeiro)*
+- As APIs REST+JWT já servem um app. Decisão tomada: **PWA primeiro** (transformar o Angular atual em
+  instalável/offline): sem custo de loja, reaproveita o código. Nativo (Flutter/React Native) depois,
+  se necessário — publicar exige **Apple US$99/ano** e **Google Play US$25** (única vez). Esforço nativo: **alto**.
 
 ## 💡 Ideias maiores (longo prazo)
 
-- [ ] **PWA / uso offline** para fazer chamada sem internet e sincronizar depois.
-- [ ] **Múltiplas classes/turmas** (hoje é só a classe de adultos).
-- [ ] **Notificações** (WhatsApp/e-mail) para faltas seguidas ou aniversários.
+- [ ] **PWA / uso offline** para fazer chamada sem internet e sincronizar depois (item 4).
+- [ ] **Alertas de faltas seguidas** (ex.: 3 ausências consecutivas → e-mail especial ao aluno/coordenação)
+      e **aniversários** — reaproveita o `NotificacaoService`.
 - [ ] **Premiação automática** ao fim do trimestre com base nos rankings.
+- [ ] **Domínio próprio + DKIM** (sair do DuckDNS, que não permite DKIM) para o `no-reply@` entregável.
 
 ## Limitações conhecidas (estado atual)
 
 - Exclusão de aluno/aula/prova é **destrutiva** (cascata).
-- Rankings/relatórios consideram todos os alunos ativos e todo o período (sem recorte por turma/trimestre).
-- Sem testes automatizados; validação só por build.
-- Uma única VM roda tudo (db + api + front) — suficiente para o MVP, não para alta disponibilidade.
+- Rankings/relatórios já recortam por **turma**, mas ainda **não por trimestre/período**.
+- E-mail de chamada é **síncrono** na transação (ok para turmas pequenas; ver Qualidade).
+- Textos dos e-mails (presente/ausente) são **fixos no código** — ainda não configuráveis pela UI.
+- Sem testes automatizados; validação por build (`mvn package` / `ng build`) e smoke manual.
+- Uma única VM (1 GB) roda tudo (db + api + front + caddy) — suficiente para o MVP, não para alta disponibilidade.
