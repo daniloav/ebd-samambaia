@@ -25,6 +25,8 @@ import java.util.Map;
 @ApplicationScoped
 public class ProvaService {
 
+    @Inject EscopoService escopo;
+
     @Inject ProvaRepository provaRepository;
     @Inject ClasseService classeService;
     @Inject NotaProvaRepository notaRepository;
@@ -33,17 +35,21 @@ public class ProvaService {
     // ---------- CRUD da prova ----------
 
     public List<ProvaResponse> listar(Long classeId) {
+        escopo.assertClasse(classeId);
         var provas = classeId != null ? provaRepository.listarPorClasse(classeId)
                                        : provaRepository.listarOrdenadoPorData();
         return provas.stream().map(ProvaResponse::de).toList();
     }
 
     public ProvaResponse buscar(Long id) {
-        return ProvaResponse.de(obter(id));
+        Prova p = obter(id);
+        escopo.assertClasse(p.getClasse().getId());
+        return ProvaResponse.de(p);
     }
 
     @Transactional
     public ProvaResponse criar(ProvaRequest req) {
+        escopo.assertClasse(req.classeId());
         Prova p = new Prova();
         aplicar(p, req);
         provaRepository.persist(p);
@@ -52,6 +58,7 @@ public class ProvaService {
 
     @Transactional
     public ProvaResponse atualizar(Long id, ProvaRequest req) {
+        escopo.assertClasse(req.classeId());
         Prova p = obter(id);
         aplicar(p, req);
         return ProvaResponse.de(p);
@@ -68,6 +75,7 @@ public class ProvaService {
     /** Grade de notas: todos os alunos ativos, com a nota lançada (ou null). */
     public NotasProvaResponse obterNotas(Long provaId) {
         Prova prova = obter(provaId);
+        escopo.assertClasse(prova.getClasse().getId());
         Map<Long, BigDecimal> notasPorAluno = new LinkedHashMap<>();
         for (NotaProva n : notaRepository.listarPorProva(provaId)) {
             notasPorAluno.put(n.getAluno().getId(), n.getNota());
@@ -82,6 +90,7 @@ public class ProvaService {
     @Transactional
     public NotasProvaResponse salvarNotas(Long provaId, SalvarNotasRequest req) {
         Prova prova = obter(provaId);
+        escopo.assertClasse(prova.getClasse().getId());
 
         Map<Long, NotaProva> existentes = new LinkedHashMap<>();
         for (NotaProva n : notaRepository.listarPorProva(provaId)) {

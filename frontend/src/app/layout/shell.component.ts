@@ -65,7 +65,7 @@ import { ClasseContextService } from '../core/classe-context.service';
           <button class="btn-sair topo-mobile" style="width:auto;padding:.3rem .6rem"
                   (click)="menuAberto.set(!menuAberto())">☰</button>
         </div>
-        @if (classeCtx.classes().length) {
+        @if (!auth.isAluno() && classeCtx.classes().length) {
           <div class="seletor-classe">
             <label>Turma</label>
             <select [ngModel]="classeCtx.selecionadaId()" (ngModelChange)="classeCtx.selecionar($event)">
@@ -76,26 +76,30 @@ import { ClasseContextService } from '../core/classe-context.service';
           </div>
         }
         <nav (click)="fecharNoMobile()">
-          <a routerLink="/painel" routerLinkActive="ativo"><span class="ico">🏠</span> Painel</a>
-          <div class="grupo">Chamada</div>
-          <a routerLink="/chamada" routerLinkActive="ativo"><span class="ico">✅</span> Fazer chamada</a>
-          <a routerLink="/aulas" routerLinkActive="ativo"><span class="ico">📅</span> Aulas</a>
-          <a routerLink="/alunos" routerLinkActive="ativo"><span class="ico">👥</span> Alunos</a>
-          <a routerLink="/relatorio" routerLinkActive="ativo"><span class="ico">📊</span> Relatório</a>
-          <div class="grupo">Desafios</div>
-          <a routerLink="/desafios" routerLinkActive="ativo"><span class="ico">🏆</span> Rankings</a>
-          <a routerLink="/provas" routerLinkActive="ativo"><span class="ico">📝</span> Provas</a>
-          @if (auth.isAdmin()) {
-            <div class="grupo">Administração</div>
-            <a routerLink="/classes" routerLinkActive="ativo"><span class="ico">📚</span> Classes</a>
-            <a routerLink="/usuarios" routerLinkActive="ativo"><span class="ico">🔑</span> Usuários</a>
-            <a routerLink="/campanhas" routerLinkActive="ativo"><span class="ico">📣</span> Campanhas</a>
+          @if (auth.isAluno()) {
+            <a routerLink="/minha-frequencia" routerLinkActive="ativo"><span class="ico">📊</span> Minha frequência</a>
+          } @else {
+            <a routerLink="/painel" routerLinkActive="ativo"><span class="ico">🏠</span> Painel</a>
+            <div class="grupo">Chamada</div>
+            <a routerLink="/chamada" routerLinkActive="ativo"><span class="ico">✅</span> Fazer chamada</a>
+            <a routerLink="/aulas" routerLinkActive="ativo"><span class="ico">📅</span> Aulas</a>
+            <a routerLink="/alunos" routerLinkActive="ativo"><span class="ico">👥</span> Alunos</a>
+            <a routerLink="/relatorio" routerLinkActive="ativo"><span class="ico">📊</span> Relatório</a>
+            <div class="grupo">Desafios</div>
+            <a routerLink="/desafios" routerLinkActive="ativo"><span class="ico">🏆</span> Rankings</a>
+            <a routerLink="/provas" routerLinkActive="ativo"><span class="ico">📝</span> Provas</a>
+            @if (auth.isAdmin()) {
+              <div class="grupo">Administração</div>
+              <a routerLink="/classes" routerLinkActive="ativo"><span class="ico">📚</span> Classes</a>
+              <a routerLink="/usuarios" routerLinkActive="ativo"><span class="ico">🔑</span> Usuários</a>
+              <a routerLink="/campanhas" routerLinkActive="ativo"><span class="ico">📣</span> Campanhas</a>
+            }
           }
         </nav>
         <div class="rodape">
           <div class="user">
             <strong>{{ auth.username() }}</strong>
-            <span class="perfil">{{ auth.role() === 'ADMIN' ? 'Administrador' : 'Professor' }}</span>
+            <span class="perfil">{{ perfilLabel() }}</span>
           </div>
           <button class="btn-sair" (click)="sair()">Sair</button>
         </div>
@@ -113,7 +117,14 @@ export class ShellComponent implements OnInit {
   menuAberto = signal(true);
 
   ngOnInit(): void {
-    this.classeCtx.carregar();
+    if (!this.auth.isAluno()) {
+      this.classeCtx.carregar();
+    }
+  }
+
+  perfilLabel(): string {
+    return this.auth.role() === 'ADMIN' ? 'Administrador'
+      : this.auth.role() === 'PROFESSOR' ? 'Professor' : 'Aluno';
   }
 
   fecharNoMobile(): void {

@@ -16,6 +16,8 @@ import java.util.Optional;
 @ApplicationScoped
 public class AulaService {
 
+    @Inject EscopoService escopo;
+
     @Inject
     AulaRepository repository;
 
@@ -23,16 +25,20 @@ public class AulaService {
     ClasseService classeService;
 
     public List<AulaResponse> listar(Long classeId) {
+        escopo.assertClasse(classeId);
         var aulas = classeId != null ? repository.listarPorClasse(classeId) : repository.listarOrdenadoPorData();
         return aulas.stream().map(AulaResponse::de).toList();
     }
 
     public AulaResponse buscar(Long id) {
-        return AulaResponse.de(obter(id));
+        Aula a = obter(id);
+        escopo.assertClasse(a.getClasse().getId());
+        return AulaResponse.de(a);
     }
 
     @Transactional
     public AulaResponse criar(AulaRequest req) {
+        escopo.assertClasse(req.classeId());
         var classe = classeService.obter(req.classeId());
         validarDataUnica(classe.getId(), req.data(), null);
         Aula a = new Aula();
@@ -45,6 +51,7 @@ public class AulaService {
 
     @Transactional
     public AulaResponse atualizar(Long id, AulaRequest req) {
+        escopo.assertClasse(req.classeId());
         Aula a = obter(id);
         var classe = classeService.obter(req.classeId());
         validarDataUnica(classe.getId(), req.data(), id);
