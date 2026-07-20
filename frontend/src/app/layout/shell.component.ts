@@ -89,6 +89,7 @@ import { ClasseContextService } from '../core/classe-context.service';
             <div class="grupo">Administração</div>
             <a routerLink="/classes" routerLinkActive="ativo"><span class="ico">📚</span> Classes</a>
             <a routerLink="/usuarios" routerLinkActive="ativo"><span class="ico">🔑</span> Usuários</a>
+            <a routerLink="/campanhas" routerLinkActive="ativo"><span class="ico">📣</span> Campanhas</a>
           }
         </nav>
         <div class="rodape">
