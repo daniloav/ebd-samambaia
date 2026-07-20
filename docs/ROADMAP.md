@@ -40,6 +40,17 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 ## 🔵 Infra e segurança
 
+### Lentidão de deploy na VM de 1 GB (prioridade — deploys levam ~20 min)
+- [ ] **Podar o build cache na VM** — está em ~5 GB e piora a lentidão: `docker builder prune -af`
+      (ganho imediato de espaço/velocidade). Considerar rodar periodicamente (cron) ou no fim do `cd.yml`.
+- [ ] **Subir para o A1 (6 GB)** via Pay-As-You-Go — **resolve de vez**: o build do Angular (`npm ci`/`ng build`)
+      faz swap thrashing na VM de 1 GB (load 4–5, ~20 min por deploy). Ver item abaixo. Já mitigado com
+      keepalive no SSH (o deploy sobrevive), mas continua lento até o upgrade.
+- Contexto: o CD faz `docker compose up -d --build` na VM (build do frontend + backend). Na de 1 GB isso
+  thrasha o swap. O keepalive no SSH evita o "Broken pipe"; o cache do `npm ci` só é reaproveitado se o
+  `package.json` não mudar (por isso o bump de versão grava só o `version.ts`).
+
+
 ### Segurança de migrations (evitar dor em produção)
 - [x] **Backup do banco antes de cada deploy** — `scripts/backup-db.sh` chamado pelo `cd.yml` faz `pg_dump` gzipado na VM antes do `docker compose up`; valida o dump e **aborta o deploy se falhar**; retenção dos 10 últimos em `~/ebd-samambaia/backups/`. Restauração em [`migrations.md`](migrations.md).
 - [x] **CI rodando as migrations contra um Postgres real** — job `Migrations · app real (Postgres)` sobe o app contra um Postgres de serviço; falha se alguma migration quebrar ou o startup divergir do schema. Pega migration ruim **antes** de produção.
