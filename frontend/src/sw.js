@@ -1,5 +1,5 @@
 /*
- * Service worker do EBD Adultos (PWA).
+ * Service worker do EBD ICES (PWA).
  * Estratégia NETWORK-FIRST: online sempre busca a versão fresca (sem risco de
  * servir versão antiga após deploy); o cache só é usado como fallback offline.
  * Nunca cacheia chamadas de API.
