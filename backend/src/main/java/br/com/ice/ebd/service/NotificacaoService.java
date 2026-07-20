@@ -3,6 +3,7 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Presenca;
+import br.com.ice.ebd.model.Visitante;
 import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.PresencaRepository;
 import io.quarkus.mailer.Mail;
@@ -238,5 +239,95 @@ public class NotificacaoService {
             return "";
         }
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    /** Boas-vindas ao visitante (se tiver e-mail). Nunca lança exceção. */
+    public void enviarBoasVindasVisitante(Visitante v) {
+        if (!habilitado || v.getEmail() == null || v.getEmail().isBlank()) {
+            return;
+        }
+        try {
+            String turma = v.getAula() != null && v.getAula().getClasse() != null
+                    ? v.getAula().getClasse().getNome() : "EBD";
+            String texto = "Olá " + v.getNome() + ",\n\n"
+                    + "Que alegria receber você na nossa Escola Bíblica Dominical! "
+                    + "Esperamos você no próximo domingo.\n\nEscola Bíblica Dominical — ICE Samambaia";
+            mailer.send(Mail.withHtml(v.getEmail(),
+                    "Bem-vindo(a) à EBD — ICE Samambaia! 🙌",
+                    htmlBoasVindasVisitante(v, turma)).setText(texto));
+            LOG.infof("Boas-vindas enviadas ao visitante %s.", v.getEmail());
+        } catch (Exception e) {
+            LOG.warnf("Falha nas boas-vindas ao visitante %s: %s", v.getEmail(), e.getMessage());
+        }
+    }
+
+    /** Avisa os professores (por e-mail) sobre um novo visitante. Retorna quantos receberam. */
+    public int avisarProfessoresNovoVisitante(Visitante v, java.util.List<String> emailsProfessores) {
+        if (!habilitado) {
+            return 0;
+        }
+        String turma = v.getAula() != null && v.getAula().getClasse() != null
+                ? v.getAula().getClasse().getNome() : "EBD";
+        String trazido = v.getTrazidoPor() != null ? v.getTrazidoPor().getNome() : "não informado";
+        String assunto = "EBD — novo visitante: " + v.getNome();
+        String html = htmlAvisoVisitante(v, turma, trazido);
+        String texto = "Novo visitante na EBD:\n\nNome: " + v.getNome()
+                + "\nTurma: " + turma + "\nTrazido por: " + trazido
+                + (v.getEmail() != null && !v.getEmail().isBlank() ? "\nE-mail: " + v.getEmail() : "")
+                + (v.getTelefone() != null && !v.getTelefone().isBlank() ? "\nTelefone: " + v.getTelefone() : "")
+                + "\n\nVamos acolher bem!\nEscola Bíblica Dominical — ICE Samambaia";
+        int enviados = 0;
+        for (String em : emailsProfessores) {
+            if (em == null || em.isBlank()) {
+                continue;
+            }
+            try {
+                mailer.send(Mail.withHtml(em, assunto, html).setText(texto));
+                enviados++;
+            } catch (Exception e) {
+                LOG.warnf("Falha ao avisar professor %s sobre visitante: %s", em, e.getMessage());
+            }
+        }
+        LOG.infof("Aviso do visitante '%s' enviado a %d professor(es).", v.getNome(), enviados);
+        return enviados;
+    }
+
+    private String htmlBoasVindasVisitante(Visitante v, String turma) {
+        String corpo = ""
+                + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Seja bem-vindo(a), " + esc(v.getNome()) + "! 🙌</h1>"
+                + "<p style=\"margin:0 0 16px;\">Foi uma alegria ter você conosco na Escola Bíblica Dominical. "
+                + "Nossa classe está de portas abertas para você!</p>"
+                + "<p style=\"margin:0 0 16px;\">Esperamos ver você no próximo domingo para mais um tempo de comunhão e Palavra.</p>"
+                + "<p style=\"margin:22px 0;text-align:center;\">"
+                + "<a href=\"" + SITE + "\" style=\"background:#c9a24b;color:#ffffff;text-decoration:none;"
+                + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">Nos vemos no próximo domingo</a></p>"
+                + "<p style=\"margin:0;\">Com carinho,<br>Escola Bíblica Dominical — ICE Samambaia 🙏</p>";
+        return shell(turma, corpo);
+    }
+
+    private String htmlAvisoVisitante(Visitante v, String turma, String trazido) {
+        String contato = "";
+        if (v.getEmail() != null && !v.getEmail().isBlank()) {
+            contato += linhaContato("E-mail", esc(v.getEmail()));
+        }
+        if (v.getTelefone() != null && !v.getTelefone().isBlank()) {
+            contato += linhaContato("Telefone", esc(v.getTelefone()));
+        }
+        String corpo = ""
+                + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Novo visitante na EBD 🎉</h1>"
+                + "<p style=\"margin:0 0 16px;\">Registramos um novo visitante. Vamos acolher bem!</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse;\">"
+                + linhaContato("Nome", esc(v.getNome()))
+                + linhaContato("Turma", esc(turma))
+                + linhaContato("Trazido por", esc(trazido))
+                + contato
+                + "</table>";
+        return shell(turma, corpo);
+    }
+
+    private String linhaContato(String rotulo, String valor) {
+        return "<tr>"
+                + "<td style=\"padding:8px 0;border-bottom:1px solid #edf0f4;color:#718096;\">" + rotulo + "</td>"
+                + "<td style=\"padding:8px 0;border-bottom:1px solid #edf0f4;text-align:right;font-weight:bold;\">" + valor + "</td></tr>";
     }
 }
