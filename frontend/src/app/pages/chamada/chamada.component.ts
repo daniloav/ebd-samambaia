@@ -66,7 +66,6 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
                 <th class="chk">Bíblia</th>
                 <th class="chk">Revista</th>
                 <th class="chk">Estudou a lição</th>
-                <th class="chk">Visitante</th>
               </tr>
             </thead>
             <tbody>
@@ -77,7 +76,6 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
                   <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeBiblia" /></td>
                   <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeRevista" /></td>
                   <td class="chk"><input type="checkbox" [(ngModel)]="i.estudouLicao" /></td>
-                  <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeVisitante" /></td>
                 </tr>
               }
             </tbody>
@@ -283,7 +281,6 @@ export class ChamadaComponent {
       trouxeBiblia: i.trouxeBiblia,
       trouxeRevista: i.trouxeRevista,
       estudouLicao: i.estudouLicao,
-      trouxeVisitante: i.trouxeVisitante,
     }));
     this.api.salvarChamada(this.aulaSelecionadaId, payload).subscribe({
       next: () => { this.toast.sucesso('Chamada salva com sucesso!'); this.salvando.set(false); },
