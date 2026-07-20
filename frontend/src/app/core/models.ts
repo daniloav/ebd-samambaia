@@ -51,7 +51,6 @@ export interface PresencaItem {
   trouxeBiblia: boolean;
   trouxeRevista: boolean;
   estudouLicao: boolean;
-  trouxeVisitante: boolean;
 }
 
 export interface ChamadaResponse {

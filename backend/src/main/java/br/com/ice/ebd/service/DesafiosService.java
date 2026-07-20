@@ -65,7 +65,7 @@ public class DesafiosService {
 
         List<RankingItem> maisVisitante = ranking(nomes, presenca,
                 m -> (double) m.visitante(),
-                v -> String.format("trouxe visitante %d vez(es)", v.longValue()),
+                v -> String.format("trouxe %d visitante(s)", v.longValue()),
                 true);
 
         List<RankingItem> melhoresNotas = rankingNotas(nomes, medias);
@@ -85,14 +85,31 @@ public class DesafiosService {
                         "sum(case when p.presente = true then 1 else 0 end), " +
                         "sum(case when p.trouxeBiblia = true then 1 else 0 end), " +
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
-                        "sum(case when p.estudouLicao = true then 1 else 0 end), " +
-                        "sum(case when p.trouxeVisitante = true then 1 else 0 end) " +
+                        "sum(case when p.estudouLicao = true then 1 else 0 end) " +
                         "from Presenca p where (:cid = -1 or p.aula.classe.id = :cid) group by p.aluno.id", Object[].class)
                 .setParameter("cid", cid)
                 .getResultList();
+        Map<Long, Long> visitantes = carregarVisitantesPorAluno(cid);
         for (Object[] l : linhas) {
-            mapa.put((Long) l[0], new MetricasPresenca(
-                    toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]), toLong(l[5])));
+            Long alunoId = (Long) l[0];
+            mapa.put(alunoId, new MetricasPresenca(
+                    toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]),
+                    visitantes.getOrDefault(alunoId, 0L)));
+        }
+        return mapa;
+    }
+
+    /** Visitantes trazidos por aluno — fonte única: cadastro de visitantes. */
+    private Map<Long, Long> carregarVisitantesPorAluno(long cid) {
+        Map<Long, Long> mapa = new LinkedHashMap<>();
+        List<Object[]> linhas = em.createQuery(
+                        "select v.trazidoPor.id, count(v) from Visitante v "
+                        + "where v.trazidoPor is not null and (:cid = -1 or v.aula.classe.id = :cid) "
+                        + "group by v.trazidoPor.id", Object[].class)
+                .setParameter("cid", cid)
+                .getResultList();
+        for (Object[] l : linhas) {
+            mapa.put((Long) l[0], toLong(l[1]));
         }
         return mapa;
     }
