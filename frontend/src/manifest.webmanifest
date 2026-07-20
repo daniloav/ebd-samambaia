@@ -1,0 +1,21 @@
+{
+  "name": "EBD Adultos · ICE Samambaia",
+  "short_name": "EBD Adultos",
+  "description": "Escola Bíblica Dominical — chamada, desafios, relatórios e avisos da classe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "background_color": "#1b3a5b",
+  "theme_color": "#1b3a5b",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -17,6 +17,9 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [x] **CRUD de Aulas** na UI — listar por turma, editar data/tema, excluir (ADMIN), atalho "fazer chamada".
 - [x] **Alertas por e-mail na chamada** — opt-in por aluno (`email` + `recebe_notificacoes`, migration V4, LGPD); e-mail **HTML** com mensagem **diferente para presente (agradecimento) e ausente (engajamento p/ próximo domingo)**. SMTP **Brevo** em produção (remetente validado `danilo.av@gmail.com`); toggle `ebd.notificacoes.enabled`; mock em dev. Guia: [`notificacoes-email.md`](notificacoes-email.md).
 
+- [x] **Módulo de Campanhas** (item 5) — envio de e-mail em massa aos alunos com opt-in, por turma ou todas; histórico com contagem de enviados (migration V5). Reaproveita o `NotificacaoService`.
+- [x] **PWA** (item 4, 1º passo) — app instalável (manifest + ícone + theme-color) e service worker *network-first* (offline básico; sempre fresco online; não cacheia API).
+
 ## 🟡 Evoluções funcionais (curto prazo)
 
 - [ ] **Dashboard com gráficos** (frequência ao longo do tempo, distribuição de presença).
@@ -53,7 +56,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 ## 🧭 Módulos planejados pós-MVP (avaliados em 2026-07-19)
 
 > Ordem sugerida original: **1 → 3 → (canal de mensagens) → 2 → 5 → 4**.
-> **Status:** 1, 3 e 2 (canal e-mail) concluídos — ver seção ✅. Faltam 5 e 4.
+> **Status:** itens 1, 3, 2 (e-mail), **5 (campanhas)** e **4 (PWA, 1º passo)** concluídos — ver seção ✅.
 
 ### ✅ 1. CRUD de Classes (multi-turma) — CONCLUÍDO
 Entidade `Classe`, `Aluno → Classe`, tudo por turma, seletor na UI (migration V3).
@@ -74,11 +77,11 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
   | **WhatsApp Cloud API (Meta)** | quase grátis p/ *utility* | **burocrático** | número Business + templates aprovados; pode gerar custo |
   | **SMS** | **pago** | média | sem tier free sustentável no BR |
 
-### 5. Módulo de Campanhas (envio em massa) — *pendente*
+### ✅ 5. Módulo de Campanhas (envio em massa) — CONCLUÍDO
 - CRUD de campanha (título, mensagem, público-alvo por classe/filtro) → dispara pelo canal do item 2
   (ou push do app). Reaproveita o `NotificacaoService`. Esforço: **médio**. Depende de 2 e 3 (ambos prontos).
 
-### 4. App Android/iOS — *pendente (PWA primeiro)*
+### ✅ 4. App Android/iOS — PWA CONCLUÍDO (1º passo)
 - As APIs REST+JWT já servem um app. Decisão tomada: **PWA primeiro** (transformar o Angular atual em
   instalável/offline): sem custo de loja, reaproveita o código. Nativo (Flutter/React Native) depois,
   se necessário — publicar exige **Apple US$99/ano** e **Google Play US$25** (única vez). Esforço nativo: **alto**.
