@@ -151,6 +151,7 @@ export interface Usuario {
   ativo: boolean;
   alunoId?: number | null;
   alunoNome?: string | null;
+  classes?: { id: number; nome: string }[];
 }
 
 export interface UsuarioRequest {
@@ -158,6 +159,7 @@ export interface UsuarioRequest {
   senha?: string | null;
   role: Role;
   alunoId?: number | null;
+  classeIds?: number[] | null;
   ativo?: boolean;
 }
 
@@ -176,4 +178,22 @@ export interface CampanhaRequest {
   titulo: string;
   mensagem: string;
   classeId?: number | null;
+}
+
+export interface MinhaFrequenciaItem {
+  data: string;
+  tema?: string | null;
+  presente: boolean;
+  trouxeBiblia: boolean;
+  trouxeRevista: boolean;
+  estudouLicao: boolean;
+}
+
+export interface MinhaFrequenciaResponse {
+  alunoNome: string;
+  totalAulas: number;
+  presencas: number;
+  faltas: number;
+  percentualPresenca: number;
+  itens: MinhaFrequenciaItem[];
 }
