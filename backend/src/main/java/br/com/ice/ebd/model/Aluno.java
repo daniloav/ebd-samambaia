@@ -29,6 +29,12 @@ public class Aluno {
     @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
+    @Column(length = 150)
+    private String email;
+
+    @Column(name = "recebe_notificacoes", nullable = false)
+    private boolean recebeNotificacoes = false;
+
     @Column(nullable = false)
     private boolean ativo = true;
 
@@ -50,6 +56,12 @@ public class Aluno {
 
     public LocalDate getDataNascimento() { return dataNascimento; }
     public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public boolean isRecebeNotificacoes() { return recebeNotificacoes; }
+    public void setRecebeNotificacoes(boolean recebeNotificacoes) { this.recebeNotificacoes = recebeNotificacoes; }
 
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }

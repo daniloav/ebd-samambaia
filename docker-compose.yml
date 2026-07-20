@@ -39,6 +39,13 @@ services:
       EBD_ADMIN_PASSWORD: ${EBD_ADMIN_PASSWORD:-admin123}
       EBD_PROFESSOR_USERNAME: ${EBD_PROFESSOR_USERNAME:-professor}
       EBD_PROFESSOR_PASSWORD: ${EBD_PROFESSOR_PASSWORD:-prof123}
+      # Alertas por e-mail (desligado por padrão; ligue definindo estas no .env):
+      EBD_NOTIF_ENABLED: ${EBD_NOTIF_ENABLED:-false}
+      EBD_MAIL_FROM: ${EBD_MAIL_FROM:-EBD ICE Samambaia <no-reply@ebd-ices.duckdns.org>}
+      EBD_SMTP_HOST: ${EBD_SMTP_HOST:-smtp-relay.brevo.com}
+      EBD_SMTP_PORT: ${EBD_SMTP_PORT:-587}
+      EBD_SMTP_USER: ${EBD_SMTP_USER:-}
+      EBD_SMTP_PASS: ${EBD_SMTP_PASS:-}
     networks:
       - ebd-net
 
