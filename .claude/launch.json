@@ -2,22 +2,18 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "postgres-dev",
-      "runtimeExecutable": "docker",
-      "runtimeArgs": ["compose", "-f", "docker-compose.dev.yml", "up"],
-      "port": 5432
-    },
-    {
       "name": "backend-quarkus",
       "runtimeExecutable": "mvn",
       "runtimeArgs": ["-f", "backend/pom.xml", "quarkus:dev"],
-      "port": 8080
+      "port": 8080,
+      "autoPort": false
     },
     {
       "name": "frontend-angular",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "start"],
-      "port": 4200
+      "port": 4200,
+      "autoPort": false
     }
   ]
 }

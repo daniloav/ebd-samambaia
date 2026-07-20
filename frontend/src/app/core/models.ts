@@ -16,6 +16,8 @@ export interface Aluno {
   dataCadastro?: string;
   classeId: number;
   classeNome?: string;
+  email?: string | null;
+  recebeNotificacoes?: boolean;
 }
 
 export interface AlunoRequest {
@@ -23,6 +25,8 @@ export interface AlunoRequest {
   classeId?: number;
   telefone?: string | null;
   dataNascimento?: string | null;
+  email?: string | null;
+  recebeNotificacoes?: boolean;
   ativo?: boolean;
 }
 
