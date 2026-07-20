@@ -34,3 +34,6 @@ Thumbs.db
 scripts/.oci-launch.env
 backend/src/main/resources/privateKey.pem
 backend/src/main/resources/publicKey.pem
+
+# Backup LOCAL de secrets de produção (NUNCA versionar)
+.secrets-local/
