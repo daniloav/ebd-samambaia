@@ -1,6 +1,6 @@
 {
   "name": "ebd-frontend",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Front-end da EBD Adultos - ICE Samambaia",
   "scripts": {
     "ng": "ng",
