@@ -22,6 +22,7 @@ jobs:
   deploy:
     name: Deploy na VM OCI
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     # roda no dispatch manual, ou quando o CI terminou com sucesso
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -88,8 +89,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           NEW="$(bash scripts/bump-version.sh)"
           echo "::notice title=Versão::Deployando v$NEW"
-          if [ -n "$(git status --porcelain frontend/src/app/version.ts frontend/package.json)" ]; then
-            git add frontend/src/app/version.ts frontend/package.json
+          if [ -n "$(git status --porcelain frontend/src/app/version.ts)" ]; then
+            git add frontend/src/app/version.ts
             git commit -m "chore(release): v$NEW [skip ci]"
             git push origin HEAD:main
           fi
@@ -101,8 +102,8 @@ jobs:
       - name: Enviar .env de produção (se configurado)
         if: steps.cfg.outputs.ready == 'true' && env.OCI_ENV != ''
         run: |
-          ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p ~/$APP_DIR"
-          printf '%s' "$OCI_ENV" | ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > ~/$APP_DIR/.env"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p ~/$APP_DIR"
+          printf '%s' "$OCI_ENV" | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > ~/$APP_DIR/.env"
 
       - name: Enviar código para a VM (rsync)
         if: steps.cfg.outputs.ready == 'true'
@@ -110,17 +111,17 @@ jobs:
           rsync -az --delete \
             --exclude '.git' --exclude 'node_modules' --exclude 'target' \
             --exclude '.env' --exclude 'dist' --exclude '.angular' --exclude 'backups' \
-            -e "ssh -i ~/.ssh/id_deploy" ./ "$OCI_USER@$OCI_HOST:~/$APP_DIR/"
+            -e "ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy" ./ "$OCI_USER@$OCI_HOST:~/$APP_DIR/"
 
       - name: Backup do banco antes do deploy (pg_dump)
         if: steps.cfg.outputs.ready == 'true'
         run: |
-          ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cd ~/$APP_DIR && bash scripts/backup-db.sh"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cd ~/$APP_DIR && bash scripts/backup-db.sh"
 
       - name: Subir stack na VM (docker compose)
         if: steps.cfg.outputs.ready == 'true'
         run: |
-          ssh -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "
             cd ~/$APP_DIR &&
             docker compose up -d --build &&
             docker compose ps

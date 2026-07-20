@@ -4,7 +4,8 @@
 #   - "BREAKING CHANGE" ou "tipo!:"  -> MAJOR
 #   - "feat:" / "feat(x):"           -> MINOR
 #   - qualquer outro (fix/docs/...)  -> PATCH
-# Grava a nova versão em frontend/src/app/version.ts e frontend/package.json,
+# Grava a nova versão em frontend/src/app/version.ts (NÃO toca no package.json, para não
+# invalidar o cache do `npm ci` no build do Docker).
 # e imprime a nova versão no stdout. Na primeira execução (sem nenhuma tag),
 # usa a versão atual do package.json como baseline (sem incrementar).
 #
@@ -46,6 +47,5 @@ fi
 
 # Grava a nova versão nos dois arquivos.
 sed -i.bak -E "s/export const APP_VERSION = '[^']*';/export const APP_VERSION = '${NEW}';/" "$VERSION_TS" && rm -f "${VERSION_TS}.bak"
-node -e "const f='${PKG}';const fs=require('fs');const p=JSON.parse(fs.readFileSync(f,'utf8'));p.version='${NEW}';fs.writeFileSync(f, JSON.stringify(p, null, 2) + '\n');"
 
 printf '%s\n' "$NEW"
