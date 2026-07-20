@@ -3,9 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
-  Aluno, AlunoRequest, Aula, AulaRequest, ChamadaResponse, Classe, ClasseRequest,
-  DesafiosResponse, NotasProvaResponse, Prova, ProvaRequest, RelatorioPresencaResponse,
-  Usuario, UsuarioRequest,
+  Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
+  Classe, ClasseRequest, DesafiosResponse, NotasProvaResponse, Prova, ProvaRequest,
+  RelatorioPresencaResponse, Usuario, UsuarioRequest,
 } from './models';
 
 /** Cliente único para todos os endpoints da API. */
@@ -120,5 +120,13 @@ export class ApiService {
   }
   deletarUsuario(id: number): Observable<void> {
     return this.http.delete<void>(`${this.api}/usuarios/${id}`);
+  }
+
+  // ---------- Campanhas ----------
+  listarCampanhas(): Observable<Campanha[]> {
+    return this.http.get<Campanha[]>(`${this.api}/campanhas`);
+  }
+  criarCampanha(c: CampanhaRequest): Observable<Campanha> {
+    return this.http.post<Campanha>(`${this.api}/campanhas`, c);
   }
 }
