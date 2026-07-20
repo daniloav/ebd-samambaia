@@ -19,13 +19,13 @@ public class DesafiosService {
 
     @Inject EscopoService escopo;
 
-    private static final int TOP_N = 5;
-
     @Inject EntityManager em;
     @Inject AlunoRepository alunoRepository;
 
     /** Métricas de presença acumuladas por aluno. */
     private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante) {}
+
+    private static final MetricasPresenca ZERO = new MetricasPresenca(0, 0, 0, 0, 0);
 
     public DesafiosResponse gerar(Long classeId) {
         escopo.assertClasse(classeId);
@@ -68,7 +68,7 @@ public class DesafiosService {
                 v -> String.format("trouxe %d visitante(s)", v.longValue()),
                 true);
 
-        List<RankingItem> melhoresNotas = rankingNotas(nomes, medias);
+        List<RankingItem> melhoresNotas = rankingNotas(nomes, medias, presenca);
 
         Map<Long, Double> notasPontos = carregarNotasPontos(cid);
         List<RankingItem> classificacaoGeral = classificacaoGeral(nomes, presenca, notasPontos);
@@ -76,6 +76,19 @@ public class DesafiosService {
         return new DesafiosResponse(totalAulas, totalProvas,
                 menosFaltou, maisBiblia, maisRevista, maisLicao, maisVisitante,
                 melhoresNotas, classificacaoGeral);
+    }
+
+    /**
+     * Desempate por peso (tudo decrescente): lição > visitante > presença > Bíblia > revista.
+     * Retorna 0 quando todos os quesitos são iguais (empate total → mesma classificação).
+     */
+    private static int compararDesempate(MetricasPresenca a, MetricasPresenca b) {
+        int c;
+        if ((c = Long.compare(b.licao(), a.licao())) != 0) return c;
+        if ((c = Long.compare(b.visitante(), a.visitante())) != 0) return c;
+        if ((c = Long.compare(b.presencas(), a.presencas())) != 0) return c;
+        if ((c = Long.compare(b.biblia(), a.biblia())) != 0) return c;
+        return Long.compare(b.revista(), a.revista());
     }
 
     private Map<Long, MetricasPresenca> carregarPresencas(long cid) {
@@ -127,54 +140,71 @@ public class DesafiosService {
         return mapa;
     }
 
-    /** Monta um ranking de presença ordenado do maior valor para o menor. */
+    /**
+     * Ranking de um quesito de presença: ordena por valor (desc) e, no empate, pelo desempate
+     * por peso. Empate total → mesma posição. Lista completa (sem corte); {@code ocultarZeros}
+     * remove quem tem 0 no quesito.
+     */
     private List<RankingItem> ranking(Map<Long, String> nomes,
                                       Map<Long, MetricasPresenca> presenca,
                                       Function<MetricasPresenca, Double> extrator,
                                       Function<Double, String> detalhe,
                                       boolean ocultarZeros) {
-        record Par(Long id, double valor) {}
+        record Par(Long id, double valor, MetricasPresenca m) {}
+        Comparator<Par> cmp = Comparator
+                .comparingDouble((Par p) -> p.valor()).reversed()
+                .thenComparing((Par a, Par b) -> compararDesempate(a.m(), b.m()));
+
         List<Par> pares = new ArrayList<>();
         for (Map.Entry<Long, String> e : nomes.entrySet()) {
-            MetricasPresenca m = presenca.getOrDefault(e.getKey(), new MetricasPresenca(0, 0, 0, 0, 0));
+            MetricasPresenca m = presenca.getOrDefault(e.getKey(), ZERO);
             double valor = extrator.apply(m);
             if (ocultarZeros && valor <= 0) {
                 continue;
             }
-            pares.add(new Par(e.getKey(), valor));
+            pares.add(new Par(e.getKey(), valor, m));
         }
-        pares.sort(Comparator.comparingDouble(Par::valor).reversed()
-                .thenComparing(p -> nomes.get(p.id())));
+        pares.sort(cmp);
 
-        List<RankingItem> ranking = new ArrayList<>();
-        int pos = 1;
-        for (Par p : pares) {
-            if (pos > TOP_N) break;
-            ranking.add(new RankingItem(pos++, p.id(), nomes.get(p.id()),
-                    p.valor(), detalhe.apply(p.valor())));
+        List<RankingItem> out = new ArrayList<>();
+        int pos = 0;
+        for (int i = 0; i < pares.size(); i++) {
+            if (i == 0 || cmp.compare(pares.get(i - 1), pares.get(i)) != 0) {
+                pos = i + 1;
+            }
+            Par p = pares.get(i);
+            out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.valor(), detalhe.apply(p.valor())));
         }
-        return ranking;
+        return out;
     }
 
-    private List<RankingItem> rankingNotas(Map<Long, String> nomes, Map<Long, Double> medias) {
-        record Par(Long id, double media) {}
+    /** Ranking de notas: média (desc), desempate por peso de presença; empate total → mesma posição. */
+    private List<RankingItem> rankingNotas(Map<Long, String> nomes, Map<Long, Double> medias,
+                                           Map<Long, MetricasPresenca> presenca) {
+        record Par(Long id, double media, MetricasPresenca m) {}
+        Comparator<Par> cmp = Comparator
+                .comparingDouble((Par p) -> p.media()).reversed()
+                .thenComparing((Par a, Par b) -> compararDesempate(a.m(), b.m()));
+
         List<Par> pares = new ArrayList<>();
         for (Map.Entry<Long, Double> e : medias.entrySet()) {
             if (nomes.containsKey(e.getKey())) {
-                pares.add(new Par(e.getKey(), e.getValue()));
+                pares.add(new Par(e.getKey(), e.getValue(), presenca.getOrDefault(e.getKey(), ZERO)));
             }
         }
-        pares.sort(Comparator.comparingDouble(Par::media).reversed()
-                .thenComparing(p -> nomes.get(p.id())));
+        pares.sort(cmp);
 
-        List<RankingItem> ranking = new ArrayList<>();
-        int pos = 1;
-        for (Par p : pares) {
-            if (pos > TOP_N) break;
-            ranking.add(new RankingItem(pos++, p.id(), nomes.get(p.id()),
-                    p.media(), String.format("média %.2f", p.media())));
+        List<RankingItem> out = new ArrayList<>();
+        int pos = 0;
+        for (int i = 0; i < pares.size(); i++) {
+            if (i == 0 || cmp.compare(pares.get(i - 1), pares.get(i)) != 0) {
+                pos = i + 1;
+            }
+            Par p = pares.get(i);
+            out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.media(),
+                    String.format("média %.2f", p.media())));
         }
-        return ranking;
+        return out;
     }
 
     /** Pontos de notas por aluno: soma de (nota/notaMaxima) * 5 sobre as provas. */
@@ -192,33 +222,43 @@ public class DesafiosService {
     }
 
     /**
-     * Classificação geral: soma dos pontos de todos os quesitos.
+     * Classificação geral (lista completa): soma dos pontos de todos os quesitos.
      * 1 pt por presença/Bíblia/revista/lição, 2 pts por visitante, + pontos de notas.
+     * Empate no total → desempate por peso e, por fim, pelos pontos de notas;
+     * empate total → mesma classificação.
      */
     private List<RankingItem> classificacaoGeral(Map<Long, String> nomes,
                                                  Map<Long, MetricasPresenca> presenca,
                                                  Map<Long, Double> notasPontos) {
-        record Par(Long id, double total, long pres, long vis, double notas) {}
+        record Par(Long id, double total, long pres, long vis, double notas, MetricasPresenca m) {}
+        Comparator<Par> cmp = Comparator
+                .comparingDouble((Par p) -> p.total()).reversed()
+                .thenComparing((Par a, Par b) -> compararDesempate(a.m(), b.m()))
+                .thenComparing(Comparator.comparingDouble((Par p) -> p.notas()).reversed());
+
         List<Par> pares = new ArrayList<>();
         for (Map.Entry<Long, String> e : nomes.entrySet()) {
-            MetricasPresenca m = presenca.getOrDefault(e.getKey(), new MetricasPresenca(0, 0, 0, 0, 0));
+            MetricasPresenca m = presenca.getOrDefault(e.getKey(), ZERO);
             double notas = notasPontos.getOrDefault(e.getKey(), 0.0);
             double total = m.presencas() + m.biblia() + m.revista() + m.licao()
                     + 2.0 * m.visitante() + notas;
             total = Math.round(total * 10.0) / 10.0;
-            pares.add(new Par(e.getKey(), total, m.presencas(), m.visitante(), Math.round(notas * 10.0) / 10.0));
+            pares.add(new Par(e.getKey(), total, m.presencas(), m.visitante(), Math.round(notas * 10.0) / 10.0, m));
         }
-        pares.sort(Comparator.comparingDouble(Par::total).reversed()
-                .thenComparing(p -> nomes.get(p.id())));
-        List<RankingItem> ranking = new ArrayList<>();
-        int pos = 1;
-        for (Par p : pares) {
-            if (pos > TOP_N) break;
+        pares.sort(cmp);
+
+        List<RankingItem> out = new ArrayList<>();
+        int pos = 0;
+        for (int i = 0; i < pares.size(); i++) {
+            if (i == 0 || cmp.compare(pares.get(i - 1), pares.get(i)) != 0) {
+                pos = i + 1;
+            }
+            Par p = pares.get(i);
             String det = String.format("%d presença(s) · %d visitante(s) · %.0f pts de notas",
                     p.pres(), p.vis(), p.notas());
-            ranking.add(new RankingItem(pos++, p.id(), nomes.get(p.id()), p.total(), det));
+            out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.total(), det));
         }
-        return ranking;
+        return out;
     }
 
     private static long toLong(Object o) {
