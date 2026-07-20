@@ -12,19 +12,27 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Set;
 
 @ApplicationScoped
 public class ClasseService {
 
     @Inject ClasseRepository repository;
     @Inject EntityManager em;
+    @Inject EscopoService escopo;
 
+    /** Lista as classes que o usuário pode ver: ADMIN todas; PROFESSOR só as vinculadas. */
     public List<ClasseResponse> listar(boolean apenasAtivas) {
         List<Classe> classes = apenasAtivas ? repository.listarAtivas() : repository.listarOrdenado();
+        Set<Long> permitidas = escopo.classesPermitidas(); // null = todas (ADMIN)
+        if (permitidas != null) {
+            classes = classes.stream().filter(c -> permitidas.contains(c.getId())).toList();
+        }
         return classes.stream().map(ClasseResponse::de).toList();
     }
 
     public ClasseResponse buscar(Long id) {
+        escopo.assertClasse(id);
         return ClasseResponse.de(obter(id));
     }
 
