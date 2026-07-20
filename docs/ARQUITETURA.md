@@ -79,8 +79,9 @@ Regras importantes:
 - `AULA.data` é **única** (uma EBD por data).
 - FKs de `PRESENCA` e `NOTA_PROVA` são `ON DELETE CASCADE`: excluir aluno/aula/prova remove os
   registros dependentes.
-- Schema versionado em `backend/src/main/resources/db/migration/V1__schema.sql`.
-  **Nunca edite a V1**; toda mudança é uma nova migration (`V2__...`).
+- Schema versionado por **Flyway** em `backend/src/main/resources/db/migration/` (V1…V6).
+  **Nunca edite uma migration já aplicada**; toda mudança é uma nova migration (`V{n}__...`).
+  Changelog e como reproduzir/trocar o banco: [`migrations.md`](migrations.md).
 
 ## 3. Backend (Quarkus)
 
