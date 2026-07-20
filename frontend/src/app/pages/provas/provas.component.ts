@@ -15,7 +15,7 @@ import { Prova, ProvaRequest } from '../../core/models';
   template: `
     <div class="flex-between" style="margin-bottom:1.25rem">
       <div><h2>Provas</h2><p class="muted">Avaliações da classe (submódulo dos desafios).</p></div>
-      @if (auth.isAdmin()) {
+      @if (auth.isAdmin() || auth.isProfessor()) {
         <button class="btn" (click)="abrirNovo()">+ Nova prova</button>
       }
     </div>
@@ -39,8 +39,10 @@ import { Prova, ProvaRequest } from '../../core/models';
                   <td>{{ p.notaMaxima }}</td>
                   <td>
                     <a class="btn btn-dourado btn-sm" [routerLink]="['/provas', p.id, 'notas']">Lançar notas</a>
-                    @if (auth.isAdmin()) {
+                    @if (auth.isAdmin() || auth.isProfessor()) {
                       <button class="btn btn-outline btn-sm" (click)="editar(p)">Editar</button>
+                    }
+                    @if (auth.isAdmin()) {
                       <button class="btn btn-perigo btn-sm" (click)="excluir(p)">Excluir</button>
                     }
                   </td>

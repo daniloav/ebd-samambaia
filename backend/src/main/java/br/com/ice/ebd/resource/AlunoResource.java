@@ -44,7 +44,7 @@ public class AlunoResource {
     }
 
     @POST
-    @RolesAllowed("ADMIN")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
     public Response criar(@Valid AlunoRequest request) {
         AlunoResponse criado = service.criar(request);
         return Response.status(Response.Status.CREATED).entity(criado).build();
@@ -52,7 +52,7 @@ public class AlunoResource {
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed("ADMIN")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
     public AlunoResponse atualizar(@PathParam("id") Long id, @Valid AlunoRequest request) {
         return service.atualizar(id, request);
     }
