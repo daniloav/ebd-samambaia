@@ -69,6 +69,7 @@ claude-trabalho/
 ├── scripts/                       ← automação de deploy OCI (ver seção 8)
 └── docs/
     ├── ARQUITETURA.md             ← modelo de dados, camadas, decisões (LER para mudanças estruturais)
+    ├── migrations.md              ← changelog das migrations (Flyway) + como recriar o banco
     ├── API.md                     ← referência de endpoints com exemplos
     ├── ROADMAP.md                 ← backlog e limitações conhecidas
     ├── rodar-local.md             ← como rodar localmente (dev, passo a passo)
