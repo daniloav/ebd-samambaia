@@ -14,7 +14,7 @@ import { Aluno, AlunoRequest } from '../../core/models';
   template: `
     <div class="flex-between" style="margin-bottom:1.25rem">
       <div><h2>Alunos</h2><p class="muted">Cadastro da classe de adultos.</p></div>
-      @if (auth.isAdmin()) {
+      @if (auth.isAdmin() || auth.isProfessor()) {
         <button class="btn" (click)="abrirNovo()">+ Novo aluno</button>
       }
     </div>
@@ -30,7 +30,7 @@ import { Aluno, AlunoRequest } from '../../core/models';
             <thead>
               <tr>
                 <th>Nome</th><th>Telefone</th><th>Nascimento</th><th>Situação</th>
-                @if (auth.isAdmin()) { <th style="width:130px">Ações</th> }
+                @if (auth.isAdmin() || auth.isProfessor()) { <th style="width:130px">Ações</th> }
               </tr>
             </thead>
             <tbody>
@@ -43,10 +43,12 @@ import { Aluno, AlunoRequest } from '../../core/models';
                     @if (a.ativo) { <span class="badge badge-verde">Ativo</span> }
                     @else { <span class="badge badge-cinza">Inativo</span> }
                   </td>
-                  @if (auth.isAdmin()) {
+                  @if (auth.isAdmin() || auth.isProfessor()) {
                     <td>
                       <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
-                      <button class="btn btn-perigo btn-sm" (click)="confirmarExclusao(a)">Excluir</button>
+                      @if (auth.isAdmin()) {
+                        <button class="btn btn-perigo btn-sm" (click)="confirmarExclusao(a)">Excluir</button>
+                      }
                     </td>
                   }
                 </tr>
