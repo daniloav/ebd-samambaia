@@ -40,8 +40,6 @@ public class Presenca {
     @Column(name = "estudou_licao", nullable = false)
     private boolean estudouLicao = false;
 
-    @Column(name = "trouxe_visitante", nullable = false)
-    private boolean trouxeVisitante = false;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -64,6 +62,4 @@ public class Presenca {
     public boolean isEstudouLicao() { return estudouLicao; }
     public void setEstudouLicao(boolean estudouLicao) { this.estudouLicao = estudouLicao; }
 
-    public boolean isTrouxeVisitante() { return trouxeVisitante; }
-    public void setTrouxeVisitante(boolean trouxeVisitante) { this.trouxeVisitante = trouxeVisitante; }
 }
