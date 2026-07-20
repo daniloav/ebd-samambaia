@@ -3,8 +3,11 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.dto.UsuarioRequest;
 import br.com.ice.ebd.dto.UsuarioResponse;
 import br.com.ice.ebd.model.Aluno;
+import br.com.ice.ebd.model.Classe;
+import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.AlunoRepository;
+import br.com.ice.ebd.repository.ClasseRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,6 +24,7 @@ public class UsuarioService {
 
     @Inject UsuarioRepository repository;
     @Inject AlunoRepository alunoRepository;
+    @Inject ClasseRepository classeRepository;
 
     public List<UsuarioResponse> listar() {
         return repository.listarOrdenado().stream().map(UsuarioResponse::de).toList();
@@ -60,7 +64,7 @@ public class UsuarioService {
     @Transactional
     public void deletar(Long id) {
         Usuario u = obter(id);
-        if (u.getRole() == br.com.ice.ebd.model.Role.ADMIN && contarAdmins() <= 1) {
+        if (u.getRole() == Role.ADMIN && contarAdmins() <= 1) {
             throw new WebApplicationException("Não é possível excluir o último administrador.",
                     Response.Status.CONFLICT);
         }
@@ -70,7 +74,9 @@ public class UsuarioService {
     private void aplicarComuns(Usuario u, UsuarioRequest req) {
         u.setRole(req.role());
         u.setAtivo(req.ativo() == null ? true : req.ativo());
-        if (req.alunoId() != null) {
+
+        // Vínculo com aluno: só faz sentido para a role ALUNO.
+        if (req.role() == Role.ALUNO && req.alunoId() != null) {
             Aluno aluno = alunoRepository.findById(req.alunoId());
             if (aluno == null) {
                 throw new NotFoundException("Aluno não encontrado: " + req.alunoId());
@@ -78,6 +84,18 @@ public class UsuarioService {
             u.setAluno(aluno);
         } else {
             u.setAluno(null);
+        }
+
+        // Turmas vinculadas: só para PROFESSOR.
+        u.getClasses().clear();
+        if (req.role() == Role.PROFESSOR && req.classeIds() != null) {
+            for (Long cid : req.classeIds()) {
+                Classe c = classeRepository.findById(cid);
+                if (c == null) {
+                    throw new NotFoundException("Classe não encontrada: " + cid);
+                }
+                u.getClasses().add(c);
+            }
         }
     }
 
@@ -98,6 +116,6 @@ public class UsuarioService {
     }
 
     private long contarAdmins() {
-        return repository.count("role", br.com.ice.ebd.model.Role.ADMIN);
+        return repository.count("role", Role.ADMIN);
     }
 }

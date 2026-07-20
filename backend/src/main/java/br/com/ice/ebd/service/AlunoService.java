@@ -13,6 +13,8 @@ import java.util.List;
 @ApplicationScoped
 public class AlunoService {
 
+    @Inject EscopoService escopo;
+
     @Inject
     AlunoRepository repository;
 
@@ -20,6 +22,7 @@ public class AlunoService {
     ClasseService classeService;
 
     public List<AlunoResponse> listar(Long classeId, boolean apenasAtivos) {
+        escopo.assertClasse(classeId);
         List<Aluno> alunos;
         if (classeId != null) {
             alunos = apenasAtivos ? repository.listarAtivosPorClasse(classeId)
@@ -31,7 +34,9 @@ public class AlunoService {
     }
 
     public AlunoResponse buscar(Long id) {
-        return AlunoResponse.de(obter(id));
+        Aluno a = obter(id);
+        escopo.assertClasse(a.getClasse().getId());
+        return AlunoResponse.de(a);
     }
 
     @Transactional

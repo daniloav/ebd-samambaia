@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
-  Classe, ClasseRequest, DesafiosResponse, NotasProvaResponse, Prova, ProvaRequest,
+  Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
   RelatorioPresencaResponse, Usuario, UsuarioRequest,
 } from './models';
 
@@ -128,5 +128,9 @@ export class ApiService {
   }
   criarCampanha(c: CampanhaRequest): Observable<Campanha> {
     return this.http.post<Campanha>(`${this.api}/campanhas`, c);
+  }
+  // ---------- Aluno (visão própria) ----------
+  minhaFrequencia(): Observable<MinhaFrequenciaResponse> {
+    return this.http.get<MinhaFrequenciaResponse>(`${this.api}/me/frequencia`);
   }
 }

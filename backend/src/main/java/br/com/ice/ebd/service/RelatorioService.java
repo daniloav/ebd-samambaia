@@ -16,6 +16,8 @@ import java.util.Map;
 @ApplicationScoped
 public class RelatorioService {
 
+    @Inject EscopoService escopo;
+
     @Inject EntityManager em;
     @Inject AlunoRepository alunoRepository;
 
@@ -23,6 +25,7 @@ public class RelatorioService {
     private record Totais(long presencas, long biblia, long revista, long licao, long visitante) {}
 
     public RelatorioPresencaResponse gerar(LocalDate inicio, LocalDate fim, Long classeId) {
+        escopo.assertClasse(classeId);
         LocalDate ini = inicio != null ? inicio : LocalDate.of(2000, 1, 1);
         LocalDate f = fim != null ? fim : LocalDate.now();
         long cid = classeId != null ? classeId : -1L;
