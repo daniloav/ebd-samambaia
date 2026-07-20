@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { APP_VERSION } from '../../version';
 
 @Component({
   selector: 'app-login',
@@ -26,13 +27,14 @@ import { AuthService } from '../../core/auth.service';
             border-radius: 8px; font-size: .85rem; margin-bottom: 1rem; }
     .dica { margin-top: 1.25rem; font-size: .78rem; color: var(--cinza-texto);
             text-align: center; line-height: 1.5; }
+    .versao { display:block; margin-top:.5rem; opacity:.55; font-size:.72rem; }
   `],
   template: `
     <div class="tela">
       <div class="caixa">
         <div class="logo">
           <div class="icone">📖</div>
-          <h1>EBD Adultos</h1>
+          <h1>EBD ICES</h1>
           <p>Igreja Cristã Evangélica · Samambaia</p>
         </div>
 
@@ -54,12 +56,14 @@ import { AuthService } from '../../core/auth.service';
           </button>
         </form>
 
-        <p class="dica">Acesso restrito à coordenação da classe.</p>
+        <p class="dica">Acesso restrito à coordenação da classe.
+          <span class="versao">v{{ versao }}</span></p>
       </div>
     </div>
   `,
 })
 export class LoginComponent {
+  versao = APP_VERSION;
   private auth = inject(AuthService);
   private router = inject(Router);
 
