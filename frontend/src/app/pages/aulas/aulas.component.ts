@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { Aula, AulaRequest } from '../../core/models';
 
@@ -73,6 +74,7 @@ import { Aula, AulaRequest } from '../../core/models';
 export class AulasComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   auth = inject(AuthService);
   private classeCtx = inject(ClasseContextService);
 
@@ -122,9 +124,9 @@ export class AulasComponent {
     });
   }
 
-  excluir(a: Aula): void {
+  async excluir(a: Aula): Promise<void> {
     const quando = new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR');
-    if (!confirm(`Excluir a aula de ${quando}? A chamada dessa aula será removida.`)) return;
+    if (!(await this.confirm.pedir({ titulo: 'Excluir aula', mensagem: `Excluir a aula de ${quando}? A chamada dessa aula será removida.`, confirmar: 'Excluir', perigo: true }))) { return; }
     this.api.deletarAula(a.id).subscribe({
       next: () => { this.toast.sucesso('Aula excluída.'); this.carregar(); },
       error: (e) => this.toast.erro(e?.error?.message || 'Erro ao excluir aula.'),

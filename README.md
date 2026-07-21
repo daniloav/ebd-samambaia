@@ -1,4 +1,4 @@
-# EBD Adultos — ICE Samambaia 📖
+# EBD ICES — Escola Bíblica Dominical (ICE Samambaia) 📖
 
 Hotsite para gestão da **Escola Bíblica Dominical (classe de adultos)** da Igreja Cristã Evangélica em Samambaia.
 
@@ -14,15 +14,16 @@ Dois módulos no MVP:
 | Backend | Java 17 · **Quarkus 3** · Hibernate ORM Panache · Flyway · JWT (roles) |
 | Frontend | **Angular 17** (standalone) · SCSS |
 | Banco | **PostgreSQL 16** |
-| Infra | Docker · Docker Compose · nginx |
+| Infra | Docker Compose · **2 VMs OCI** (app+banco) · Caddy (HTTPS) + nginx · imagens no **GHCR** |
 
 ```
 claude-trabalho/
 ├── backend/     API Quarkus  (br.com.ice.ebd)
 ├── frontend/    App Angular
-├── docker-compose.yml       stack completo (prod / VM)
-├── docker-compose.dev.yml   só o Postgres (dev)
-└── docs/deploy-oracle.md    passo a passo na Oracle Cloud
+├── docker-compose.yml       stack all-in-one (dev/local; fallback)
+├── docker-compose.app.yml   PROD VM app (caddy+frontend+backend, imagens GHCR)
+├── docker-compose.db.yml    PROD VM banco (Postgres)
+└── docs/topologia.md        topologia de produção (2 VMs)
 ```
 
 ## 📚 Documentação
@@ -30,6 +31,7 @@ claude-trabalho/
 | Documento | Para quê |
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Contexto completo do projeto (lido pelo Claude Code a cada sessão) |
+| [`docs/topologia.md`](docs/topologia.md) | **Topologia de produção** (2 VMs + GHCR + backups) |
 | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Modelo de dados, camadas e decisões técnicas |
 | [`docs/API.md`](docs/API.md) | Referência de endpoints com exemplos |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Backlog e limitações conhecidas |
@@ -45,7 +47,8 @@ claude-trabalho/
 | Perfil | Pode |
 |---|---|
 | **ADMIN** | tudo: CRUD de alunos e provas, excluir aulas, chamada, notas, relatórios, rankings |
-| **PROFESSOR** | fazer chamada, criar aulas, lançar notas, ver relatórios e rankings, consultar alunos |
+| **PROFESSOR** | fazer chamada, criar aulas, lançar notas, ver relatórios e rankings, consultar alunos (escopo por turma) |
+| **ALUNO** | ver a própria frequência e o próprio boletim |
 
 Usuários criados automaticamente no **primeiro boot** (troque as senhas!):
 
@@ -80,13 +83,15 @@ npm start
 ```
 Acesse `http://localhost:4200` e entre com `admin / admin123`.
 
-## 📦 Rodando o stack completo (como em produção)
+## 📦 Rodando o stack all-in-one (local)
 
 ```bash
 docker compose up -d --build
 ```
-Sobe Postgres + backend + frontend. Acesse `http://localhost` (porta 80).
-O nginx serve o Angular e faz proxy de `/api` para o backend.
+Sobe Postgres + backend + frontend num só host. Acesse `http://localhost`.
+
+> **Produção não usa este arquivo.** Roda em **2 VMs** (app + banco), com as imagens buildadas no CI
+> e publicadas no GHCR — ver [`docs/topologia.md`](docs/topologia.md).
 
 Copie `.env.example` para `.env` para customizar credenciais:
 ```bash
@@ -120,7 +125,8 @@ Ambos estão no `.gitignore`.
 
 ## ☁️ Deploy na Oracle Cloud
 
-Veja o guia completo em [`docs/deploy-oracle.md`](docs/deploy-oracle.md).
+Produção em **2 VMs Always Free** + GHCR: [`docs/topologia.md`](docs/topologia.md).
+Provisionamento: [`docs/deploy-oracle.md`](docs/deploy-oracle.md).
 
 ## 📤 Subindo para o GitHub
 

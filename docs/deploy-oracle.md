@@ -1,5 +1,10 @@
 # Deploy na Oracle Cloud (VM) 🚀
 
+> ℹ️ **Nota:** este guia descreve o **provisionamento inicial de uma VM** e o deploy antigo
+> (build na VM). A **infra atual** são **2 VMs (app + banco) + imagens no GHCR** — veja
+> [`topologia.md`](topologia.md). Use este doc só para criar/reprovisionar uma VM.
+
+
 Guia para hospedar o hotsite em uma VM da Oracle Cloud Infrastructure (OCI), usando Docker Compose.
 
 ## 1. Criar a instância (VM)
