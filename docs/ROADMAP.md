@@ -64,6 +64,10 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       com `prefers-color-scheme` + overrides. Nice-to-have.
 
 ### 📱 Compatibilidade mobile
+- [x] **Retrocompatibilidade Safari/iOS antigo** — a build só mirava **iOS 18+** (default do Angular),
+      deixando iPhones com iOS < 18 na **tela branca**. Adicionado `frontend/.browserslistrc` incluindo
+      **Safari/iOS ≥ 14** (esbuild rebaixa a sintaxe) + **tela de fallback** no `index.html` (nunca fica
+      branco; mostra "atualize o navegador" e captura o erro). Piso realista do Angular 17: Safari 15.
 > O caso de uso nº 1 no celular é o professor **fazendo a chamada em sala**. Priorizar essa tela.
 - [x] **P1 · Chamada otimizada para toque** — checkboxes nativos são pequenos para dedo; aumentar a área
       de toque (célula inteira clicável, alvos ≥44px) e testar a tabela de 5 colunas em 360px de largura.
