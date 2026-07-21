@@ -121,7 +121,8 @@ jobs:
         # Sem os secrets, este passo é pulado e o Dockerfile gera chaves (comportamento antigo).
         if: steps.cfg.outputs.ready == 'true' && env.JWT_PRIV != '' && env.JWT_PUB != ''
         run: |
-          DEST=~/$APP_DIR/backend/src/main/resources
+          # Aspas: o ~ deve expandir NA VM (sem aspas expandiria no runner p/ /home/runner)
+          DEST="~/$APP_DIR/backend/src/main/resources"
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p $DEST"
           printf '%s' "$JWT_PRIV" | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $DEST/privateKey.pem"
           printf '%s' "$JWT_PUB"  | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $DEST/publicKey.pem"
