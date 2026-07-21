@@ -115,7 +115,15 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 - [ ] **Backups automáticos** do Postgres (cron + `pg_dump`).
 - [x] **Chaves JWT persistentes** — via secrets no CD (`EBD_JWT_PRIVATE_KEY`/`EBD_JWT_PUBLIC_KEY`), gravadas no build a cada deploy; tokens sobrevivem. Ativar: adicionar os secrets (ver `docs/senhas-e-secrets.md`).
-- [ ] **Rotacionar a chave SMTP da Brevo** (a atual foi compartilhada em chat durante a config).
+- [ ] **E-mail: conta Gmail dedicada para o envio** (migração Brevo → SMTP do Gmail em 2026-07,
+      ver `docs/notificacoes-email.md`). Passos:
+      1. criar um **Gmail gratuito** só do sistema (ex.: `ebd.ices@gmail.com`);
+      2. **excluir a senha de app** criada no e-mail pessoal (`danilo.av@gmail.com` →
+         myaccount.google.com/apppasswords → remover);
+      3. criar a **senha de app na conta nova** e atualizar `EBD_MAIL_FROM`, `EBD_SMTP_USER`
+         e `EBD_SMTP_PASS` no `.env` da VM + secret `OCI_ENV_FILE` + backup `.secrets-local/`.
+- [ ] **Excluir a chave SMTP da Brevo** (não usamos mais o Brevo; a chave foi compartilhada
+      em chat durante a config — apagar no painel: SMTP & API → API Keys).
 - [ ] (Opcional) **Purga de histórico do Git** para remover a chave JWT antiga, se o repo virar público.
 - [ ] **Budget/alerta de custo** na OCI (garantia extra contra cobrança).
 - [ ] **Proteção de branch na `main`** (bloquear push direto, exigir PR + CI verde).
