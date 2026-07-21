@@ -27,9 +27,11 @@ Em **GitHub → repositório → Settings → Secrets and variables → Actions*
 | `OCI_SSH_HOST` | IP público da VM (`163.176.181.38`) | não |
 | `OCI_SSH_USER` | usuário SSH (`ubuntu`) | não |
 | `OCI_SSH_KEY` | **chave privada** de deploy (`~/.ssh/ebd_deploy`) | **sim** |
-| `OCI_ENV_FILE` | `.env` de produção (senhas do banco e dos usuários) | **sim** |
-| `EBD_JWT_PRIVATE_KEY` | (opcional) chave **privada** JWT persistente — ver seção 6 | **sim** |
-| `EBD_JWT_PUBLIC_KEY` | (opcional) chave **pública** JWT persistente — ver seção 6 | não |
+| `OCI_ENV_FILE` | `.env` de produção (senhas do banco/usuários, SMTP, `EBD_DB_HOST`) | **sim** |
+| `EBD_JWT_PRIVATE_KEY` | chave **privada** JWT (montada em `/keys` na VM — ver seção 6) | **sim** |
+| `EBD_JWT_PUBLIC_KEY` | chave **pública** JWT | não |
+| `EBD_GHCR_USER` | usuário do GHCR (`daniloav`) — a VM baixar imagem privada | não |
+| `EBD_GHCR_PAT` | PAT **classic** `read:packages` (login do Docker na VM) | **sim** |
 
 ⚠️ **Não dá para "ver" o valor de um Secret depois de salvo** — o GitHub só deixa
 **substituir**. Por isso as fontes de verdade são:
