@@ -31,6 +31,7 @@ public class ProvaService {
     @Inject ClasseService classeService;
     @Inject NotaProvaRepository notaRepository;
     @Inject AlunoRepository alunoRepository;
+    @Inject NotificacaoService notificacaoService;
 
     // ---------- CRUD da prova ----------
 
@@ -126,6 +127,28 @@ public class ProvaService {
             notaRepository.persist(n);
         }
         return obterNotas(provaId);
+    }
+
+    /**
+     * "Lançar e notificar": envia a cada aluno com nota lançada o e-mail do seu desempenho.
+     * Respeita o opt-in ({@code recebeNotificacoes}), como os alertas de chamada. Retorna
+     * quantos e-mails foram enviados.
+     */
+    @Transactional
+    public int notificarNotas(Long provaId) {
+        Prova prova = obter(provaId);
+        escopo.assertClasse(prova.getClasse().getId());
+        int enviados = 0;
+        for (NotaProva n : notaRepository.listarPorProva(provaId)) {
+            Aluno a = n.getAluno();
+            if (a.getEmail() == null || a.getEmail().isBlank() || !a.isRecebeNotificacoes()) {
+                continue;
+            }
+            if (notificacaoService.enviarNotaProva(a, prova, n.getNota())) {
+                enviados++;
+            }
+        }
+        return enviados;
     }
 
     // ---------- helpers ----------

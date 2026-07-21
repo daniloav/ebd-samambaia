@@ -5,7 +5,8 @@ import { environment } from '../../environments/environment';
 import {
   Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
-  RelatorioGeralResponse, RelatorioPresencaResponse, Usuario, UsuarioRequest,
+  RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
+  BoletimResponse, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
 
@@ -155,5 +156,29 @@ export class ApiService {
   // ---------- Conta (próprio usuário) ----------
   trocarSenha(senhaAtual: string, novaSenha: string): Observable<void> {
     return this.http.put<void>(`${this.api}/me/senha`, { senhaAtual, novaSenha });
+  }
+
+  // ---------- Relatório de visitantes ----------
+  relatorioVisitantes(inicio?: string, fim?: string, classeId?: number | null): Observable<RelatorioVisitantesResponse> {
+    let params = new HttpParams();
+    if (inicio) params = params.set('inicio', inicio);
+    if (fim) params = params.set('fim', fim);
+    if (classeId) params = params.set('classeId', classeId);
+    return this.http.get<RelatorioVisitantesResponse>(`${this.api}/relatorios/visitantes`, { params });
+  }
+
+  // ---------- Boletim ----------
+  boletim(alunoId: number, ano: number, trimestre: number): Observable<BoletimResponse> {
+    const params = new HttpParams().set('alunoId', alunoId).set('ano', ano).set('trimestre', trimestre);
+    return this.http.get<BoletimResponse>(`${this.api}/boletim`, { params });
+  }
+  meuBoletim(ano: number, trimestre: number): Observable<BoletimResponse> {
+    const params = new HttpParams().set('ano', ano).set('trimestre', trimestre);
+    return this.http.get<BoletimResponse>(`${this.api}/me/boletim`, { params });
+  }
+
+  // ---------- Notas: lançar e notificar ----------
+  notificarNotas(provaId: number): Observable<{ enviados: number }> {
+    return this.http.post<{ enviados: number }>(`${this.api}/provas/${provaId}/notas/notificar`, {});
   }
 }
