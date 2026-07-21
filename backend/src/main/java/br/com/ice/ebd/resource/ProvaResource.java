@@ -19,6 +19,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 
 @Path("/api/provas")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -76,5 +77,13 @@ public class ProvaResource {
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public NotasProvaResponse salvarNotas(@PathParam("id") Long id, @Valid SalvarNotasRequest request) {
         return service.salvarNotas(id, request);
+    }
+
+    /** "Lançar e notificar": envia o desempenho por e-mail aos alunos com nota lançada. */
+    @POST
+    @Path("/{id}/notas/notificar")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public Map<String, Integer> notificarNotas(@PathParam("id") Long id) {
+        return Map.of("enviados", service.notificarNotas(id));
     }
 }

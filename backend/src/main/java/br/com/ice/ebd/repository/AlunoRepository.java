@@ -36,4 +36,14 @@ public class AlunoRepository implements PanacheRepository<Aluno> {
         }
         return list(base + " and classe.id = ?1 order by nome", classeId);
     }
+
+    /**
+     * Aniversariantes de um dia (mês+dia), ativos e com e-mail preenchido.
+     * Ignora o opt-in de propósito: felicitação de aniversário vai a todos com e-mail.
+     */
+    public List<Aluno> listarAniversariantesComEmail(int mes, int dia) {
+        return list("ativo = true and email is not null and email <> '' "
+                + "and extract(month from dataNascimento) = ?1 "
+                + "and extract(day from dataNascimento) = ?2 order by nome", mes, dia);
+    }
 }

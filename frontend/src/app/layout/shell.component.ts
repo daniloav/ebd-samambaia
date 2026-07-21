@@ -82,6 +82,7 @@ import { APP_VERSION } from '../version';
         <nav (click)="fecharNoMobile()">
           @if (auth.isAluno()) {
             <a routerLink="/minha-frequencia" routerLinkActive="ativo"><span class="ico">📊</span> Minha frequência</a>
+            <a routerLink="/meu-boletim" routerLinkActive="ativo"><span class="ico">📄</span> Meu boletim</a>
           } @else {
             <a routerLink="/painel" routerLinkActive="ativo"><span class="ico">🏠</span> Painel</a>
             <div class="grupo">Chamada</div>
@@ -89,9 +90,11 @@ import { APP_VERSION } from '../version';
             <a routerLink="/aulas" routerLinkActive="ativo"><span class="ico">📅</span> Aulas</a>
             <a routerLink="/alunos" routerLinkActive="ativo"><span class="ico">👥</span> Alunos</a>
             <a routerLink="/relatorio" routerLinkActive="ativo"><span class="ico">📊</span> Relatório</a>
+            <a routerLink="/relatorio-visitantes" routerLinkActive="ativo"><span class="ico">🧑‍🤝‍🧑</span> Visitantes</a>
             <div class="grupo">Desafios</div>
             <a routerLink="/desafios" routerLinkActive="ativo"><span class="ico">🏆</span> Rankings</a>
             <a routerLink="/provas" routerLinkActive="ativo"><span class="ico">📝</span> Provas</a>
+            <a routerLink="/boletim" routerLinkActive="ativo"><span class="ico">📄</span> Boletins</a>
             @if (auth.isAdmin()) {
               <div class="grupo">Administração</div>
               <a routerLink="/classes" routerLinkActive="ativo"><span class="ico">📚</span> Classes</a>

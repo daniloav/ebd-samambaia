@@ -1,7 +1,9 @@
 package br.com.ice.ebd.resource;
 
+import br.com.ice.ebd.dto.BoletimResponse;
 import br.com.ice.ebd.dto.MinhaFrequenciaResponse;
 import br.com.ice.ebd.dto.TrocarSenhaRequest;
+import br.com.ice.ebd.service.BoletimService;
 import br.com.ice.ebd.service.MinhaFrequenciaService;
 import br.com.ice.ebd.service.UsuarioService;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -10,6 +12,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -29,6 +32,9 @@ public class MeResource {
 
     @Inject
     UsuarioService usuarioService;
+
+    @Inject
+    BoletimService boletimService;
 
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
@@ -54,5 +60,13 @@ public class MeResource {
     public Response trocarSenha(TrocarSenhaRequest req) {
         usuarioService.trocarPropriaSenha(identity.getPrincipal().getName(), req);
         return Response.noContent().build();
+    }
+
+    /** Boletim do próprio aluno num trimestre (só ALUNO; nunca expõe outros alunos). */
+    @GET
+    @Path("/boletim")
+    @RolesAllowed("ALUNO")
+    public BoletimResponse boletim(@QueryParam("ano") int ano, @QueryParam("trimestre") int trimestre) {
+        return boletimService.gerarMeu(ano, trimestre);
     }
 }
