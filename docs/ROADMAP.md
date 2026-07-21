@@ -8,9 +8,9 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 - [x] **MVP completo** (chamada, desafios/provas, relatório) — backend + frontend + infra.
 - [x] **Runtime validado ponta-a-ponta** com Postgres real (migrations, seed, login JWT, chamada, provas/notas, rankings, relatório).
-- [x] **Deploy na OCI + site no ar**: **https://ebd-ices.duckdns.org**. VM `E2.1.Micro` (x86, 1 GB Always Free) + swap 3 GB; stack Docker (db, backend, frontend, caddy).
+- [x] **Deploy na OCI + site no ar**: **https://ebd-ices.duckdns.org**. **2 VMs** E2.1.Micro (app: caddy+frontend+backend · banco: Postgres) — ver [`topologia.md`](topologia.md).
 - [x] **HTTPS** com domínio (DuckDNS) via **Caddy + Let's Encrypt** (auto-renova; redirect HTTP→HTTPS).
-- [x] **CI/CD** (GitHub Actions): CI (build back/front + Semgrep/Trivy/gitleaks) e CodeQL nas branches; **CD real** faz deploy no merge da `main` (rsync + `docker compose up -d --build`, reescreve o `.env` a partir do secret `OCI_ENV_FILE`).
+- [x] **CI/CD** (GitHub Actions): CI (build back/front + Semgrep/Trivy/gitleaks) e CodeQL; **CD** builda as imagens no runner → **GHCR privado** → a VM faz `pull` (sem build, ~2 min). Chaves JWT via volume; `.env` do secret `OCI_ENV_FILE`.
 - [x] **Senhas padrão trocadas** em produção (admin/professor + credenciais do banco definidas via secret).
 - [x] **Multi-turma (Classes)** — entidade `Classe`, `Aluno/Aula/Prova` por classe; chamada, rankings e relatório **filtram por turma**; seletor de turma na UI (migration V3).
 - [x] **Perfis/roles + CRUD de Usuários** na UI — role **ALUNO** adicionada (ADMIN/PROFESSOR/ALUNO); tela de gestão de usuários (ADMIN).
@@ -47,31 +47,24 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 ### 🧭 Usabilidade
 - [x] **P1 · Aviso de sessão expirada** — o 401 redireciona ao login em silêncio; mostrar toast
       "Sua sessão expirou, entre novamente" (o interceptor já centraliza isso).
-- [ ] **P2 · Substituir `confirm()` nativo** — 7 telas usam o diálogo do navegador (feio e inconsistente
-      com o design). Criar um modal de confirmação reutilizável no padrão visual do app.
-- [ ] **P2 · Busca/filtro na lista de alunos** — com turmas grandes, achar um aluno exige rolar; um campo
-      de busca por nome resolve (junto da paginação já listada).
+- [x] **P2 · Substituir `confirm()` nativo** — `ConfirmService` + `ConfirmDialogComponent` (modal no padrão do app) substituem os 8 `confirm()` nativos.
+- [x] **P2 · Busca/filtro na lista de alunos** — campo de busca por nome (acento-insensível) na tela de alunos.
 - [ ] **P3 · "Esqueci minha senha"** — fluxo de reset por e-mail (o SMTP já existe). Enquanto não houver,
       o caminho é pedir ao admin.
-- [ ] **P3 · Estados vazios orientados** — telas sem dados poderiam sugerir a próxima ação
-      (ex.: "Nenhuma aula — crie a primeira" com botão), em vez de só texto.
+- [x] **P3 · Estados vazios orientados** — `VazioComponent` (ícone + título + ação) aplicado à lista de alunos; reutilizável nas demais.
 
 ### 🎨 Design
-- [ ] **P2 · Modal de confirmação própria** (mesmo item do confirm() acima — é a maior inconsistência visual).
+- [x] **P2 · Modal de confirmação própria** — feito (ver Usabilidade).
 - [ ] **P3 · Refinos visuais** — favicon PNG real (hoje emoji inline), transições/hover consistentes,
       skeleton loading nas tabelas em vez de "Carregando...".
-- [ ] **P3 · Modo escuro** — o SCSS usa variáveis CSS (`--azul`, etc.), então um tema escuro é viável
-      com `prefers-color-scheme` + overrides. Nice-to-have.
+- [x] **P3 · Modo escuro** — variáveis semânticas + `prefers-color-scheme` (auto) e toggle manual (`data-tema`, persistido) no rodapé do menu.
 
 ### 📱 Compatibilidade mobile
 > O caso de uso nº 1 no celular é o professor **fazendo a chamada em sala**. Priorizar essa tela.
 - [x] **P1 · Chamada otimizada para toque** — checkboxes nativos são pequenos para dedo; aumentar a área
       de toque (célula inteira clicável, alvos ≥44px) e testar a tabela de 5 colunas em 360px de largura.
-- [ ] **P2 · Responsividade além do shell** — só o layout tem breakpoint (820px); as páginas dependem de
-      `tabela-scroll` (funciona, mas apertado). Nas principais (chamada, alunos), considerar linhas em
-      formato cartão no mobile.
-- [ ] **P2 · Ícones PNG do PWA (192/512px)** — o ícone SVG não rende bem no iOS (limitação conhecida,
-      documentada no guia); PNGs fecham a instalação com visual correto em iPhone.
+- [x] **P2 · Responsividade das páginas** — `.tabela-cards`: no ≤600px as linhas viram cartão. Aplicado a **alunos** e à **chamada** (nome = cabeçalho; itens = linhas grandes de toque).
+- [x] **P2 · Ícones PNG do PWA (192/512px)** — PNGs 192/512 + apple-touch-icon + favicon 32/48 no manifest e index.html.
 - [ ] **P3 · Ajustes finos de PWA** — `safe-area-inset` para notch, splash screens iOS, atalhos de app
       (`shortcuts` no manifest, ex.: "Fazer chamada" direto).
 
@@ -105,18 +98,13 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 ## 🔵 Infra e segurança
 
 ### Lentidão de deploy na VM de 1 GB (prioridade — deploys levam ~20 min)
-- [ ] **Podar o build cache na VM** — está em ~5 GB e piora a lentidão: `docker builder prune -af`
-      (ganho imediato de espaço/velocidade). Considerar rodar periodicamente (cron) ou no fim do `cd.yml`.
-- [ ] **Subir para o A1 (6 GB)** via Pay-As-You-Go — **resolve de vez**: o build do Angular (`npm ci`/`ng build`)
-      faz swap thrashing na VM de 1 GB (load 4–5, ~20 min por deploy). Ver item abaixo. Já mitigado com
-      keepalive no SSH (o deploy sobrevive), mas continua lento até o upgrade.
-- Contexto: o CD faz `docker compose up -d --build` na VM (build do frontend + backend). Na de 1 GB isso
-  thrasha o swap. O keepalive no SSH evita o "Broken pipe"; o cache do `npm ci` só é reaproveitado se o
-  `package.json` não mudar (por isso o bump de versão grava só o `version.ts`).
+- [x] **Deploy lento resolvido** — o build saiu da VM: as imagens são buildadas no CI e publicadas no
+      **GHCR**; a VM só faz `pull` (deploy ~20 min → ~2 min, sem swap thrashing). Ver [`estagio1-ci-ghcr.md`](estagio1-ci-ghcr.md).
+- [x] **Folga de RAM** — Postgres separado na 2ª VM (`ebd-db`); o backend ficou com `mem_limit` 700m.
 
 
 ### Segurança de migrations (evitar dor em produção)
-- [x] **Backup do banco antes de cada deploy** — `scripts/backup-db.sh` chamado pelo `cd.yml` faz `pg_dump` gzipado na VM antes do `docker compose up`; valida o dump e **aborta o deploy se falhar**; retenção dos 10 últimos em `~/ebd-samambaia/backups/`. Restauração em [`migrations.md`](migrations.md).
+- [x] **Backup do banco** — pós-split, roda **na `ebd-db`** por cron (`scripts/backup-ebd-db.sh`, valida e retém 14) + **offsite no OCI Object Storage** (PAR). Ver [`topologia.md`](topologia.md#backups). (O `backup-db.sh` no `cd.yml` era da topologia antiga.)
 - [x] **CI rodando as migrations contra um Postgres real** — job `Migrations · app real (Postgres)` sobe o app contra um Postgres de serviço; falha se alguma migration quebrar ou o startup divergir do schema. Pega migration ruim **antes** de produção.
 - [x] **Travar o `clean` do Flyway**: `quarkus.flyway.clean-disabled=true` no `application.properties` (nada zera o schema por engano).
 - [ ] **Regra de rollback**: nunca voltar o app para uma versão anterior às migrations já aplicadas sem restaurar o backup do banco correspondente — documentar em [`migrations.md`](migrations.md).

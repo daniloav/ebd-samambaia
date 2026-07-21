@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
 import { ClasseContextService } from '../core/classe-context.service';
 import { APP_VERSION } from '../version';
+import { ConfirmDialogComponent } from '../core/confirm-dialog.component';
+import { TemaService } from '../core/tema.service';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, ConfirmDialogComponent],
   styles: [`
     .layout { display: flex; min-height: 100vh; }
     .sidebar {
@@ -48,6 +50,7 @@ import { APP_VERSION } from '../version';
     .link-conta { display: block; color: #cbd5e0; font-size: .82rem; text-decoration: none;
                   margin-bottom: .55rem; }
     .link-conta:hover { color: #fff; text-decoration: underline; }
+    .link-tema { background: none; border: none; padding: 0; cursor: pointer; font: inherit; text-align: left; }
     .conteudo { flex: 1; padding: 1.75rem 2rem; max-width: 1100px; }
     .topo-mobile { display: none; }
     @media (max-width: 820px) {
@@ -109,6 +112,9 @@ import { APP_VERSION } from '../version';
             <strong>{{ auth.username() }}</strong>
             <span class="perfil">{{ perfilLabel() }}</span>
           </div>
+          <button class="link-conta link-tema" (click)="tema.alternar()">
+            {{ tema.escuroEfetivo() ? '☀️ Tema claro' : '🌙 Tema escuro' }}
+          </button>
           <a class="link-conta" routerLink="/conta" (click)="fecharNoMobile()">🔒 Trocar senha</a>
           <button class="btn-sair" (click)="sair()">Sair</button>
         </div>
@@ -117,10 +123,12 @@ import { APP_VERSION } from '../version';
         <router-outlet />
       </main>
     </div>
+    <app-confirm-dialog />
   `,
 })
 export class ShellComponent implements OnInit {
   auth = inject(AuthService);
+  tema = inject(TemaService);
   classeCtx = inject(ClasseContextService);
   private router = inject(Router);
   menuAberto = signal(true);

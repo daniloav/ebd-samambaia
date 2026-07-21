@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { Classe, ClasseRequest } from '../../core/models';
 
@@ -75,6 +76,7 @@ import { Classe, ClasseRequest } from '../../core/models';
 export class ClassesComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   private classeCtx = inject(ClasseContextService);
 
   classes = signal<Classe[]>([]);
@@ -120,8 +122,8 @@ export class ClassesComponent {
     });
   }
 
-  excluir(c: Classe): void {
-    if (!confirm(`Excluir a classe "${c.nome}"?`)) return;
+  async excluir(c: Classe): Promise<void> {
+    if (!(await this.confirm.pedir({ titulo: 'Excluir classe', mensagem: `Excluir a classe "${c.nome}"?`, confirmar: 'Excluir', perigo: true }))) { return; }
     this.api.deletarClasse(c.id).subscribe({
       next: () => { this.toast.sucesso('Classe excluída.'); this.carregar(); this.classeCtx.carregar(); },
       error: (e) => this.toast.erro(e?.error?.message || 'Erro ao excluir classe.'),

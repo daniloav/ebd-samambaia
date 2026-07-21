@@ -10,15 +10,19 @@ flowchart LR
   subgraph Navegador
     A[Angular 17 SPA]
   end
-  subgraph VM["VM / Docker"]
-    N[nginx] -->|estáticos| A
-    N -->|/api → :8080| B[Quarkus API]
-    B --> DB[(PostgreSQL)]
+  subgraph APP["VM ebd-server (app)"]
+    C[Caddy HTTPS] -->|estáticos| N[nginx / Angular]
+    C -->|/api → :8080| B[Quarkus API]
   end
-  A -->|HTTP + JWT| N
+  subgraph DBVM["VM ebd-db (banco)"]
+    DB[(PostgreSQL)]
+  end
+  B -->|IP privado 5432| DB
+  A -->|HTTPS + JWT| C
 ```
 
-- Em **produção** o nginx serve os arquivos do Angular e faz proxy de `/api` para o backend
+- Em **produção** roda em **2 VMs** (app + banco) — ver [`topologia.md`](topologia.md). O Caddy termina o
+  HTTPS; o nginx serve o Angular e o `/api` vai para o backend
   (mesma origem → sem CORS). Em **dev**, o Angular (`:4200`) chama o backend (`:8080`)
   diretamente e o CORS está liberado no `application.properties`.
 - Autenticação **stateless** via JWT no header `Authorization: Bearer <token>`.
@@ -144,12 +148,12 @@ sequenceDiagram
 | Flyway com `generation=none` | Schema reproduzível e versionado (produção-like) |
 | DTOs `record` + mapeamento manual | Evita expor entidades e problemas de lazy-loading na serialização |
 | Seed no `DataInitializer` (runtime) | Cria usuários com hash BCrypt no boot, sem hardcode de hash no SQL |
-| JWT RS256 com chaves em arquivo | Padrão do smallrye-jwt; chaves fora do Git, geradas no build Docker |
+| JWT RS256 com chaves em arquivo | Padrão do smallrye-jwt; chaves fora do Git. Em produção são montadas em runtime (volume `/keys`, a partir de secrets) — imagem sem segredo e tokens estáveis entre deploys |
 | Ranking/relatório via JPQL agregado | Uma query por métrica; simples e suficiente para o volume de uma classe |
 
 ## 6. Pontos de atenção / dívidas técnicas
 
-- **Runtime ainda não validado com Postgres real** (ver CLAUDE.md §9) — prioridade.
+- Em produção o envio de e-mail (chamada) é **assíncrono** (Vert.x EventBus) para não segurar o request.
 - Sem testes automatizados ainda (só validação por build). Bom candidato: testes de
   `@QuarkusTest` para os services de chamada e ranking.
 - Exclusão de aluno é **hard delete** (cascata). Se quiser preservar histórico, migrar para
