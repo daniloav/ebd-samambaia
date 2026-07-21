@@ -113,10 +113,10 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
             <input type="email" [(ngModel)]="novoVisitante.email" maxlength="150" /></div>
           <div class="form-group"><label>Telefone</label>
             <input type="text" [(ngModel)]="novoVisitante.telefone" maxlength="20" /></div>
-          <div class="form-group" style="min-width:180px"><label>Trazido por</label>
+          <div class="form-group" style="min-width:180px"><label>Trazido por <small style="opacity:.6">(só presentes)</small></label>
             <select [(ngModel)]="novoVisitante.trazidoPorAlunoId">
               <option [ngValue]="null">— não informado —</option>
-              @for (i of itens(); track i.alunoId) { <option [ngValue]="i.alunoId">{{ i.alunoNome }}</option> }
+              @for (i of itens(); track i.alunoId) { @if (i.presente) { <option [ngValue]="i.alunoId">{{ i.alunoNome }}</option> } }
             </select>
           </div>
           <button class="btn btn-verde" (click)="adicionarVisitante()" [disabled]="salvandoVisitante()">
@@ -238,6 +238,14 @@ export class ChamadaComponent {
     return this.itens().filter((i) => i[campo] === true).length;
   }
 
+  /** Só atribui "trazido por" se o aluno estiver presente (não faz sentido ausente trazer visitante). */
+  private trazidoPorValido(): number | null {
+    const id = this.novoVisitante.trazidoPorAlunoId ?? null;
+    if (id == null) return null;
+    const aluno = this.itens().find((i) => i.alunoId === id);
+    return aluno && aluno.presente ? id : null;
+  }
+
   contato(v: Visitante): string {
     const partes = [v.email, v.telefone].filter((x) => !!x);
     return partes.length ? partes.join(' · ') : '—';
@@ -251,7 +259,7 @@ export class ChamadaComponent {
       nome: this.novoVisitante.nome.trim(),
       email: this.novoVisitante.email || null,
       telefone: this.novoVisitante.telefone || null,
-      trazidoPorAlunoId: this.novoVisitante.trazidoPorAlunoId ?? null,
+      trazidoPorAlunoId: this.trazidoPorValido(),
     };
     this.api.adicionarVisitante(this.aulaSelecionadaId, payload).subscribe({
       next: () => {
