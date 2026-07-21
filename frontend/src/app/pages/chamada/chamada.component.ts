@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/models';
 
@@ -17,9 +18,12 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
     .chk input { width: 22px; height: 22px; cursor: pointer; accent-color: var(--verde); vertical-align: middle; }
     tbody tr td { padding-top: .55rem; padding-bottom: .55rem; }
     @media (max-width: 600px) {
-      .chk { min-width: 48px; }
       .chk input { width: 26px; height: 26px; }
-      .nome-col { min-width: 120px; font-size: .9rem; }
+      /* modo cartão: nome do aluno = cabeçalho; itens = linhas rotuladas com toque grande */
+      .chamada-cards .nome-col { background: var(--superficie-2); font-weight: 700; font-size: 1rem;
+        justify-content: flex-start; padding: .6rem .8rem; }
+      .chamada-cards td.chk { justify-content: space-between; text-align: left; min-height: 46px; }
+      .chamada-cards td.chk::before { text-transform: none; font-size: .9rem; font-weight: 600; color: var(--texto); }
     }
     .nome-col { min-width: 180px; }
     .resumo { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem; }
@@ -65,7 +69,7 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
           <button class="btn btn-outline btn-sm" (click)="marcarTodosPresentes()">Marcar todos presentes</button>
         </div>
         <div class="tabela-scroll">
-          <table class="tabela">
+          <table class="tabela tabela-cards chamada-cards">
             <thead>
               <tr>
                 <th class="nome-col">Aluno</th>
@@ -79,13 +83,13 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
               @for (i of itens(); track i.alunoId) {
                 <tr>
                   <td class="nome-col">{{ i.alunoNome }}</td>
-                  <td class="chk" (click)="i.presente = !i.presente">
+                  <td class="chk" data-label="Presente" (click)="i.presente = !i.presente">
                     <input type="checkbox" [(ngModel)]="i.presente" (click)="$event.stopPropagation()" /></td>
-                  <td class="chk" (click)="i.trouxeBiblia = !i.trouxeBiblia">
+                  <td class="chk" data-label="Trouxe a Bíblia" (click)="i.trouxeBiblia = !i.trouxeBiblia">
                     <input type="checkbox" [(ngModel)]="i.trouxeBiblia" (click)="$event.stopPropagation()" /></td>
-                  <td class="chk" (click)="i.trouxeRevista = !i.trouxeRevista">
+                  <td class="chk" data-label="Trouxe a revista" (click)="i.trouxeRevista = !i.trouxeRevista">
                     <input type="checkbox" [(ngModel)]="i.trouxeRevista" (click)="$event.stopPropagation()" /></td>
-                  <td class="chk" (click)="i.estudouLicao = !i.estudouLicao">
+                  <td class="chk" data-label="Estudou a lição" (click)="i.estudouLicao = !i.estudouLicao">
                     <input type="checkbox" [(ngModel)]="i.estudouLicao" (click)="$event.stopPropagation()" /></td>
                 </tr>
               }
@@ -161,6 +165,7 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
 export class ChamadaComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   private classeCtx = inject(ClasseContextService);
 
   aulas = signal<Aula[]>([]);
@@ -283,8 +288,8 @@ export class ChamadaComponent {
     });
   }
 
-  removerVisitante(v: Visitante): void {
-    if (!confirm(`Remover o visitante "${v.nome}"?`)) return;
+  async removerVisitante(v: Visitante): Promise<void> {
+    if (!(await this.confirm.pedir({ titulo: 'Remover visitante', mensagem: `Remover o visitante "${v.nome}"?`, confirmar: 'Remover', perigo: true }))) { return; }
     this.api.removerVisitante(v.id).subscribe({
       next: () => { this.toast.sucesso('Visitante removido.'); if (this.aulaSelecionadaId) this.carregarVisitantes(this.aulaSelecionadaId); },
       error: (e) => this.toast.erro(e?.error?.message || 'Erro ao remover visitante.'),

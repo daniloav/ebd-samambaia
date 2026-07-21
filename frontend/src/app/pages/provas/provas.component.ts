@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { Prova, ProvaRequest } from '../../core/models';
 
@@ -80,6 +81,7 @@ import { Prova, ProvaRequest } from '../../core/models';
 export class ProvasComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   auth = inject(AuthService);
   private classeCtx = inject(ClasseContextService);
 
@@ -129,8 +131,8 @@ export class ProvasComponent {
     });
   }
 
-  excluir(p: Prova): void {
-    if (!confirm(`Excluir a prova "${p.titulo}"? As notas lançadas serão removidas.`)) return;
+  async excluir(p: Prova): Promise<void> {
+    if (!(await this.confirm.pedir({ titulo: 'Excluir prova', mensagem: `Excluir a prova "${p.titulo}"? As notas lançadas serão removidas.`, confirmar: 'Excluir', perigo: true }))) { return; }
     this.api.deletarProva(p.id).subscribe({
       next: () => { this.toast.sucesso('Prova excluída.'); this.carregar(); },
       error: () => this.toast.erro('Erro ao excluir prova.'),

@@ -47,31 +47,24 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 ### 🧭 Usabilidade
 - [x] **P1 · Aviso de sessão expirada** — o 401 redireciona ao login em silêncio; mostrar toast
       "Sua sessão expirou, entre novamente" (o interceptor já centraliza isso).
-- [ ] **P2 · Substituir `confirm()` nativo** — 7 telas usam o diálogo do navegador (feio e inconsistente
-      com o design). Criar um modal de confirmação reutilizável no padrão visual do app.
-- [ ] **P2 · Busca/filtro na lista de alunos** — com turmas grandes, achar um aluno exige rolar; um campo
-      de busca por nome resolve (junto da paginação já listada).
+- [x] **P2 · Substituir `confirm()` nativo** — `ConfirmService` + `ConfirmDialogComponent` (modal no padrão do app) substituem os 8 `confirm()` nativos.
+- [x] **P2 · Busca/filtro na lista de alunos** — campo de busca por nome (acento-insensível) na tela de alunos.
 - [ ] **P3 · "Esqueci minha senha"** — fluxo de reset por e-mail (o SMTP já existe). Enquanto não houver,
       o caminho é pedir ao admin.
-- [ ] **P3 · Estados vazios orientados** — telas sem dados poderiam sugerir a próxima ação
-      (ex.: "Nenhuma aula — crie a primeira" com botão), em vez de só texto.
+- [x] **P3 · Estados vazios orientados** — `VazioComponent` (ícone + título + ação) aplicado à lista de alunos; reutilizável nas demais.
 
 ### 🎨 Design
-- [ ] **P2 · Modal de confirmação própria** (mesmo item do confirm() acima — é a maior inconsistência visual).
+- [x] **P2 · Modal de confirmação própria** — feito (ver Usabilidade).
 - [ ] **P3 · Refinos visuais** — favicon PNG real (hoje emoji inline), transições/hover consistentes,
       skeleton loading nas tabelas em vez de "Carregando...".
-- [ ] **P3 · Modo escuro** — o SCSS usa variáveis CSS (`--azul`, etc.), então um tema escuro é viável
-      com `prefers-color-scheme` + overrides. Nice-to-have.
+- [x] **P3 · Modo escuro** — variáveis semânticas + `prefers-color-scheme` (auto) e toggle manual (`data-tema`, persistido) no rodapé do menu.
 
 ### 📱 Compatibilidade mobile
 > O caso de uso nº 1 no celular é o professor **fazendo a chamada em sala**. Priorizar essa tela.
 - [x] **P1 · Chamada otimizada para toque** — checkboxes nativos são pequenos para dedo; aumentar a área
       de toque (célula inteira clicável, alvos ≥44px) e testar a tabela de 5 colunas em 360px de largura.
-- [ ] **P2 · Responsividade além do shell** — só o layout tem breakpoint (820px); as páginas dependem de
-      `tabela-scroll` (funciona, mas apertado). Nas principais (chamada, alunos), considerar linhas em
-      formato cartão no mobile.
-- [ ] **P2 · Ícones PNG do PWA (192/512px)** — o ícone SVG não rende bem no iOS (limitação conhecida,
-      documentada no guia); PNGs fecham a instalação com visual correto em iPhone.
+- [x] **P2 · Responsividade das páginas** — `.tabela-cards`: no ≤600px as linhas viram cartão. Aplicado a **alunos** e à **chamada** (nome = cabeçalho; itens = linhas grandes de toque).
+- [x] **P2 · Ícones PNG do PWA (192/512px)** — PNGs 192/512 + apple-touch-icon + favicon 32/48 no manifest e index.html.
 - [ ] **P3 · Ajustes finos de PWA** — `safe-area-inset` para notch, splash screens iOS, atalhos de app
       (`shortcuts` no manifest, ex.: "Fazer chamada" direto).
 
