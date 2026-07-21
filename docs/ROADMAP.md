@@ -8,9 +8,9 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 - [x] **MVP completo** (chamada, desafios/provas, relatório) — backend + frontend + infra.
 - [x] **Runtime validado ponta-a-ponta** com Postgres real (migrations, seed, login JWT, chamada, provas/notas, rankings, relatório).
-- [x] **Deploy na OCI + site no ar**: **https://ebd-ices.duckdns.org**. VM `E2.1.Micro` (x86, 1 GB Always Free) + swap 3 GB; stack Docker (db, backend, frontend, caddy).
+- [x] **Deploy na OCI + site no ar**: **https://ebd-ices.duckdns.org**. **2 VMs** E2.1.Micro (app: caddy+frontend+backend · banco: Postgres) — ver [`topologia.md`](topologia.md).
 - [x] **HTTPS** com domínio (DuckDNS) via **Caddy + Let's Encrypt** (auto-renova; redirect HTTP→HTTPS).
-- [x] **CI/CD** (GitHub Actions): CI (build back/front + Semgrep/Trivy/gitleaks) e CodeQL nas branches; **CD real** faz deploy no merge da `main` (rsync + `docker compose up -d --build`, reescreve o `.env` a partir do secret `OCI_ENV_FILE`).
+- [x] **CI/CD** (GitHub Actions): CI (build back/front + Semgrep/Trivy/gitleaks) e CodeQL; **CD** builda as imagens no runner → **GHCR privado** → a VM faz `pull` (sem build, ~2 min). Chaves JWT via volume; `.env` do secret `OCI_ENV_FILE`.
 - [x] **Senhas padrão trocadas** em produção (admin/professor + credenciais do banco definidas via secret).
 - [x] **Multi-turma (Classes)** — entidade `Classe`, `Aluno/Aula/Prova` por classe; chamada, rankings e relatório **filtram por turma**; seletor de turma na UI (migration V3).
 - [x] **Perfis/roles + CRUD de Usuários** na UI — role **ALUNO** adicionada (ADMIN/PROFESSOR/ALUNO); tela de gestão de usuários (ADMIN).
@@ -105,18 +105,13 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 ## 🔵 Infra e segurança
 
 ### Lentidão de deploy na VM de 1 GB (prioridade — deploys levam ~20 min)
-- [ ] **Podar o build cache na VM** — está em ~5 GB e piora a lentidão: `docker builder prune -af`
-      (ganho imediato de espaço/velocidade). Considerar rodar periodicamente (cron) ou no fim do `cd.yml`.
-- [ ] **Subir para o A1 (6 GB)** via Pay-As-You-Go — **resolve de vez**: o build do Angular (`npm ci`/`ng build`)
-      faz swap thrashing na VM de 1 GB (load 4–5, ~20 min por deploy). Ver item abaixo. Já mitigado com
-      keepalive no SSH (o deploy sobrevive), mas continua lento até o upgrade.
-- Contexto: o CD faz `docker compose up -d --build` na VM (build do frontend + backend). Na de 1 GB isso
-  thrasha o swap. O keepalive no SSH evita o "Broken pipe"; o cache do `npm ci` só é reaproveitado se o
-  `package.json` não mudar (por isso o bump de versão grava só o `version.ts`).
+- [x] **Deploy lento resolvido** — o build saiu da VM: as imagens são buildadas no CI e publicadas no
+      **GHCR**; a VM só faz `pull` (deploy ~20 min → ~2 min, sem swap thrashing). Ver [`estagio1-ci-ghcr.md`](estagio1-ci-ghcr.md).
+- [x] **Folga de RAM** — Postgres separado na 2ª VM (`ebd-db`); o backend ficou com `mem_limit` 700m.
 
 
 ### Segurança de migrations (evitar dor em produção)
-- [x] **Backup do banco antes de cada deploy** — `scripts/backup-db.sh` chamado pelo `cd.yml` faz `pg_dump` gzipado na VM antes do `docker compose up`; valida o dump e **aborta o deploy se falhar**; retenção dos 10 últimos em `~/ebd-samambaia/backups/`. Restauração em [`migrations.md`](migrations.md).
+- [x] **Backup do banco** — pós-split, roda **na `ebd-db`** por cron (`scripts/backup-ebd-db.sh`, valida e retém 14) + **offsite no OCI Object Storage** (PAR). Ver [`topologia.md`](topologia.md#backups). (O `backup-db.sh` no `cd.yml` era da topologia antiga.)
 - [x] **CI rodando as migrations contra um Postgres real** — job `Migrations · app real (Postgres)` sobe o app contra um Postgres de serviço; falha se alguma migration quebrar ou o startup divergir do schema. Pega migration ruim **antes** de produção.
 - [x] **Travar o `clean` do Flyway**: `quarkus.flyway.clean-disabled=true` no `application.properties` (nada zera o schema por engano).
 - [ ] **Regra de rollback**: nunca voltar o app para uma versão anterior às migrations já aplicadas sem restaurar o backup do banco correspondente — documentar em [`migrations.md`](migrations.md).
