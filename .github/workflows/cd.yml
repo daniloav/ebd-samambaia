@@ -1,40 +1,38 @@
 name: CD · Deploy OCI
 
-# Faz o deploy no VM da Oracle Cloud via SSH (rsync do código + docker compose na VM).
-# Enquanto os secrets OCI_* não estiverem cadastrados, roda em MODO MOCK (não faz deploy),
-# apenas registra os passos — útil até a VM ser provisionada.
+# Topologia de 2 VMs + imagens no GHCR:
+#  1) job "build": builda backend/frontend no runner e publica no GHCR (privado).
+#  2) job "deploy": a VM de app só faz `docker compose pull && up` (SEM build) usando
+#     docker-compose.app.yml; o Postgres roda na VM ebd-db (ver docs/estagio2-db-separado.md).
+# Enquanto os secrets OCI_* forem placeholder, o deploy roda em MODO MOCK.
 
 on:
-  workflow_dispatch: {}          # disparo manual
-  workflow_run:                  # SÓ na main: dispara após o CI concluir na main
+  workflow_dispatch: {}
+  workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: [main]            # <- deploy nunca roda para a develop
+    branches: [main]
 
 permissions:
   contents: write
+  packages: write        # push das imagens no GHCR
 
 concurrency:
   group: deploy-oci
   cancel-in-progress: false
 
+env:
+  IMAGE_BACKEND: ghcr.io/daniloav/ebd-backend
+  IMAGE_FRONTEND: ghcr.io/daniloav/ebd-frontend
+
 jobs:
-  deploy:
-    name: Deploy na VM OCI
+  # ---------------- BUILD & PUSH (GHCR) ----------------
+  build:
+    name: Build & push imagens (GHCR)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # roda no dispatch manual, ou quando o CI terminou com sucesso
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
-    env:
-      OCI_HOST: ${{ secrets.OCI_SSH_HOST }}
-      OCI_USER: ${{ secrets.OCI_SSH_USER }}
-      OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
-      OCI_ENV: ${{ secrets.OCI_ENV_FILE }}
-      JWT_PRIV: ${{ secrets.EBD_JWT_PRIVATE_KEY }}
-      JWT_PUB: ${{ secrets.EBD_JWT_PUBLIC_KEY }}
-      APP_DIR: ebd-samambaia
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,7 +40,59 @@ jobs:
           fetch-tags: true
           ref: main
 
-      - name: Verificar se os secrets OCI estão preenchidos (não-placeholder)
+      - name: Bump de versão (SemVer por commit) + tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          NEW="$(bash scripts/bump-version.sh)"
+          echo "::notice title=Versão::Publicando v$NEW"
+          if [ -n "$(git status --porcelain frontend/src/app/version.ts)" ]; then
+            git add frontend/src/app/version.ts
+            git commit -m "chore(release): v$NEW [skip ci]"
+            git push origin HEAD:main
+          fi
+          if ! git rev-parse -q --verify "refs/tags/v$NEW" >/dev/null; then
+            git tag "v$NEW"; git push origin "v$NEW"
+          fi
+
+      - name: Login no GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build & push do backend
+        run: |
+          docker build -t "$IMAGE_BACKEND:latest" -t "$IMAGE_BACKEND:${GITHUB_SHA}" ./backend
+          docker push "$IMAGE_BACKEND:latest"
+          docker push "$IMAGE_BACKEND:${GITHUB_SHA}"
+
+      - name: Build & push do frontend
+        run: |
+          docker build -t "$IMAGE_FRONTEND:latest" -t "$IMAGE_FRONTEND:${GITHUB_SHA}" ./frontend
+          docker push "$IMAGE_FRONTEND:latest"
+          docker push "$IMAGE_FRONTEND:${GITHUB_SHA}"
+
+  # ---------------- DEPLOY (pull na VM de app) ----------------
+  deploy:
+    name: Deploy na VM de app (pull)
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 20
+    env:
+      OCI_HOST: ${{ secrets.OCI_SSH_HOST }}
+      OCI_USER: ${{ secrets.OCI_SSH_USER }}
+      OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
+      OCI_ENV: ${{ secrets.OCI_ENV_FILE }}
+      JWT_PRIV: ${{ secrets.EBD_JWT_PRIVATE_KEY }}
+      JWT_PUB: ${{ secrets.EBD_JWT_PUBLIC_KEY }}
+      GHCR_USER: ${{ secrets.EBD_GHCR_USER }}
+      GHCR_PAT: ${{ secrets.EBD_GHCR_PAT }}
+      APP_DIR: ebd-samambaia
+      DB_HOST_PRIV: "10.0.1.54"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Verificar se os secrets OCI estão preenchidos
         id: cfg
         run: |
           if [ -n "$OCI_HOST" ] && [ "$OCI_HOST" != "CHANGEME" ] \
@@ -53,29 +103,10 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # ---------------- MODO MOCK ----------------
-      - name: MOCK — recursos OCI ainda não provisionados
+      - name: MOCK — secrets OCI ainda não prontos
         if: steps.cfg.outputs.ready != 'true'
-        run: |
-          echo "::notice title=Deploy em modo MOCK::Secrets OCI com placeholder (CHANGEME); nenhum deploy real executado."
-          cat <<'EOF'
-          ─────────────────────────────────────────────────────────────
-          MODO MOCK — os secrets existem, mas com valor placeholder (CHANGEME).
-          Quando a VM estiver pronta, ATUALIZE os secrets com os valores reais:
-            • OCI_SSH_HOST   = IP público da VM (ex.: 140.238.x.x)
-            • OCI_SSH_USER   = ubuntu (já definido)
-            • OCI_SSH_KEY    = conteúdo da chave PRIVADA de deploy
-            • OCI_ENV_FILE   = (opcional) conteúdo do .env de produção
-          Passos que SERIAM executados:
-            1) Configurar SSH e known_hosts
-            2) (opcional) enviar .env de produção para a VM
-            3) rsync do código → ~/ebd-samambaia na VM
-            4) docker compose up -d --build
-            5) healthcheck em http://$OCI_HOST/q/health
-          ─────────────────────────────────────────────────────────────
-          EOF
+        run: echo "::notice title=Deploy MOCK::Secrets OCI ausentes/placeholder; nenhum deploy real."
 
-      # ---------------- DEPLOY REAL ----------------
       - name: Configurar SSH
         if: steps.cfg.outputs.ready == 'true'
         run: |
@@ -84,85 +115,61 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "$OCI_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Bump de versão (SemVer por commit) + tag
-        if: steps.cfg.outputs.ready == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          NEW="$(bash scripts/bump-version.sh)"
-          echo "::notice title=Versão::Deployando v$NEW"
-          if [ -n "$(git status --porcelain frontend/src/app/version.ts)" ]; then
-            git add frontend/src/app/version.ts
-            git commit -m "chore(release): v$NEW [skip ci]"
-            git push origin HEAD:main
-          fi
-          if ! git rev-parse -q --verify "refs/tags/v$NEW" >/dev/null; then
-            git tag "v$NEW"
-            git push origin "v$NEW"
-          fi
-
       - name: Enviar .env de produção (se configurado)
         if: steps.cfg.outputs.ready == 'true' && env.OCI_ENV != ''
         run: |
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p ~/$APP_DIR"
           printf '%s' "$OCI_ENV" | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > ~/$APP_DIR/.env"
 
-      - name: Enviar código para a VM (rsync)
+      - name: Garantir EBD_DB_HOST no .env (banco na VM-db)
         if: steps.cfg.outputs.ready == 'true'
         run: |
-          rsync -az --delete \
-            --exclude '.git' --exclude 'node_modules' --exclude 'target' \
-            --exclude '.env' --exclude 'dist' --exclude '.angular' --exclude 'backups' \
-            -e "ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy" ./ "$OCI_USER@$OCI_HOST:~/$APP_DIR/"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" \
+            "cd ~/$APP_DIR && sed -i 's/EBD_DB_HOST=[0-9.]*//g' .env 2>/dev/null; grep -q '^EBD_DB_HOST=' .env || printf '\nEBD_DB_HOST=%s\n' '$DB_HOST_PRIV' >> .env"
 
-      - name: Chaves JWT persistentes (opt-in via secrets)
-        # Se os secrets estiverem definidos, grava as MESMAS chaves a cada deploy,
-        # de modo que os tokens dos usuários sobrevivam às reconstruções.
-        # Sem os secrets, este passo é pulado e o Dockerfile gera chaves (comportamento antigo).
+      - name: Sincronizar arquivos de deploy (compose, Caddyfile, scripts)
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          rsync -az -e "ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy" \
+            docker-compose.app.yml docker-compose.db.yml Caddyfile "$OCI_USER@$OCI_HOST:~/$APP_DIR/"
+          rsync -az -e "ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy" \
+            scripts/ "$OCI_USER@$OCI_HOST:~/$APP_DIR/scripts/"
+
+      - name: Chaves JWT no volume /keys (a partir dos secrets)
         if: steps.cfg.outputs.ready == 'true' && env.JWT_PRIV != '' && env.JWT_PUB != ''
         run: |
-          # Aspas: o ~ deve expandir NA VM (sem aspas expandiria no runner p/ /home/runner)
-          DEST="~/$APP_DIR/backend/src/main/resources"
-          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p $DEST"
-          printf '%s' "$JWT_PRIV" | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $DEST/privateKey.pem"
-          printf '%s' "$JWT_PUB"  | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $DEST/publicKey.pem"
-          echo 'Chaves JWT persistentes gravadas na VM.'
+          KEYS="~/$APP_DIR/keys"
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p $KEYS && chmod 700 $KEYS"
+          printf '%s' "$JWT_PRIV" | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $KEYS/privateKey.pem && chmod 600 $KEYS/privateKey.pem"
+          printf '%s' "$JWT_PUB"  | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $KEYS/publicKey.pem"
 
-      - name: Backup do banco antes do deploy (pg_dump)
+      - name: Login no GHCR (na VM), pull e subir (sem build)
         if: steps.cfg.outputs.ready == 'true'
         run: |
-          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cd ~/$APP_DIR && bash scripts/backup-db.sh"
-
-      - name: Subir stack na VM (docker compose)
-        if: steps.cfg.outputs.ready == 'true'
-        run: |
+          printf '%s' "$GHCR_PAT" | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" \
+            "docker login ghcr.io -u '$GHCR_USER' --password-stdin"
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "
             cd ~/$APP_DIR &&
-            docker compose up -d --build &&
-            docker compose ps &&
-            docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+            docker compose -f docker-compose.app.yml --env-file .env pull &&
+            docker compose -f docker-compose.app.yml --env-file .env up -d --remove-orphans &&
+            docker compose -f docker-compose.app.yml ps &&
+            docker compose -f docker-compose.app.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
           "
 
-      - name: Faxina do Docker na VM (cache dangling + imagens órfãs)
+      - name: Faxina do Docker na VM (imagens órfãs)
         if: steps.cfg.outputs.ready == 'true'
         run: |
-          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "
-            docker builder prune -f >/dev/null 2>&1 || true;
-            docker image prune -f >/dev/null 2>&1 || true;
-            echo 'Faxina do Docker concluída.'
-          "
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" \
+            "docker image prune -f >/dev/null 2>&1 || true; echo 'Faxina concluída.'"
 
       - name: Healthcheck
         if: steps.cfg.outputs.ready == 'true'
         env:
           URL: ${{ vars.PROD_URL || format('http://{0}', secrets.OCI_SSH_HOST) }}
         run: |
-          echo "Aguardando a aplicação responder em $URL ..."
+          echo "Aguardando a aplicação em $URL ..."
           for i in $(seq 1 18); do
-            if curl -fsS "$URL/q/health" >/dev/null 2>&1; then
-              echo "✅ Aplicação no ar em $URL"
-              exit 0
-            fi
+            if curl -fsS "$URL/q/health" >/dev/null 2>&1; then echo "✅ No ar em $URL"; exit 0; fi
             sleep 10
           done
           echo "❌ Healthcheck falhou após ~3min"; exit 1
