@@ -22,7 +22,7 @@ jobs:
   deploy:
     name: Deploy na VM OCI
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     # roda no dispatch manual, ou quando o CI terminou com sucesso
     if: >-
       github.event_name == 'workflow_dispatch' ||
