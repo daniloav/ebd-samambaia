@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { Campanha, CampanhaRequest } from '../../core/models';
 
@@ -86,6 +87,7 @@ import { Campanha, CampanhaRequest } from '../../core/models';
 export class CampanhasComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   classeCtx = inject(ClasseContextService);
 
   campanhas = signal<Campanha[]>([]);
@@ -107,13 +109,13 @@ export class CampanhasComponent {
     });
   }
 
-  enviar(): void {
+  async enviar(): Promise<void> {
     if (!this.form.titulo?.trim()) { this.toast.erro('Informe o título.'); return; }
     if (!this.form.mensagem?.trim()) { this.toast.erro('Informe a mensagem.'); return; }
     const alvo = this.classeId
       ? (this.classeCtx.classes().find((c) => c.id === this.classeId)?.nome ?? 'a turma selecionada')
       : 'TODAS as turmas';
-    if (!confirm(`Enviar esta campanha para os alunos com opt-in de ${alvo}?`)) return;
+    if (!(await this.confirm.pedir({ titulo: 'Enviar campanha', mensagem: `Enviar esta campanha para os alunos com opt-in de ${alvo}?`, confirmar: 'Enviar' }))) { return; }
 
     this.enviando.set(true);
     const payload: CampanhaRequest = {

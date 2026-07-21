@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { NotasProvaResponse, NotaItem } from '../../core/models';
 
 @Component({
@@ -69,6 +70,7 @@ export class NotasComponent {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
 
   provaId!: number;
   dados = signal<NotasProvaResponse | null>(null);
@@ -121,8 +123,8 @@ export class NotasComponent {
     });
   }
 
-  notificar(): void {
-    if (!confirm('Enviar por e-mail o desempenho aos alunos com nota lançada?')) {
+  async notificar(): Promise<void> {
+    if (!(await this.confirm.pedir({ titulo: 'Lançar e notificar', mensagem: 'Enviar por e-mail o desempenho aos alunos com nota lançada?', confirmar: 'Enviar' }))) {
       return;
     }
     this.notificando.set(true);

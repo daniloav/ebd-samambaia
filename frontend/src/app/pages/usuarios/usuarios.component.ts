@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models';
 
 @Component({
@@ -120,6 +121,7 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
 export class UsuariosComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
 
   usuarios = signal<Usuario[]>([]);
   alunos = signal<Aluno[]>([]);
@@ -209,8 +211,8 @@ export class UsuariosComponent {
     });
   }
 
-  excluir(u: Usuario): void {
-    if (!confirm(`Excluir o usuário "${u.username}"?`)) return;
+  async excluir(u: Usuario): Promise<void> {
+    if (!(await this.confirm.pedir({ titulo: 'Excluir usuário', mensagem: `Excluir o usuário "${u.username}"?`, confirmar: 'Excluir', perigo: true }))) { return; }
     this.api.deletarUsuario(u.id).subscribe({
       next: () => { this.toast.sucesso('Usuário excluído.'); this.carregar(); },
       error: (e) => this.toast.erro(e?.error?.message || 'Erro ao excluir usuário.'),

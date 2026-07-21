@@ -1,16 +1,22 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
+import { VazioComponent } from '../../shared/vazio.component';
 import { Aluno, AlunoRequest } from '../../core/models';
 
 @Component({
   selector: 'app-alunos',
   standalone: true,
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, VazioComponent],
+  styles: [`
+    .busca { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; max-width: 340px; }
+    .busca input { flex: 1; }
+  `],
   template: `
     <div class="flex-between" style="margin-bottom:1.25rem">
       <div><h2>Alunos</h2><p class="muted">Cadastro da classe de adultos.</p></div>
@@ -23,39 +29,55 @@ import { Aluno, AlunoRequest } from '../../core/models';
       @if (carregando()) {
         <div class="spinner-wrap muted">Carregando...</div>
       } @else if (alunos().length === 0) {
-        <p class="muted text-center">Nenhum aluno cadastrado ainda.</p>
+        <app-vazio icone="👥" titulo="Nenhum aluno cadastrado ainda"
+                   texto="Cadastre o primeiro aluno da turma para começar a fazer a chamada.">
+          @if (auth.isAdmin() || auth.isProfessor()) {
+            <button class="btn" (click)="abrirNovo()">+ Cadastrar aluno</button>
+          }
+        </app-vazio>
       } @else {
-        <div class="tabela-scroll">
-          <table class="tabela">
-            <thead>
-              <tr>
-                <th>Nome</th><th>Telefone</th><th>Nascimento</th><th>Situação</th>
-                @if (auth.isAdmin() || auth.isProfessor()) { <th style="width:130px">Ações</th> }
-              </tr>
-            </thead>
-            <tbody>
-              @for (a of alunos(); track a.id) {
-                <tr>
-                  <td>{{ a.nome }}</td>
-                  <td>{{ a.telefone || '—' }}</td>
-                  <td>{{ a.dataNascimento ? (a.dataNascimento | date:'dd/MM/yyyy') : '—' }}</td>
-                  <td>
-                    @if (a.ativo) { <span class="badge badge-verde">Ativo</span> }
-                    @else { <span class="badge badge-cinza">Inativo</span> }
-                  </td>
-                  @if (auth.isAdmin() || auth.isProfessor()) {
-                    <td>
-                      <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
-                      @if (auth.isAdmin()) {
-                        <button class="btn btn-perigo btn-sm" (click)="confirmarExclusao(a)">Excluir</button>
-                      }
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
+        <div class="busca">
+          <input type="search" [ngModel]="busca()" (ngModelChange)="busca.set($event)"
+                 placeholder="🔎 Buscar por nome..." aria-label="Buscar aluno" />
+          @if (busca()) { <button class="btn btn-outline btn-sm" (click)="busca.set('')">Limpar</button> }
         </div>
+
+        @if (alunosFiltrados().length === 0) {
+          <app-vazio icone="🔎" titulo="Nenhum aluno encontrado"
+                     [texto]="'Nada corresponde a a sua busca.'"></app-vazio>
+        } @else {
+          <div class="tabela-scroll">
+            <table class="tabela tabela-cards">
+              <thead>
+                <tr>
+                  <th>Nome</th><th>Telefone</th><th>Nascimento</th><th>Situação</th>
+                  @if (auth.isAdmin() || auth.isProfessor()) { <th style="width:130px">Ações</th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (a of alunosFiltrados(); track a.id) {
+                  <tr>
+                    <td data-label="Nome">{{ a.nome }}</td>
+                    <td data-label="Telefone">{{ a.telefone || '—' }}</td>
+                    <td data-label="Nascimento">{{ a.dataNascimento ? (a.dataNascimento | date:'dd/MM/yyyy') : '—' }}</td>
+                    <td data-label="Situação">
+                      @if (a.ativo) { <span class="badge badge-verde">Ativo</span> }
+                      @else { <span class="badge badge-cinza">Inativo</span> }
+                    </td>
+                    @if (auth.isAdmin() || auth.isProfessor()) {
+                      <td data-label="Ações">
+                        <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
+                        @if (auth.isAdmin()) {
+                          <button class="btn btn-perigo btn-sm" (click)="confirmarExclusao(a)">Excluir</button>
+                        }
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       }
     </div>
 
@@ -103,10 +125,17 @@ import { Aluno, AlunoRequest } from '../../core/models';
 export class AlunosComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   auth = inject(AuthService);
   private classeCtx = inject(ClasseContextService);
 
   alunos = signal<Aluno[]>([]);
+  busca = signal('');
+  alunosFiltrados = computed(() => {
+    const q = this.norm(this.busca());
+    const lista = this.alunos();
+    return q ? lista.filter((a) => this.norm(a.nome).includes(q)) : lista;
+  });
   carregando = signal(true);
   modalAberto = signal(false);
   salvando = signal(false);
@@ -115,6 +144,10 @@ export class AlunosComponent {
 
   constructor() {
     effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true });
+  }
+
+  private norm(s: string): string {
+    return (s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
   }
 
   private formVazio(): AlunoRequest {
@@ -170,8 +203,13 @@ export class AlunosComponent {
     });
   }
 
-  confirmarExclusao(a: Aluno): void {
-    if (!confirm(`Excluir o aluno "${a.nome}"? Isso remove também seus registros de chamada e notas.`)) return;
+  async confirmarExclusao(a: Aluno): Promise<void> {
+    const ok = await this.confirm.pedir({
+      titulo: 'Excluir aluno',
+      mensagem: `Excluir o aluno "${a.nome}"? Isso remove também seus registros de chamada e notas.`,
+      confirmar: 'Excluir', perigo: true,
+    });
+    if (!ok) { return; }
     this.api.deletarAluno(a.id).subscribe({
       next: () => { this.toast.sucesso('Aluno excluído.'); this.carregar(); },
       error: () => this.toast.erro('Erro ao excluir aluno.'),
