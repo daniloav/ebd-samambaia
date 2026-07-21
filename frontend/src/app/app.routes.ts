@@ -59,6 +59,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/desafios/desafios.component').then((m) => m.DesafiosComponent),
       },
       {
+        path: 'conta',
+        loadComponent: () => import('./pages/conta/conta.component').then((m) => m.ContaComponent),
+      },
+      {
         path: 'classes',
         loadComponent: () => import('./pages/classes/classes.component').then((m) => m.ClassesComponent),
         canActivate: [adminGuard],
