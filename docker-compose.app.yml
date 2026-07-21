@@ -1,0 +1,68 @@
+# Stack da VM de APP (ebd-server) na topologia de 2 VMs: caddy + frontend + backend.
+# O Postgres roda na VM ebd-db (ver docker-compose.db.yml). Defina no .env da app:
+#   EBD_DB_HOST=10.0.1.54   (IP PRIVADO da ebd-db)
+# Uso:  docker compose -f docker-compose.app.yml --env-file .env up -d --build
+services:
+  backend:
+    image: ghcr.io/daniloav/ebd-backend:${EBD_IMAGE_TAG:-latest}
+    container_name: ebd-backend
+    restart: unless-stopped
+    # Sem Postgres local nesta VM: sobra RAM, então o backend ganha mais heap.
+    mem_limit: 700m
+    volumes:
+      # Chaves JWT persistentes (gravadas pelo CD a partir dos secrets) — imagem fica sem segredo.
+      - ./keys:/keys:ro
+    environment:
+      # Lê as chaves do volume /keys (estáveis entre deploys). Sem isto, cairia no classpath.
+      EBD_JWT_PUBLIC_LOCATION: /keys/publicKey.pem
+      EBD_JWT_PRIVATE_LOCATION: /keys/privateKey.pem
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://${EBD_DB_HOST:?defina EBD_DB_HOST no .env}:${EBD_DB_PORT:-5432}/${POSTGRES_DB:-ebd}
+      QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_USER:-ebd}
+      QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-ebd}
+      EBD_ADMIN_USERNAME: ${EBD_ADMIN_USERNAME:-admin}
+      EBD_ADMIN_PASSWORD: ${EBD_ADMIN_PASSWORD:-admin123}
+      EBD_PROFESSOR_USERNAME: ${EBD_PROFESSOR_USERNAME:-professor}
+      EBD_PROFESSOR_PASSWORD: ${EBD_PROFESSOR_PASSWORD:-prof123}
+      EBD_NOTIF_ENABLED: ${EBD_NOTIF_ENABLED:-false}
+      EBD_MAIL_FROM: ${EBD_MAIL_FROM:-EBD ICE Samambaia <no-reply@ebd-ices.duckdns.org>}
+      EBD_SMTP_HOST: ${EBD_SMTP_HOST:-smtp.gmail.com}
+      EBD_SMTP_PORT: ${EBD_SMTP_PORT:-587}
+      EBD_SMTP_USER: ${EBD_SMTP_USER:-}
+      EBD_SMTP_PASS: ${EBD_SMTP_PASS:-}
+    networks:
+      - ebd-net
+
+  frontend:
+    image: ghcr.io/daniloav/ebd-frontend:${EBD_IMAGE_TAG:-latest}
+    container_name: ebd-frontend
+    restart: unless-stopped
+    mem_limit: 96m
+    depends_on:
+      - backend
+    networks:
+      - ebd-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: ebd-caddy
+    restart: unless-stopped
+    mem_limit: 96m
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - ebd-net
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  ebd-net:
+    driver: bridge
