@@ -1,0 +1,40 @@
+# Postgres dedicado — roda SÓ na 2ª VM (ebd-db, 10.0.1.54).
+# Uso na VM-db:  docker compose -f docker-compose.db.yml --env-file .env up -d
+#
+# Segurança: o Postgres é vinculado ao IP PRIVADO (EBD_DB_BIND_IP) — nunca fica no IP público.
+# Some assim ao acesso externo; a Security List ainda restringe 5432 ao IP privado da app.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ebd-postgres
+    restart: unless-stopped
+    # 1 GB só para o banco: mais cache, conexões e work_mem que no box compartilhado.
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=640MB"
+      - "-c"
+      - "max_connections=50"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "listen_addresses=*"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ebd}
+      POSTGRES_USER: ${POSTGRES_USER:-ebd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ebd}
+    volumes:
+      - ebd_pgdata:/var/lib/postgresql/data
+    ports:
+      # Bind no IP PRIVADO da VM-db (defina EBD_DB_BIND_IP=10.0.1.54 no .env da VM-db).
+      - "${EBD_DB_BIND_IP:-127.0.0.1}:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ebd} -d ${POSTGRES_DB:-ebd}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ebd_pgdata:
