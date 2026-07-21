@@ -1,0 +1,13 @@
+# Alvos de compatibilidade da build (o Angular/esbuild rebaixa a sintaxe do JS
+# para o mínimo denominador daqui). Incluímos Safari/iOS antigos para os iPhones
+# que estavam com tela branca (o default do Angular só mirava iOS 18+).
+# Obs.: o Angular 17 dá suporte oficial a Safari 15+; 14 costuma funcionar com o
+# rebaixamento de sintaxe, abaixo disso não há garantia (runtime do framework).
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Edge versions
+Safari >= 14
+iOS >= 14
+Firefox ESR
+> 0.3%
+not dead
