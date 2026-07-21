@@ -20,15 +20,22 @@ public class AuthService {
     @Inject
     TokenService tokenService;
 
+    @Inject
+    ProtecaoLoginService protecao;
+
     public LoginResponse autenticar(LoginRequest req) {
+        protecao.verificarBloqueio(req.username());
         Optional<Usuario> opt = usuarioRepository.findByUsername(req.username());
         if (opt.isEmpty()) {
+            protecao.registrarFalha(req.username());
             throw new NotAuthorizedException("Usuário ou senha inválidos", "Bearer");
         }
         Usuario usuario = opt.get();
         if (!usuario.isAtivo() || !BcryptUtil.matches(req.senha(), usuario.getSenhaHash())) {
+            protecao.registrarFalha(req.username());
             throw new NotAuthorizedException("Usuário ou senha inválidos", "Bearer");
         }
+        protecao.registrarSucesso(req.username());
         String token = tokenService.gerarToken(usuario);
         return new LoginResponse(token, usuario.getUsername(), usuario.getRole().name(),
                 tokenService.getDurationSeconds());

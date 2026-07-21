@@ -124,7 +124,17 @@ jobs:
           ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "
             cd ~/$APP_DIR &&
             docker compose up -d --build &&
-            docker compose ps
+            docker compose ps &&
+            docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
+          "
+
+      - name: Faxina do Docker na VM (cache dangling + imagens órfãs)
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "
+            docker builder prune -f >/dev/null 2>&1 || true;
+            docker image prune -f >/dev/null 2>&1 || true;
+            echo 'Faxina do Docker concluída.'
           "
 
       - name: Healthcheck

@@ -2,5 +2,16 @@
 # O Caddy provisiona e renova o certificado sozinho e redireciona HTTP -> HTTPS.
 ebd-ices.duckdns.org {
     encode gzip
+
+    # Headers de segurança (o SPA fica atrás do proxy; API é same-origin via nginx)
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
     reverse_proxy frontend:8080
 }

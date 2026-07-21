@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { RelatorioGeralResponse } from '../../core/models';
+import { exportarExcel, exportarPdf } from '../../core/export.util';
 
 @Component({
   selector: 'app-relatorio-geral',
@@ -22,6 +23,10 @@ import { RelatorioGeralResponse } from '../../core/models';
         <button class="btn btn-verde" (click)="buscar()" [disabled]="carregando()">
           {{ carregando() ? 'Carregando...' : 'Ver relatório' }}
         </button>
+        @if (dados()?.turmas?.length) {
+          <button class="btn btn-outline" (click)="exportarPdf()">📄 PDF</button>
+          <button class="btn btn-outline" (click)="exportarExcel()">📊 Excel</button>
+        }
       </div>
     </div>
 
@@ -103,5 +108,33 @@ export class RelatorioGeralComponent {
       next: (d) => { this.dados.set(d); this.carregando.set(false); },
       error: (e) => { this.toast.erro(e?.error?.message || 'Falha ao carregar o relatório geral.'); this.carregando.set(false); },
     });
+  }
+
+  private cols(): string[] {
+    return ['Turma', 'Presentes', 'Faltosos', 'Bíblias', 'Revistas', 'Lições', 'Visitantes'];
+  }
+
+  private linhas(d: RelatorioGeralResponse): (string | number)[][] {
+    const rows: (string | number)[][] = d.turmas.map((t) =>
+      [t.classeNome + (t.tema ? ' — ' + t.tema : ''), t.presentes, t.faltosos, t.biblias, t.revistas, t.licoes, t.visitantes]);
+    rows.push(['TOTAL', d.totais.presentes, d.totais.faltosos, d.totais.biblias, d.totais.revistas, d.totais.licoes, d.totais.visitantes]);
+    return rows;
+  }
+
+  async exportarPdf(): Promise<void> {
+    const d = this.dados(); if (!d) { return; }
+    await exportarPdf(`relatorio-geral-${d.data}`, 'Relatório geral do dia — EBD ICES',
+      `Data: ${this.br(d.data)} · Turmas: ${d.totalTurmas}`, this.cols(), this.linhas(d));
+  }
+
+  async exportarExcel(): Promise<void> {
+    const d = this.dados(); if (!d) { return; }
+    await exportarExcel(`relatorio-geral-${d.data}`, 'Relatório geral', this.cols(), this.linhas(d));
+  }
+
+  private br(iso: string): string {
+    if (!iso) { return '—'; }
+    const [y, m, dd] = iso.split('-');
+    return `${dd}/${m}/${y}`;
   }
 }

@@ -20,6 +20,61 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [x] **Módulo de Campanhas** (item 5) — envio de e-mail em massa aos alunos com opt-in, por turma ou todas; histórico com contagem de enviados (migration V5). Reaproveita o `NotificacaoService`.
 - [x] **PWA** (item 4, 1º passo) — app instalável (manifest + ícone + theme-color) e service worker *network-first* (offline básico; sempre fresco online; não cacheia API).
 
+## 🔍 Avaliação do sistema (2026-07-20): segurança, usabilidade, design e mobile
+
+> Auditoria feita sobre o código/config reais. Prioridade: **P1** (fazer logo) → **P3** (quando der).
+
+### 🔐 Segurança
+- [x] **P1 · Fechar o CORS em produção** — hoje `quarkus.http.cors.origins=/.*/` (qualquer origem) vale
+      também em prod. Como o nginx faz proxy same-origin de `/api`, o CORS pode ser **desligado em prod**
+      (`%prod.quarkus.http.cors=false`) e mantido aberto só em dev. 1 linha, risco zero.
+- [x] **P1 · Proteção de força-bruta no login** — `/api/auth/login` não tem limite de tentativas nem atraso.
+      Mínimo: atraso incremental por usuário/IP após N falhas (in-memory já ajuda). Senhas fracas em uso
+      tornam isso mais importante.
+- [x] **P1 · Headers de segurança no Caddy** — faltam `Strict-Transport-Security`, `X-Content-Type-Options`,
+      `X-Frame-Options`/`frame-ancestors`, `Referrer-Policy`. Bloco `header {}` no Caddyfile, ~6 linhas.
+- [ ] **P2 · Política de senha mínima** — `UsuarioRequest.senha` não valida tamanho/força
+      (aceita "1"). `@Size(min=8)` + dica na UI.
+- [ ] **P2 · Trocar a própria senha** — hoje só o ADMIN troca senhas (tela Usuários); o usuário não pode
+      trocar a dele (e as senhas atuais foram definidas pelo admin). Endpoint `PUT /api/me/senha` + tela.
+- [ ] **P2 · Chaves JWT persistentes** (já listado em Infra) — cada deploy gera chaves novas e **desloga
+      todo mundo**; com volume, sessões sobrevivem ao deploy.
+- [ ] **P3 · Auditoria de ações** — log de quem excluiu/alterou aluno, aula, prova, usuário (tabela
+      `auditoria` simples). Útil quando houver mais professores.
+- [ ] **P3 · Token em localStorage** — acessível a XSS (Angular escapa por padrão; risco baixo). Alternativa
+      robusta (cookie httpOnly + CSRF) só se o app crescer.
+
+### 🧭 Usabilidade
+- [x] **P1 · Aviso de sessão expirada** — o 401 redireciona ao login em silêncio; mostrar toast
+      "Sua sessão expirou, entre novamente" (o interceptor já centraliza isso).
+- [ ] **P2 · Substituir `confirm()` nativo** — 7 telas usam o diálogo do navegador (feio e inconsistente
+      com o design). Criar um modal de confirmação reutilizável no padrão visual do app.
+- [ ] **P2 · Busca/filtro na lista de alunos** — com turmas grandes, achar um aluno exige rolar; um campo
+      de busca por nome resolve (junto da paginação já listada).
+- [ ] **P3 · "Esqueci minha senha"** — fluxo de reset por e-mail (o SMTP já existe). Enquanto não houver,
+      o caminho é pedir ao admin.
+- [ ] **P3 · Estados vazios orientados** — telas sem dados poderiam sugerir a próxima ação
+      (ex.: "Nenhuma aula — crie a primeira" com botão), em vez de só texto.
+
+### 🎨 Design
+- [ ] **P2 · Modal de confirmação própria** (mesmo item do confirm() acima — é a maior inconsistência visual).
+- [ ] **P3 · Refinos visuais** — favicon PNG real (hoje emoji inline), transições/hover consistentes,
+      skeleton loading nas tabelas em vez de "Carregando...".
+- [ ] **P3 · Modo escuro** — o SCSS usa variáveis CSS (`--azul`, etc.), então um tema escuro é viável
+      com `prefers-color-scheme` + overrides. Nice-to-have.
+
+### 📱 Compatibilidade mobile
+> O caso de uso nº 1 no celular é o professor **fazendo a chamada em sala**. Priorizar essa tela.
+- [x] **P1 · Chamada otimizada para toque** — checkboxes nativos são pequenos para dedo; aumentar a área
+      de toque (célula inteira clicável, alvos ≥44px) e testar a tabela de 5 colunas em 360px de largura.
+- [ ] **P2 · Responsividade além do shell** — só o layout tem breakpoint (820px); as páginas dependem de
+      `tabela-scroll` (funciona, mas apertado). Nas principais (chamada, alunos), considerar linhas em
+      formato cartão no mobile.
+- [ ] **P2 · Ícones PNG do PWA (192/512px)** — o ícone SVG não rende bem no iOS (limitação conhecida,
+      documentada no guia); PNGs fecham a instalação com visual correto em iPhone.
+- [ ] **P3 · Ajustes finos de PWA** — `safe-area-inset` para notch, splash screens iOS, atalhos de app
+      (`shortcuts` no manifest, ex.: "Fazer chamada" direto).
+
 ## 🟡 Evoluções funcionais (curto prazo)
 
 - [ ] **Dashboard com gráficos** (frequência ao longo do tempo, distribuição de presença).
