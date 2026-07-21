@@ -1,6 +1,7 @@
 package br.com.ice.ebd.service;
 
 import br.com.ice.ebd.model.Aluno;
+import br.com.ice.ebd.model.CampanhaImagem;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Presenca;
 import br.com.ice.ebd.model.Prova;
@@ -100,7 +101,8 @@ public class NotificacaoService {
      * e-mails foram efetivamente enviados. Falhas individuais viram log e não interrompem o lote.
      * Roda dentro da transação do chamador (CampanhaService).
      */
-    public int enviarCampanha(String titulo, String mensagem, List<Aluno> destinatarios, String turmaLabel) {
+    public int enviarCampanha(String titulo, String mensagem, List<Aluno> destinatarios,
+                              String turmaLabel, List<CampanhaImagem> imagens) {
         if (!habilitado) {
             return 0;
         }
@@ -110,16 +112,26 @@ public class NotificacaoService {
                 continue;
             }
             try {
-                String html = htmlCampanha(a, titulo, mensagem, turmaLabel);
+                String html = htmlCampanha(a, titulo, mensagem, turmaLabel, imagens);
                 String texto = "Olá " + a.getNome() + ",\n\n" + mensagem
                         + "\n\nEscola Bíblica Dominical — ICE Samambaia";
-                mailer.send(Mail.withHtml(a.getEmail(), titulo, html).setText(texto));
+                Mail mail = Mail.withHtml(a.getEmail(), titulo, html).setText(texto);
+                if (imagens != null) {
+                    for (int i = 0; i < imagens.size(); i++) {
+                        CampanhaImagem img = imagens.get(i);
+                        String nome = img.getNome() != null ? img.getNome() : ("imagem" + i);
+                        // contentId "imgN" casa com o cid:imgN referenciado no HTML.
+                        mail.addInlineAttachment(nome, img.getConteudo(), img.getTipo(), "img" + i);
+                    }
+                }
+                mailer.send(mail);
                 enviados++;
             } catch (Exception e) {
                 LOG.warnf("Falha ao enviar campanha para %s: %s", a.getEmail(), e.getMessage());
             }
         }
-        LOG.infof("Campanha '%s' (%s): %d e-mail(s) enviado(s).", titulo, turmaLabel, enviados);
+        LOG.infof("Campanha '%s' (%s): %d e-mail(s) enviado(s) com %d imagem(ns).",
+                titulo, turmaLabel, enviados, imagens != null ? imagens.size() : 0);
         return enviados;
     }
 
@@ -155,9 +167,18 @@ public class NotificacaoService {
         return shell(nomeTurma(aula), corpo);
     }
 
-    private String htmlCampanha(Aluno a, String titulo, String mensagem, String turmaLabel) {
+    private String htmlCampanha(Aluno a, String titulo, String mensagem, String turmaLabel,
+                               List<CampanhaImagem> imagens) {
+        StringBuilder arte = new StringBuilder();
+        if (imagens != null) {
+            for (int i = 0; i < imagens.size(); i++) {
+                arte.append("<img src=\"cid:img").append(i).append("\" alt=\"\" "
+                        + "style=\"display:block;width:100%;max-width:100%;height:auto;"
+                        + "border-radius:8px;margin:0 0 14px;\">");
+            }
+        }
         String texto = esc(mensagem).replace("\n", "<br>");
-        String corpo = ""
+        String corpo = arte
                 + "<h1 style=\"margin:0 0 14px;font-size:20px;color:#1b3a5b;\">" + esc(titulo) + "</h1>"
                 + "<p style=\"margin:0 0 14px;\">Olá, " + esc(a.getNome()) + "!</p>"
                 + "<p style=\"margin:0 0 18px;\">" + texto + "</p>"
