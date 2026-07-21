@@ -81,7 +81,16 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [ ] **Exportar relatório** de presenças para PDF/Excel.
 - [ ] **Filtro por trimestre/período letivo** em relatórios e rankings (hoje já filtra por turma, falta o recorte de período).
 - [ ] **Histórico da chamada** por aluno (linha do tempo de presença/itens).
-- [ ] **Aniversariantes do mês** (já temos `data_nascimento`).
+- [x] **Batch de aniversário** — rotina agendada (`quarkus-scheduler`) que às **12:00 BRT** envia
+      "feliz aniversário" a todos os alunos ativos com e-mail (ignora opt-in). Endpoint de teste
+      `POST /api/admin/aniversarios/executar`. ⚠️ Instância única: sem recuperação de *misfire*
+      (se a VM estiver fora do ar às 12h, os parabéns do dia não são reenviados).
+- [x] **Relatório de visitantes** — por período, geral (todas as turmas, só ADMIN) ou por turma;
+      exporta PDF/Excel. Endpoint `GET /api/relatorios/visitantes`.
+- [x] **Boletim por trimestre** — notas das provas + frequência + situação; o aluno extrai o próprio
+      (`GET /api/me/boletim`), ADMIN/PROFESSOR extraem de qualquer aluno (`GET /api/boletim`). PDF dedicado.
+- [x] **E-mail de desempenho na prova** — botão "Lançar e notificar" envia a nota/aproveitamento ao
+      aluno (respeita opt-in). `POST /api/provas/{id}/notas/notificar`.
 - [ ] **Observações por aula/aluno** (campo de texto livre na chamada).
 
 ## 🟢 Qualidade e robustez
