@@ -114,9 +114,11 @@ PY
 cutover() {
   log "4/4 — virando a app para o banco remoto ($DB_PRIV)"
   scp_app "$REPO_DIR/docker-compose.app.yml" "~/$APP_DIR/docker-compose.app.yml"
-  # adiciona EBD_DB_HOST no .env da app (idempotente)
-  ssh_app "grep -q '^EBD_DB_HOST=' ~/$APP_DIR/.env && sed -i 's/^EBD_DB_HOST=.*/EBD_DB_HOST=$DB_PRIV/' ~/$APP_DIR/.env || echo 'EBD_DB_HOST=$DB_PRIV' >> ~/$APP_DIR/.env"
-  ssh_app "cd ~/$APP_DIR && sudo docker compose -f docker-compose.app.yml --env-file .env up -d --build"
+  # grava EBD_DB_HOST em LINHA PRÓPRIA: remove qualquer ocorrência anterior (inclusive "grudada"
+  # no fim de outra linha, quando o .env não terminava com \n) e anexa com quebra de linha à frente.
+  ssh_app "cd ~/$APP_DIR && cp .env .env.bak 2>/dev/null || true; sed -i 's/EBD_DB_HOST=[0-9.]*//g' .env; printf '\nEBD_DB_HOST=%s\n' '$DB_PRIV' >> .env"
+  # passa EBD_DB_HOST inline também (reforço: independe do parsing do .env)
+  ssh_app "cd ~/$APP_DIR && sudo EBD_DB_HOST='$DB_PRIV' docker compose -f docker-compose.app.yml --env-file .env up -d --build"
   log "aguardando o health..."
   for i in $(seq 1 30); do
     if curl -sf "https://ebd-ices.duckdns.org/q/health" >/dev/null 2>&1; then ok "health OK"; break; fi
