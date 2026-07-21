@@ -15,6 +15,9 @@ O schema do banco é **versionado e gerenciado pelo Flyway**. As migrations fica
 | **V4** | `V4__aluno_email_notificacoes.sql` | `email` + `recebe_notificacoes` (opt-in/LGPD) em `aluno`. |
 | **V5** | `V5__campanha.sql` | Tabela `campanha` (envio de e-mail em massa + histórico). |
 | **V6** | `V6__professor_classe.sql` | RBAC: tabela de vínculo N:N `professor_classe` (professor ↔ turma). |
+| **V7** | `V7__visitante_e_usuario_email.sql` | Cadastro de visitante e `email` em `usuario`. |
+| **V8** | `V8__remove_trouxe_visitante.sql` | Remove `trouxe_visitante` da chamada (visitante vem do cadastro). |
+| **V9** | `V9__campanha_imagem.sql` | Tabela `campanha_imagem` (arte/imagens embutidas inline no e-mail da campanha; `bytea`). |
 
 ## Regras de ouro
 
