@@ -19,29 +19,42 @@ Controlado pela flag **`ebd.notificacoes.enabled`**:
 | **dev** (`mvn quarkus:dev`) | `true` | Mailer em **mock**: não envia de verdade, só **loga** o e-mail. |
 | **produção** | `false` (padrão) | Não envia nada até você configurar o SMTP e ligar. |
 
-## Como ligar em produção (SMTP grátis — Brevo)
+## Como ligar em produção (SMTP grátis — Gmail)
 
-1. Crie uma conta grátis em **Brevo** (ex-Sendinblue) — plano free ~300 e-mails/dia.
-2. Em **SMTP & API → SMTP**, pegue: host (`smtp-relay.brevo.com`), porta `587`,
-   *login* (seu e-mail) e a **chave SMTP** (senha).
-3. No `.env` de produção da VM (e no secret **`OCI_ENV_FILE`** do GitHub — ver
+> **Histórico (2026-07):** começamos com o **Brevo**, mas ele passou a **rejeitar** envios
+> com remetente de domínio gratuito (`@gmail.com`): pelas regras DMARC do Gmail/Yahoo
+> (2024), o Brevo reescreve o remetente para `...@brevosend.com` e hoje **recusa** esse
+> fallback. Só aceitaria com **domínio próprio autenticado** (DKIM) — e o DuckDNS não
+> suporta os registros DNS necessários. Solução: enviar pelo **SMTP do próprio Gmail**
+> com **senha de app** (o e-mail sai assinado pelo Google; DMARC ok, sem reescrita).
+> Limite ~500 destinatários/dia — muito acima do uso da EBD.
+
+1. Na conta Google remetente, ative a **verificação em 2 etapas** e crie uma
+   **senha de app** em <https://myaccount.google.com/apppasswords> (16 letras, sem espaços).
+2. No `.env` de produção da VM (e no secret **`OCI_ENV_FILE`** do GitHub — ver
    [`senhas-e-secrets.md`](senhas-e-secrets.md)), defina:
 
    ```env
    EBD_NOTIF_ENABLED=true
-   EBD_MAIL_FROM=EBD ICE Samambaia <no-reply@ebd-ices.duckdns.org>
-   EBD_SMTP_HOST=smtp-relay.brevo.com
+   EBD_MAIL_FROM=EBD ICE Samambaia <conta-remetente@gmail.com>
+   EBD_SMTP_HOST=smtp.gmail.com
    EBD_SMTP_PORT=587
-   EBD_SMTP_USER=<seu-login-brevo>
-   EBD_SMTP_PASS=<sua-chave-smtp-brevo>
+   EBD_SMTP_USER=conta-remetente@gmail.com
+   EBD_SMTP_PASS=<senha de app>
    ```
 
-4. Aplique na VM: `sudo docker compose up -d` (recria o backend com as novas variáveis).
-   O `docker-compose.yml` já repassa essas variáveis ao backend.
+   > O `EBD_MAIL_FROM` deve ser **a própria conta Gmail** que autentica no SMTP
+   > (o Google reescreve remetentes diferentes da conta autenticada).
 
-> **Entregabilidade:** para o `EBD_MAIL_FROM` cair menos em spam, o ideal é validar o
-> domínio no Brevo (SPF/DKIM). Enquanto não fizer isso, dá para usar um remetente já
-> verificado na sua conta Brevo.
+3. Aplique na VM: `sudo docker compose up -d` (recria o backend com as novas variáveis).
+   O `docker-compose.yml` já repassa essas variáveis ao backend. (O próximo deploy do CD
+   também aplica, pois envia o `.env` e recria os containers.)
+4. Teste: salve uma chamada (aluno com e-mail + opt-in) ou cadastre um visitante com
+   e-mail; `sudo docker logs --tail 20 ebd-backend | grep -i notifica` mostra os envios.
+
+> **Recomendado (ver ROADMAP):** usar uma conta Gmail **dedicada** ao sistema
+> (ex.: `ebd.ices@gmail.com`) em vez do e-mail pessoal — a senha de app fica restrita
+> a uma conta sem dados pessoais, e o remetente fica com cara institucional.
 
 ## Limitações conhecidas (roadmap)
 
