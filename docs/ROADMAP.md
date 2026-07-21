@@ -25,13 +25,13 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 > Auditoria feita sobre o código/config reais. Prioridade: **P1** (fazer logo) → **P3** (quando der).
 
 ### 🔐 Segurança
-- [ ] **P1 · Fechar o CORS em produção** — hoje `quarkus.http.cors.origins=/.*/` (qualquer origem) vale
+- [x] **P1 · Fechar o CORS em produção** — hoje `quarkus.http.cors.origins=/.*/` (qualquer origem) vale
       também em prod. Como o nginx faz proxy same-origin de `/api`, o CORS pode ser **desligado em prod**
       (`%prod.quarkus.http.cors=false`) e mantido aberto só em dev. 1 linha, risco zero.
-- [ ] **P1 · Proteção de força-bruta no login** — `/api/auth/login` não tem limite de tentativas nem atraso.
+- [x] **P1 · Proteção de força-bruta no login** — `/api/auth/login` não tem limite de tentativas nem atraso.
       Mínimo: atraso incremental por usuário/IP após N falhas (in-memory já ajuda). Senhas fracas em uso
       tornam isso mais importante.
-- [ ] **P1 · Headers de segurança no Caddy** — faltam `Strict-Transport-Security`, `X-Content-Type-Options`,
+- [x] **P1 · Headers de segurança no Caddy** — faltam `Strict-Transport-Security`, `X-Content-Type-Options`,
       `X-Frame-Options`/`frame-ancestors`, `Referrer-Policy`. Bloco `header {}` no Caddyfile, ~6 linhas.
 - [ ] **P2 · Política de senha mínima** — `UsuarioRequest.senha` não valida tamanho/força
       (aceita "1"). `@Size(min=8)` + dica na UI.
@@ -45,7 +45,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       robusta (cookie httpOnly + CSRF) só se o app crescer.
 
 ### 🧭 Usabilidade
-- [ ] **P1 · Aviso de sessão expirada** — o 401 redireciona ao login em silêncio; mostrar toast
+- [x] **P1 · Aviso de sessão expirada** — o 401 redireciona ao login em silêncio; mostrar toast
       "Sua sessão expirou, entre novamente" (o interceptor já centraliza isso).
 - [ ] **P2 · Substituir `confirm()` nativo** — 7 telas usam o diálogo do navegador (feio e inconsistente
       com o design). Criar um modal de confirmação reutilizável no padrão visual do app.
@@ -65,7 +65,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 ### 📱 Compatibilidade mobile
 > O caso de uso nº 1 no celular é o professor **fazendo a chamada em sala**. Priorizar essa tela.
-- [ ] **P1 · Chamada otimizada para toque** — checkboxes nativos são pequenos para dedo; aumentar a área
+- [x] **P1 · Chamada otimizada para toque** — checkboxes nativos são pequenos para dedo; aumentar a área
       de toque (célula inteira clicável, alvos ≥44px) e testar a tabela de 5 colunas em 360px de largura.
 - [ ] **P2 · Responsividade além do shell** — só o layout tem breakpoint (820px); as páginas dependem de
       `tabela-scroll` (funciona, mas apertado). Nas principais (chamada, alunos), considerar linhas em
