@@ -45,6 +45,9 @@ import { APP_VERSION } from '../version';
       border: none; padding: .5rem; border-radius: 6px; cursor: pointer; font-weight: 600;
     }
     .btn-sair:hover { background: rgba(255,255,255,.2); }
+    .link-conta { display: block; color: #cbd5e0; font-size: .82rem; text-decoration: none;
+                  margin-bottom: .55rem; }
+    .link-conta:hover { color: #fff; text-decoration: underline; }
     .conteudo { flex: 1; padding: 1.75rem 2rem; max-width: 1100px; }
     .topo-mobile { display: none; }
     @media (max-width: 820px) {
@@ -103,6 +106,7 @@ import { APP_VERSION } from '../version';
             <strong>{{ auth.username() }}</strong>
             <span class="perfil">{{ perfilLabel() }}</span>
           </div>
+          <a class="link-conta" routerLink="/conta" (click)="fecharNoMobile()">🔒 Trocar senha</a>
           <button class="btn-sair" (click)="sair()">Sair</button>
         </div>
       </aside>
