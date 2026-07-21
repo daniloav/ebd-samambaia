@@ -169,6 +169,10 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   use **Postgres nativo** em vez do `docker-compose.dev.yml`:
   `brew services start postgresql@16` + role/db `ebd` (senha `ebd`) na porta 5432.
   Na VM (deploy) o Docker é limpo e funciona normalmente.
+- 📊 **Relatório de visitantes + batch de aniversário + evolução de provas** — relatório de visitantes
+  por período (geral/turma, com export PDF/Excel); 1ª rotina batch (`quarkus-scheduler`) que às 12:00 BRT
+  manda "feliz aniversário" a todos com e-mail; provas ganharam botão "Lançar e notificar" (e-mail de nota)
+  e **boletim por trimestre** (notas+frequência+situação) que o aluno extrai em PDF. Sem migration.
 - 📧 **Alertas por e-mail** (roadmap item 2): ao salvar a chamada, envia e-mail aos alunos com opt-in
   (`recebe_notificacoes` + `email`, migration V4). Toggle `ebd.notificacoes.enabled` (off em prod até
   configurar SMTP). Validado em dev com mailer *mock*. Guia: [`docs/notificacoes-email.md`](docs/notificacoes-email.md).

@@ -6,6 +6,14 @@ traz a presença e os itens da aula (Bíblia, revista, lição, visitante).
 
 - **Backend:** `NotificacaoService` (usa o Quarkus Mailer), disparado no `ChamadaResource` ao
   salvar. Nunca quebra o salvamento da chamada: falha de e-mail só vira log.
+
+**Outros e-mails do `NotificacaoService`** (todos respeitam o toggle e nunca lançam):
+- **Visitante** — boas-vindas ao visitante + aviso aos professores (ao cadastrar).
+- **Campanha** — envio em massa aos alunos com opt-in.
+- **Aniversário** — rotina `AniversarioService` (`@Scheduled`, 12:00 BRT) → parabéns a **todos os
+  alunos ativos com e-mail** (ignora o opt-in). Teste: `POST /api/admin/aniversarios/executar`.
+- **Desempenho na prova** — botão "Lançar e notificar" na tela de notas → nota/aproveitamento ao
+  aluno (respeita opt-in). `POST /api/provas/{id}/notas/notificar`.
 - **Opt-in por aluno:** no cadastro do aluno há o campo *e-mail* e a opção
   *"Receber alertas de chamada por e-mail"* (LGPD — só enviamos a quem consentiu).
 - **Migration:** `V4__aluno_email_notificacoes.sql` (colunas `email` e `recebe_notificacoes`).
