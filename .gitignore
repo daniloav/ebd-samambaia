@@ -37,3 +37,6 @@ backend/src/main/resources/publicKey.pem
 
 # Backup LOCAL de secrets de produção (NUNCA versionar)
 .secrets-local/
+
+# Backups/temporários do estagio2-cutover.sh (regras da Security List)
+scripts/.seclist-ingress-*.json
