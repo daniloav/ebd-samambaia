@@ -43,3 +43,6 @@ scripts/.seclist-ingress-*.json
 
 # Chaves JWT montadas em runtime na VM (nunca versionar)
 keys/
+
+# Cópias offsite dos backups baixados da ebd-db
+backups-ebd/
