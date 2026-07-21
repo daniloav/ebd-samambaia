@@ -13,7 +13,14 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
   styles: [`
     .barra { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 1.25rem; }
     .barra .form-group { margin: 0; }
-    .chk { text-align: center; }
+    .chk { text-align: center; cursor: pointer; min-width: 44px; }
+    .chk input { width: 22px; height: 22px; cursor: pointer; accent-color: var(--verde); vertical-align: middle; }
+    tbody tr td { padding-top: .55rem; padding-bottom: .55rem; }
+    @media (max-width: 600px) {
+      .chk { min-width: 48px; }
+      .chk input { width: 26px; height: 26px; }
+      .nome-col { min-width: 120px; font-size: .9rem; }
+    }
     .nome-col { min-width: 180px; }
     .resumo { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem; }
     .resumo span { font-size: .85rem; color: var(--cinza-texto); }
@@ -72,10 +79,14 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
               @for (i of itens(); track i.alunoId) {
                 <tr>
                   <td class="nome-col">{{ i.alunoNome }}</td>
-                  <td class="chk"><input type="checkbox" [(ngModel)]="i.presente" /></td>
-                  <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeBiblia" /></td>
-                  <td class="chk"><input type="checkbox" [(ngModel)]="i.trouxeRevista" /></td>
-                  <td class="chk"><input type="checkbox" [(ngModel)]="i.estudouLicao" /></td>
+                  <td class="chk" (click)="i.presente = !i.presente">
+                    <input type="checkbox" [(ngModel)]="i.presente" (click)="$event.stopPropagation()" /></td>
+                  <td class="chk" (click)="i.trouxeBiblia = !i.trouxeBiblia">
+                    <input type="checkbox" [(ngModel)]="i.trouxeBiblia" (click)="$event.stopPropagation()" /></td>
+                  <td class="chk" (click)="i.trouxeRevista = !i.trouxeRevista">
+                    <input type="checkbox" [(ngModel)]="i.trouxeRevista" (click)="$event.stopPropagation()" /></td>
+                  <td class="chk" (click)="i.estudouLicao = !i.estudouLicao">
+                    <input type="checkbox" [(ngModel)]="i.estudouLicao" (click)="$event.stopPropagation()" /></td>
                 </tr>
               }
             </tbody>
