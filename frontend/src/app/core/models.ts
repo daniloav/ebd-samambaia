@@ -164,6 +164,11 @@ export interface UsuarioRequest {
   ativo?: boolean;
 }
 
+export interface CampanhaImagemMeta {
+  id: number;
+  nome: string | null;
+  tipo: string;
+}
 export interface Campanha {
   id: number;
   titulo: string;
@@ -173,6 +178,7 @@ export interface Campanha {
   totalEnviados: number;
   criadoPor?: string | null;
   dataEnvio: string;
+  imagens?: CampanhaImagemMeta[];
 }
 
 export interface CampanhaRequest {
