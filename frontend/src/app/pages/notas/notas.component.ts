@@ -49,11 +49,15 @@ import { NotasProvaResponse, NotaItem } from '../../core/models';
             </table>
           </div>
           <p class="muted mt">Deixe em branco para não lançar nota do aluno.</p>
-          <div class="mt">
+          <div class="mt" style="display:flex;gap:.6rem;flex-wrap:wrap">
             <button class="btn btn-verde" (click)="salvar()" [disabled]="salvando()">
               {{ salvando() ? 'Salvando...' : '💾 Salvar notas' }}
             </button>
+            <button class="btn btn-outline" (click)="notificar()" [disabled]="salvando() || notificando()">
+              {{ notificando() ? 'Enviando...' : '✉️ Lançar e notificar alunos' }}
+            </button>
           </div>
+          <p class="muted mt">"Lançar e notificar" envia a cada aluno (com e-mail e que aceitou receber avisos) o seu desempenho. Salve as notas antes.</p>
         }
       </div>
     } @else if (carregando()) {
@@ -71,6 +75,7 @@ export class NotasComponent {
   itens = signal<NotaItem[]>([]);
   carregando = signal(true);
   salvando = signal(false);
+  notificando = signal(false);
 
   constructor() {
     this.provaId = Number(this.route.snapshot.paramMap.get('id'));
@@ -113,6 +118,23 @@ export class NotasComponent {
         this.salvando.set(false);
       },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao salvar notas.'); this.salvando.set(false); },
+    });
+  }
+
+  notificar(): void {
+    if (!confirm('Enviar por e-mail o desempenho aos alunos com nota lançada?')) {
+      return;
+    }
+    this.notificando.set(true);
+    this.api.notificarNotas(this.provaId).subscribe({
+      next: (r) => {
+        this.notificando.set(false);
+        this.toast.sucesso(`E-mail(s) enviado(s): ${r.enviados}.`);
+      },
+      error: (e) => {
+        this.notificando.set(false);
+        this.toast.erro(e?.error?.message || 'Falha ao notificar os alunos.');
+      },
     });
   }
 }

@@ -51,3 +51,83 @@ export async function exportarPdf(
   });
   doc.save(`${nomeArquivo}.pdf`);
 }
+
+/** Formata uma data ISO (yyyy-mm-dd) como dd/mm/yyyy. */
+function brData(iso: string): string {
+  if (!iso) { return '—'; }
+  const [y, m, d] = iso.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
+}
+
+/**
+ * Gera e baixa o boletim de um aluno como PDF (cabeçalho + dados + provas +
+ * frequência + situação). Recebe o objeto BoletimResponse da API.
+ */
+export async function exportarBoletimPdf(b: any): Promise<void> {
+  const jspdfMod: any = await import('jspdf');
+  const jsPDF = jspdfMod.jsPDF ?? jspdfMod.default;
+  const autoTableMod: any = await import('jspdf-autotable');
+  const autoTable = autoTableMod.autoTable ?? autoTableMod.default;
+
+  const doc = new jsPDF({ orientation: 'portrait' });
+  const azul: [number, number, number] = [27, 58, 91];
+
+  // Cabeçalho
+  doc.setFillColor(...azul);
+  doc.rect(0, 0, 210, 26, 'F');
+  doc.setTextColor(255);
+  doc.setFontSize(16);
+  doc.text('Boletim — Escola Bíblica Dominical', 14, 12);
+  doc.setFontSize(10);
+  doc.setTextColor(201, 162, 75);
+  doc.text('ICE Samambaia', 14, 19);
+
+  // Dados do aluno
+  doc.setTextColor(40);
+  doc.setFontSize(11);
+  doc.text(`Aluno: ${b.alunoNome}`, 14, 36);
+  doc.text(`Turma: ${b.turma}`, 14, 43);
+  doc.text(`${b.trimestre}º trimestre de ${b.ano}  (${brData(b.periodoInicio)} a ${brData(b.periodoFim)})`, 14, 50);
+
+  // Provas
+  autoTable(doc, {
+    startY: 56,
+    head: [['Prova', 'Data', 'Nota', 'Máx.', 'Aproveitamento']],
+    body: (b.provas ?? []).map((p: any) => [
+      p.titulo,
+      brData(p.data),
+      p.nota != null ? String(p.nota) : '—',
+      String(p.notaMaxima),
+      p.percentual != null ? `${p.percentual}%` : '—',
+    ]),
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: azul },
+    alternateRowStyles: { fillColor: [247, 247, 245] },
+  });
+  let y = (doc as any).lastAutoTable.finalY + 6;
+  doc.setFontSize(10);
+  doc.text(`Média das notas: ${b.mediaNotas}    ·    Aproveitamento: ${b.aproveitamentoPct}%`, 14, y);
+
+  // Frequência
+  const f = b.frequencia;
+  autoTable(doc, {
+    startY: y + 5,
+    head: [['Aulas', 'Presenças', 'Faltas', '% Presença', 'Bíblia', 'Revista', 'Lição']],
+    body: [[f.totalAulas, f.presencas, f.faltas, `${f.percentualPresenca}%`, f.biblias, f.revistas, f.licoes]],
+    styles: { fontSize: 9, cellPadding: 2, halign: 'center' },
+    headStyles: { fillColor: azul },
+  });
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  // Situação
+  doc.setFontSize(12);
+  doc.setTextColor(...azul);
+  doc.text(`Situação: ${b.situacao}`, 14, y);
+  if (b.visitantesTrazidos) {
+    doc.setFontSize(9);
+    doc.setTextColor(110);
+    doc.text(`Visitantes trazidos no período: ${b.visitantesTrazidos}`, 14, y + 6);
+  }
+
+  doc.save(`boletim-${b.alunoNome.replace(/\s+/g, '-').toLowerCase()}-${b.ano}-T${b.trimestre}.pdf`);
+}

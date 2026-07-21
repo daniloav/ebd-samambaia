@@ -233,3 +233,53 @@ export interface RelatorioGeralResponse {
   totais: RelatorioGeralTotais;
   turmas: RelatorioGeralLinha[];
 }
+
+export interface RelatorioVisitantesItem {
+  id: number;
+  nome: string;
+  email: string | null;
+  telefone: string | null;
+  turma: string;
+  dataAula: string;
+  trazidoPorNome: string | null;
+}
+export interface RelatorioVisitantesResponse {
+  inicio: string;
+  fim: string;
+  classeId: number | null;
+  classeNome: string | null;
+  total: number;
+  itens: RelatorioVisitantesItem[];
+}
+
+export interface BoletimProvaItem {
+  titulo: string;
+  data: string;
+  nota: number | null;
+  notaMaxima: number;
+  percentual: number | null;
+}
+export interface BoletimFrequencia {
+  totalAulas: number;
+  presencas: number;
+  faltas: number;
+  percentualPresenca: number;
+  biblias: number;
+  revistas: number;
+  licoes: number;
+}
+export interface BoletimResponse {
+  alunoId: number;
+  alunoNome: string;
+  turma: string;
+  ano: number;
+  trimestre: number;
+  periodoInicio: string;
+  periodoFim: string;
+  provas: BoletimProvaItem[];
+  mediaNotas: number;
+  aproveitamentoPct: number;
+  frequencia: BoletimFrequencia;
+  visitantesTrazidos: number;
+  situacao: string;
+}
