@@ -1,14 +1,19 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.MinhaFrequenciaResponse;
+import br.com.ice.ebd.dto.TrocarSenhaRequest;
 import br.com.ice.ebd.service.MinhaFrequenciaService;
+import br.com.ice.ebd.service.UsuarioService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Map;
 
 /** Dados do usuário autenticado e a visão própria do aluno. */
@@ -21,6 +26,9 @@ public class MeResource {
 
     @Inject
     MinhaFrequenciaService minhaFrequenciaService;
+
+    @Inject
+    UsuarioService usuarioService;
 
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
@@ -36,5 +44,15 @@ public class MeResource {
     @RolesAllowed("ALUNO")
     public MinhaFrequenciaResponse frequencia() {
         return minhaFrequenciaService.minha();
+    }
+
+    /** Troca da própria senha (qualquer usuário autenticado, para a sua conta). */
+    @PUT
+    @Path("/senha")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
+    public Response trocarSenha(TrocarSenhaRequest req) {
+        usuarioService.trocarPropriaSenha(identity.getPrincipal().getName(), req);
+        return Response.noContent().build();
     }
 }

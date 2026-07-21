@@ -151,4 +151,9 @@ export class ApiService {
     if (data) params = params.set('data', data);
     return this.http.get<RelatorioGeralResponse>(`${this.api}/relatorios/geral`, { params });
   }
+
+  // ---------- Conta (próprio usuário) ----------
+  trocarSenha(senhaAtual: string, novaSenha: string): Observable<void> {
+    return this.http.put<void>(`${this.api}/me/senha`, { senhaAtual, novaSenha });
+  }
 }
