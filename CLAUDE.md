@@ -159,6 +159,9 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 - ✅ Backend passa no `mvn package`; frontend passa no `ng build`.
 - ✅ Código no GitHub: `git@github.com:daniloav/ebd-samambaia.git` (repo **privado**), branch `main`.
 - ✅ Segredos removidos do versionamento. CI/CD verde (CD em mock até secrets reais).
+- ✅ **Segurança P1+P2** — CORS fechado, anti-força-bruta no login, headers no Caddy, aviso de sessão
+  expirada, chamada por toque (P1); senha mínima (8), trocar a própria senha (`PUT /api/me/senha` +
+  tela *Minha conta*) e chaves JWT persistentes opt-in via secrets `EBD_JWT_*` (P2). Ver `docs/ROADMAP.md`.
 - ✅ **Runtime VALIDADO (2026-07-19)** — smoke test ponta-a-ponta OK: Flyway migrou, seed criou
   usuários/alunos, login JWT, chamada (upsert), provas+notas, rankings e relatório responderam
   contra Postgres real; login pela UI navega ao painel com dados reais.

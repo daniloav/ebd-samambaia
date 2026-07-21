@@ -1,5 +1,6 @@
 package br.com.ice.ebd.service;
 
+import br.com.ice.ebd.dto.TrocarSenhaRequest;
 import br.com.ice.ebd.dto.UsuarioRequest;
 import br.com.ice.ebd.dto.UsuarioResponse;
 import br.com.ice.ebd.model.Aluno;
@@ -22,6 +23,9 @@ import java.util.Optional;
 @ApplicationScoped
 public class UsuarioService {
 
+    /** Tamanho mínimo de senha exigido em toda a aplicação. */
+    public static final int SENHA_MIN = 8;
+
     @Inject UsuarioRepository repository;
     @Inject AlunoRepository alunoRepository;
     @Inject ClasseRepository classeRepository;
@@ -40,6 +44,7 @@ public class UsuarioService {
             throw new WebApplicationException("A senha é obrigatória para criar um usuário.",
                     Response.Status.BAD_REQUEST);
         }
+        validarForcaSenha(req.senha());
         validarUsernameUnico(req.username(), null);
         Usuario u = new Usuario();
         u.setUsername(req.username().trim());
@@ -55,6 +60,7 @@ public class UsuarioService {
         validarUsernameUnico(req.username(), id);
         u.setUsername(req.username().trim());
         if (req.senha() != null && !req.senha().isBlank()) {
+            validarForcaSenha(req.senha());
             u.setSenhaHash(BcryptUtil.bcryptHash(req.senha()));
         }
         aplicarComuns(u, req);
@@ -97,6 +103,35 @@ public class UsuarioService {
                 }
                 u.getClasses().add(c);
             }
+        }
+    }
+
+    /**
+     * Troca da própria senha pelo usuário autenticado: confere a senha atual,
+     * exige força mínima e recusa repetir a senha vigente.
+     */
+    @Transactional
+    public void trocarPropriaSenha(String username, TrocarSenhaRequest req) {
+        Usuario u = repository.findByUsername(username == null ? "" : username.trim())
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado."));
+        if (req == null || req.senhaAtual() == null
+                || !BcryptUtil.matches(req.senhaAtual(), u.getSenhaHash())) {
+            throw new WebApplicationException("Senha atual incorreta.", Response.Status.BAD_REQUEST);
+        }
+        validarForcaSenha(req.novaSenha());
+        if (BcryptUtil.matches(req.novaSenha(), u.getSenhaHash())) {
+            throw new WebApplicationException("A nova senha deve ser diferente da atual.",
+                    Response.Status.BAD_REQUEST);
+        }
+        u.setSenhaHash(BcryptUtil.bcryptHash(req.novaSenha()));
+    }
+
+    /** Exige senha com pelo menos {@link #SENHA_MIN} caracteres. */
+    private void validarForcaSenha(String senha) {
+        if (senha == null || senha.length() < SENHA_MIN) {
+            throw new WebApplicationException(
+                    "A senha deve ter pelo menos " + SENHA_MIN + " caracteres.",
+                    Response.Status.BAD_REQUEST);
         }
     }
 
