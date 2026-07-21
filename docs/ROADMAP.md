@@ -33,11 +33,11 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       tornam isso mais importante.
 - [x] **P1 · Headers de segurança no Caddy** — faltam `Strict-Transport-Security`, `X-Content-Type-Options`,
       `X-Frame-Options`/`frame-ancestors`, `Referrer-Policy`. Bloco `header {}` no Caddyfile, ~6 linhas.
-- [ ] **P2 · Política de senha mínima** — `UsuarioRequest.senha` não valida tamanho/força
+- [x] **P2 · Política de senha mínima** — senha exige **≥ 8 caracteres** (validado no `UsuarioService` para criar/editar/trocar). `UsuarioRequest.senha`
       (aceita "1"). `@Size(min=8)` + dica na UI.
-- [ ] **P2 · Trocar a própria senha** — hoje só o ADMIN troca senhas (tela Usuários); o usuário não pode
+- [x] **P2 · Trocar a própria senha** — `PUT /api/me/senha` (confere senha atual, exige ≥8, recusa repetir) + tela **Minha conta** (link no rodapé). Antes só o ADMIN trocava; o usuário não podia
       trocar a dele (e as senhas atuais foram definidas pelo admin). Endpoint `PUT /api/me/senha` + tela.
-- [ ] **P2 · Chaves JWT persistentes** (já listado em Infra) — cada deploy gera chaves novas e **desloga
+- [x] **P2 · Chaves JWT persistentes** (ver Infra) — CD grava as chaves dos secrets `EBD_JWT_PRIVATE_KEY`/`EBD_JWT_PUBLIC_KEY` a cada deploy (opt-in; sem secret = comportamento antigo). Antes cada deploy gerava chaves novas e **deslogava
       todo mundo**; com volume, sessões sobrevivem ao deploy.
 - [ ] **P3 · Auditoria de ações** — log de quem excluiu/alterou aluno, aula, prova, usuário (tabela
       `auditoria` simples). Útil quando houver mais professores.
@@ -114,7 +114,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 
 - [ ] **Backups automáticos** do Postgres (cron + `pg_dump`).
-- [ ] **Chaves JWT persistentes** via volume (hoje o Docker gera novas a cada build).
+- [x] **Chaves JWT persistentes** — via secrets no CD (`EBD_JWT_PRIVATE_KEY`/`EBD_JWT_PUBLIC_KEY`), gravadas no build a cada deploy; tokens sobrevivem. Ativar: adicionar os secrets (ver `docs/senhas-e-secrets.md`).
 - [ ] **Rotacionar a chave SMTP da Brevo** (a atual foi compartilhada em chat durante a config).
 - [ ] (Opcional) **Purga de histórico do Git** para remover a chave JWT antiga, se o repo virar público.
 - [ ] **Budget/alerta de custo** na OCI (garantia extra contra cobrança).

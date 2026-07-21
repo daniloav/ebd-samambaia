@@ -28,6 +28,8 @@ Em **GitHub → repositório → Settings → Secrets and variables → Actions*
 | `OCI_SSH_USER` | usuário SSH (`ubuntu`) | não |
 | `OCI_SSH_KEY` | **chave privada** de deploy (`~/.ssh/ebd_deploy`) | **sim** |
 | `OCI_ENV_FILE` | `.env` de produção (senhas do banco e dos usuários) | **sim** |
+| `EBD_JWT_PRIVATE_KEY` | (opcional) chave **privada** JWT persistente — ver seção 6 | **sim** |
+| `EBD_JWT_PUBLIC_KEY` | (opcional) chave **pública** JWT persistente — ver seção 6 | não |
 
 ⚠️ **Não dá para "ver" o valor de um Secret depois de salvo** — o GitHub só deixa
 **substituir**. Por isso as fontes de verdade são:
@@ -89,6 +91,35 @@ ssh-keygen -t ed25519 -f ~/.ssh/ebd_deploy -N "" -C "ebd-deploy-actions"
 ssh-copy-id -i ~/.ssh/ebd_deploy.pub ubuntu@163.176.181.38   # instala a nova pública na VM
 gh secret set OCI_SSH_KEY < ~/.ssh/ebd_deploy                # atualiza o secret
 ```
+
+## 6. Chaves JWT persistentes (opt-in) — evitar deslogar todo mundo a cada deploy
+
+Por padrão o `backend/Dockerfile` **gera um par de chaves JWT novo a cada build**, o que invalida
+todos os tokens e desloga os usuários em todo deploy. Para evitar isso, o CD grava as **mesmas**
+chaves (vindas de secrets) no build a cada deploy — se os secrets existirem. Sem os secrets, nada
+muda (comportamento antigo).
+
+**Ativar (uma vez):**
+```bash
+# 1) gerar o par no mesmo formato que o Dockerfile usa (RSA 2048)
+openssl genrsa -out /tmp/privateKey.pem 2048
+openssl rsa -in /tmp/privateKey.pem -pubout -out /tmp/publicKey.pem
+
+# 2) cadastrar como secrets do GitHub
+gh secret set EBD_JWT_PRIVATE_KEY < /tmp/privateKey.pem
+gh secret set EBD_JWT_PUBLIC_KEY  < /tmp/publicKey.pem
+
+# 3) guardar um backup local (gitignored) e apagar os temporários
+mkdir -p .secrets-local && cp /tmp/privateKey.pem /tmp/publicKey.pem .secrets-local/
+rm /tmp/privateKey.pem /tmp/publicKey.pem
+```
+
+- No **primeiro** deploy após adicionar os secrets, os tokens atuais (assinados com a chave antiga
+  embutida) deixam de valer — é **um único** logout geral. A partir daí, os tokens sobrevivem aos deploys.
+- O CD (`.github/workflows/cd.yml`, passo *"Chaves JWT persistentes"*) grava os `.pem` em
+  `backend/src/main/resources/` na VM **após o rsync** e **antes** do build; o Dockerfile detecta que
+  já existem e não gera novas.
+- Rotacionar as chaves = repetir os passos acima com um par novo (causa um logout geral).
 
 ## 5. Regra de ouro
 

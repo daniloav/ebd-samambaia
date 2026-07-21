@@ -32,6 +32,8 @@ jobs:
       OCI_USER: ${{ secrets.OCI_SSH_USER }}
       OCI_SSH_KEY: ${{ secrets.OCI_SSH_KEY }}
       OCI_ENV: ${{ secrets.OCI_ENV_FILE }}
+      JWT_PRIV: ${{ secrets.EBD_JWT_PRIVATE_KEY }}
+      JWT_PUB: ${{ secrets.EBD_JWT_PUBLIC_KEY }}
       APP_DIR: ebd-samambaia
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +114,18 @@ jobs:
             --exclude '.git' --exclude 'node_modules' --exclude 'target' \
             --exclude '.env' --exclude 'dist' --exclude '.angular' --exclude 'backups' \
             -e "ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy" ./ "$OCI_USER@$OCI_HOST:~/$APP_DIR/"
+
+      - name: Chaves JWT persistentes (opt-in via secrets)
+        # Se os secrets estiverem definidos, grava as MESMAS chaves a cada deploy,
+        # de modo que os tokens dos usuários sobrevivam às reconstruções.
+        # Sem os secrets, este passo é pulado e o Dockerfile gera chaves (comportamento antigo).
+        if: steps.cfg.outputs.ready == 'true' && env.JWT_PRIV != '' && env.JWT_PUB != ''
+        run: |
+          DEST=~/$APP_DIR/backend/src/main/resources
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "mkdir -p $DEST"
+          printf '%s' "$JWT_PRIV" | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $DEST/privateKey.pem"
+          printf '%s' "$JWT_PUB"  | ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -i ~/.ssh/id_deploy "$OCI_USER@$OCI_HOST" "cat > $DEST/publicKey.pem"
+          echo 'Chaves JWT persistentes gravadas na VM.'
 
       - name: Backup do banco antes do deploy (pg_dump)
         if: steps.cfg.outputs.ready == 'true'
