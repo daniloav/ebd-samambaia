@@ -40,3 +40,6 @@ backend/src/main/resources/publicKey.pem
 
 # Backups/temporários do estagio2-cutover.sh (regras da Security List)
 scripts/.seclist-ingress-*.json
+
+# Chaves JWT montadas em runtime na VM (nunca versionar)
+keys/
