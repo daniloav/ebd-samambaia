@@ -1,76 +1,86 @@
 # Produção — acesso e operação 🌐
 
-Dados e comandos do ambiente de produção (VM na Oracle Cloud).
+Ambiente de produção na Oracle Cloud (OCI). **Topologia de 2 VMs** — visão completa em
+[`topologia.md`](topologia.md).
 
 ## Acesso
 
 | O quê | Valor |
 |---|---|
-| **URL do site** | **https://ebd-ices.duckdns.org** (IP direto: 163.176.181.38) |
+| **URL do site** | **https://ebd-ices.duckdns.org** |
 | **Swagger da API** | https://ebd-ices.duckdns.org/q/swagger-ui |
 | **Health** | https://ebd-ices.duckdns.org/q/health |
 | **Login** | usuários `admin` e `professor` — senhas no seu **gerenciador de senhas** (ver [`senhas-e-secrets.md`](senhas-e-secrets.md)) |
 
-> **HTTPS ativo** via Caddy + Let's Encrypt (dominio DuckDNS ebd-ices.duckdns.org), com renovacao automatica do certificado e redirect HTTP->HTTPS.
+> **HTTPS ativo** via Caddy + Let's Encrypt (DuckDNS `ebd-ices.duckdns.org`), com renovação automática e redirect HTTP→HTTPS.
 >
-> AVISO: o IP publico da VM e efemero — se voce parar e iniciar a instancia (reboot nao conta), o IP pode mudar; entao atualize o IP no DuckDNS.
+> AVISO: o IP público das VMs é efêmero — se você parar e iniciar a instância (reboot não conta), o IP pode mudar; atualize o IP no DuckDNS (app) e o `EBD_DB_HOST`/Security List se mudar o **privado** da db.
 
-## A VM
+## As VMs
 
-| Item | Valor |
-|---|---|
-| Provedor / região | Oracle Cloud (OCI) · `sa-saopaulo-1` |
-| Nome / shape | `ebd-server` · `VM.Standard.E2.1.Micro` (x86, 1 OCPU / 1 GB, Always Free) |
-| SO | Ubuntu 22.04 · **3 GB de swap** |
-| Acesso SSH | `ssh ubuntu@163.176.181.38` (sua chave `~/.ssh/id_ed25519`) |
-| App na VM | `~/ebd-samambaia` (Docker Compose: `ebd-postgres`, `ebd-backend`, `ebd-frontend`) |
+| | ebd-server (app) | ebd-db (banco) |
+|---|---|---|
+| Shape | E2.1.Micro (1 OCPU / 1 GB, Always Free) | idem |
+| IP público / privado | 163.176.181.38 / 10.0.1.45 | 136.248.80.0 / 10.0.1.54 |
+| SSH | `ssh ubuntu@163.176.181.38` | `ssh ubuntu@136.248.80.0` |
+| Roda | `caddy` + `frontend` + `backend` (`~/ebd-samambaia`, `docker-compose.app.yml`) | Postgres (`~/ebd-db`, `docker-compose.db.yml`) |
+
+Chave SSH: `~/.ssh/id_ed25519`. Detalhes de rede/segurança em [`topologia.md`](topologia.md).
 
 ## Como o deploy acontece
 
-Merge de um PR na **`main`** → o workflow **CD** faz o deploy automático (rsync + build na VM).
-Ver [`CICD.md`](CICD.md). Deploy manual: `gh workflow run "CD · Deploy OCI"`.
+Merge de PR na **`main`** → **CI** → **CD**: builda as imagens no runner, publica no **GHCR privado**
+e a `ebd-server` faz `docker compose pull && up` (**sem build na VM**, ~2 min). Ver [`CICD.md`](CICD.md).
+Deploy manual: `gh workflow run "CD · Deploy OCI"`.
 
-## Operação (rodar na VM via SSH)
+## Operação (via SSH)
 
 ```bash
+# --- App (ebd-server) ---
 ssh ubuntu@163.176.181.38
 cd ~/ebd-samambaia
+docker compose -f docker-compose.app.yml ps                  # status
+docker compose -f docker-compose.app.yml logs -f backend     # logs (backend/frontend/caddy)
+docker compose -f docker-compose.app.yml restart backend     # reiniciar um serviço
+docker compose -f docker-compose.app.yml --env-file .env up -d   # aplicar mudança de .env
+docker compose -f docker-compose.app.yml --env-file .env pull && \
+  docker compose -f docker-compose.app.yml --env-file .env up -d  # puxar imagem nova (rollback: EBD_IMAGE_TAG=<sha> no .env)
 
-sudo docker compose ps                 # status dos containers
-sudo docker compose logs -f backend    # logs do backend (ou frontend/db)
-sudo docker compose restart backend    # reiniciar um serviço
-sudo docker compose up -d              # subir (após mudar .env)
-sudo docker compose up -d --build      # rebuild + subir (lento em 1 GB)
+# --- Banco (ebd-db) ---
+ssh ubuntu@136.248.80.0
+docker exec -it ebd-postgres psql -U ebd -d ebd              # console SQL (ex.: SELECT count(*) FROM aluno;)
 ```
 
-### Backup e restore do banco
-```bash
-# backup
-sudo docker exec ebd-postgres pg_dump -U ebd ebd > ~/backup_$(date +%F).sql
-# restore
-cat backup.sql | sudo docker exec -i ebd-postgres psql -U ebd -d ebd
-```
+## Backups
 
-### Consultar o banco direto
+Rodam **na ebd-db** (o deploy não faz mais `pg_dump`). Cron diário + offsite no OCI Object Storage.
+Ver [`topologia.md`](topologia.md#backups). Instalação:
 ```bash
-sudo docker exec -it ebd-postgres psql -U ebd -d ebd
-# ex.: SELECT count(*) FROM aluno;
+./scripts/setup-backup-ebd-db.sh     # cron local na ebd-db
+./scripts/setup-offsite-oci.sh       # offsite no Object Storage (PAR)
+```
+Restaurar (na ebd-db):
+```bash
+gzip -dc ~/backups/ebd-AAAAMMDD-HHMM.sql.gz \
+  | docker exec -i ebd-postgres sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
 ## Trocar senhas / secrets
 
-Ver [`senhas-e-secrets.md`](senhas-e-secrets.md) (seção "Rotacionar"). Em resumo: atualiza o
-`.env` na VM + o secret `OCI_ENV_FILE`, e aplica com `docker compose up -d`
-(ou `down -v && up -d` se precisar reinicializar o banco).
+Ver [`senhas-e-secrets.md`](senhas-e-secrets.md). Em resumo: atualiza o `.env` na `ebd-server`
+(app/SMTP) ou na `ebd-db` (banco) + o secret `OCI_ENV_FILE`, e aplica com o `docker compose ... up -d`
+do host correspondente.
 
-## Verificar / diagnosticar rápido
+## Diagnóstico rápido
 
 ```bash
-curl -I http://163.176.181.38            # frontend deve dar 200
-curl -s http://163.176.181.38/q/health   # {"status":"UP",...}
+curl -sI https://ebd-ices.duckdns.org            # frontend 200
+curl -s  https://ebd-ices.duckdns.org/q/health   # {"status":"UP",...}
+# 5432 NÃO pode responder da internet (rode de fora da VCN):
+nc -vz 136.248.80.0 5432                          # deve falhar
 ```
 
 ## Custo
 
-Tudo em recursos **Always Free** (a instância tem a tag `free-tier-retained: true`).
-Custo esperado: **US$ 0**. Para blindar, crie um Budget/alerta em Billing → Cost Management.
+Tudo em **Always Free**: 2 VMs E2.1.Micro + 10 GB de Object Storage. Custo esperado **US$ 0**.
+Para blindar, crie um Budget/alerta em Billing → Cost Management.

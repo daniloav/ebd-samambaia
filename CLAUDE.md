@@ -27,7 +27,7 @@ Idioma do domínio/código: **português** (nomes de classes, variáveis, rotas,
 | Backend | Java **17** · **Quarkus 3.15** · Hibernate ORM **Panache** · **Flyway** · JWT (smallrye) com perfis |
 | Frontend | **Angular 17** standalone (sem Angular Material) · SCSS · Signals |
 | Banco | **PostgreSQL 16** |
-| Infra | Docker · Docker Compose · nginx (serve o Angular + proxy `/api`) |
+| Infra | Docker Compose · **2 VMs OCI** (app+banco) · Caddy (HTTPS) + nginx · imagens no GHCR |
 | Cloud | Oracle Cloud (OCI) — VM Always Free (A1.Flex ARM), região `sa-saopaulo-1` |
 
 Ambiente local do Danilo: Java 19 (roda o target 17), Maven 3.9, **Node 18.13** (por isso
@@ -39,12 +39,14 @@ Angular **17**, não 18+), Docker. Shell: **zsh** (atenção: scripts usam sheba
 claude-trabalho/
 ├── CLAUDE.md                      ← este arquivo
 ├── README.md                      ← visão geral + como rodar
-├── docker-compose.yml             ← stack completo (prod/VM): db + backend + frontend
+├── docker-compose.yml             ← stack all-in-one (dev/local; fallback — prod usa os 2 abaixo)
+├── docker-compose.app.yml         ← PROD VM app: caddy+frontend+backend (imagens do GHCR)
+├── docker-compose.db.yml          ← PROD VM banco (ebd-db): só Postgres
 ├── docker-compose.dev.yml         ← só Postgres (dev)
 ├── .env.example                   ← credenciais do compose de produção
 ├── backend/                       ← API Quarkus (pacote br.com.ice.ebd)
 │   ├── pom.xml
-│   ├── Dockerfile                 ← multi-stage; gera chaves JWT se ausentes
+│   ├── Dockerfile                 ← multi-stage (imagem publicada no GHCR; chaves JWT vêm do volume /keys em prod)
 │   └── src/main/
 │       ├── java/br/com/ice/ebd/
 │       │   ├── model/             ← entidades JPA (Aluno, Aula, Presenca, Prova, NotaProva, Usuario, Role)
@@ -65,9 +67,11 @@ claude-trabalho/
 │       ├── core/                  ← auth.service, api.service, guards, auth.interceptor, toast.service, models.ts
 │       ├── layout/shell.component.ts   ← menu lateral + outlet
 │       └── pages/                 ← login, dashboard, alunos, chamada, relatorio, provas, notas, desafios
-├── .github/workflows/             ← CI (build + SAST/segurança) e CD (deploy OCI)
-├── scripts/                       ← automação de deploy OCI (ver seção 8)
+├── Caddyfile                      ← HTTPS (Let's Encrypt) + proxy → frontend (VM app)
+├── .github/workflows/             ← CI (build + SAST/segurança) e CD (build imagens GHCR + pull na VM)
+├── scripts/                       ← automação OCI + deploy + backup (ver seção 8)
 └── docs/
+    ├── topologia.md               ← INFRA ATUAL: 2 VMs (app+banco) + GHCR + backups (LER p/ deploy/infra)
     ├── ARQUITETURA.md             ← modelo de dados, camadas, decisões (LER para mudanças estruturais)
     ├── migrations.md              ← changelog das migrations (Flyway) + como recriar o banco
     ├── API.md                     ← referência de endpoints com exemplos
@@ -126,35 +130,34 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 - **Banco**: schema é dono do **Flyway** (`hibernate.database.generation=none`). Toda mudança de
   modelo exige **nova migration** `V2__...`, `V3__...` (não editar a V1 já aplicada).
 
-## 8. Deploy na OCI (estado atual)
+## 8. Deploy na OCI (topologia de 2 VMs + GHCR)
 
-- **Região**: `sa-saopaulo-1` (uma única AD). **Rede já criada** via CLI: VCN pública +
-  Internet Gateway + rota `0.0.0.0/0` + subnet pública + Security List liberando portas 22 e 80.
-- **VM alvo (atual)**: `ebd-server`, shape **`VM.Standard.E2.1.Micro`** (x86, **1 OCPU / 1 GB**, Always Free),
-  Ubuntu 22.04. Mudança do A1.Flex (6 GB) por "Out of capacity" persistente do A1 em São Paulo.
-  Como é 1 GB: `oci-bootstrap.sh` cria **3 GB de swap**, `docker-compose` tem `mem_limit` por serviço
-  e o backend usa `-XX:MaxRAMPercentage`. Voltar ao A1 (6 GB) via **Pay As You Go** está no ROADMAP.
-- O script `scripts/oci-a1-retry.sh` é **agnóstico ao shape** (lê `SHAPE` do `.oci-launch.env`)
-  e tenta com retry no "Out of capacity".
-- Scripts (em `scripts/`):
-  - `oci-descobrir.sh` — lista OCIDs (compartment, AD, imagem, subnet).
-  - `oci-a1-retry.sh` — cria a VM com retry no "Out of capacity" (lê `scripts/.oci-launch.env`).
-  - `gen-jwt-keys.sh` — gera as chaves JWT do backend.
-  - `oci-bootstrap.sh` — roda NA VM: instala Docker/Compose e libera portas 80/443.
-  - `.oci-launch.env` (local, ignorado) — OCIDs reais; modelo em `.oci-launch.env.example`.
-- **CI/CD** (GitHub Actions, ver [`docs/CICD.md`](docs/CICD.md)):
-  - `ci.yml` — build backend/frontend + segurança (Semgrep SAST, Trivy deps/IaC, gitleaks segredos).
-  - `codeql.yml` — CodeQL `security-and-quality` (só roda em repo público/GHAS; pulado no privado).
-  - `cd.yml` — deploy no OCI via rsync+SSH; **modo mock** até cadastrar os secrets `OCI_*`.
-- **Uso persistente do retry** (sobrevive a fechar o terminal):
-  ```bash
-  nohup ./scripts/oci-a1-retry.sh > ~/ebd-launch.log 2>&1 &
-  tail -f ~/ebd-launch.log
-  ```
-- Guia completo: [`docs/deploy-oracle.md`](docs/deploy-oracle.md).
+> Referência autoritativa da infra: [`docs/topologia.md`](docs/topologia.md).
+
+- **Região** `sa-saopaulo-1`, subnet pública única. **2 VMs Always Free** E2.1.Micro (1 OCPU / 1 GB),
+  Ubuntu 22.04 + swap, custo US$ 0:
+  - **`ebd-server`** (app · 163.176.181.38 / **10.0.1.45**): caddy + frontend + backend
+    (`~/ebd-samambaia`, `docker-compose.app.yml`).
+  - **`ebd-db`** (banco · 136.248.80.0 / **10.0.1.54**): Postgres (`~/ebd-db`, `docker-compose.db.yml`),
+    bind no IP privado; 5432 liberada só de `10.0.1.45/32` (Security List + iptables).
+- **Deploy**: merge na `main` → **CD** builda `ebd-backend`/`ebd-frontend` e publica no **GHCR privado**
+  (`ghcr.io/daniloav/ebd-*`); a `ebd-server` faz `docker login` + `pull` + `up` (**sem build na VM**, ~2 min).
+  Chaves JWT montadas em runtime (volume `./keys`). Rollback: `EBD_IMAGE_TAG=<sha>` no `.env`.
+- **Scripts** (em `scripts/`):
+  - `oci-a1-retry.sh` (cria VM, agnóstico ao shape) · `oci-descobrir.sh` · `oci-bootstrap.sh` (Docker+portas na VM).
+  - `estagio2-cutover.sh` — split do banco na 2ª VM (roda do Mac). `gen-jwt-keys.sh` — chaves de dev.
+  - `backup-ebd-db.sh` (roda na ebd-db, via cron) + `setup-backup-ebd-db.sh` + `setup-offsite-oci.sh` (offsite no Object Storage).
+  - `.oci-launch.env` (ignorado) — OCIDs reais; modelo em `.oci-launch.env.example`.
+- **CI/CD** (ver [`docs/CICD.md`](docs/CICD.md)): `ci.yml` (build + Semgrep/Trivy/gitleaks); `codeql.yml`
+  (pulado em repo privado); `cd.yml` (build imagens → GHCR → pull na VM). Secrets: `OCI_*`, `EBD_JWT_*`, `EBD_GHCR_*`.
+- **Backups**: diário na `ebd-db` (local rotacionado) + offsite no **OCI Object Storage** (bucket `ebd-backups`, PAR write-only).
+- Runbooks: [`docs/estagio1-ci-ghcr.md`](docs/estagio1-ci-ghcr.md) · [`docs/estagio2-db-separado.md`](docs/estagio2-db-separado.md) · [`docs/deploy-oracle.md`](docs/deploy-oracle.md).
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 🏗️ **Topologia de 2 VMs + GHCR (2026-07)** — Postgres separado na `ebd-db` (backend com folga de RAM);
+  imagens buildadas no CI e publicadas no GHCR privado, a VM só faz `pull` (deploy ~2 min); e-mail da
+  chamada **assíncrono** (EventBus); backup diário na `ebd-db` + offsite no Object Storage. Ver [`docs/topologia.md`](docs/topologia.md).
 - ✅ MVP completo (backend + frontend + infra + scripts + docs).
 - ✅ Backend passa no `mvn package`; frontend passa no `ng build`.
 - ✅ Código no GitHub: `git@github.com:daniloav/ebd-samambaia.git` (repo **privado**), branch `main`.

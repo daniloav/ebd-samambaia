@@ -63,7 +63,7 @@ No `~/ebd-samambaia/.env`, adicione: `EBD_DB_HOST=10.0.1.54`.
 Suba com o compose de app (sem o Postgres local) e remova o container antigo do banco:
 ```bash
 cd ~/ebd-samambaia
-sudo docker compose -f docker-compose.app.yml --env-file .env up -d --build
+sudo docker compose -f docker-compose.app.yml --env-file .env up -d --build   # (na topologia atual, com imagens no GHCR: pull + up -d, sem --build)
 sudo docker rm -f ebd-postgres      # remove o Postgres local (dados já migraram)
 sudo docker compose -f docker-compose.app.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
 ```
@@ -77,9 +77,9 @@ nc -vz 136.248.80.0 5432   # deve dar timeout/refused (rode de fora da VCN)
 ```
 Login e uma chamada de teste pela UI devem funcionar normalmente.
 
-### Backup passa a rodar na VM-db
-O `scripts/backup-db.sh` (que hoje roda `docker exec ebd-postgres pg_dump` na app) deve rodar na
-**ebd-db**. Ajustar o CD/cron quando fizermos o Estágio 1 (deploy em 2 hosts).
+### Backup roda na VM-db (feito)
+O CD não faz mais `pg_dump`. O backup roda **na ebd-db** por cron + offsite no Object Storage:
+`scripts/setup-backup-ebd-db.sh` e `scripts/setup-offsite-oci.sh` (ver [`topologia.md`](topologia.md#backups)).
 
 ## Rollback
 Se algo falhar no passo 4/5: volte o `docker-compose.yml` all-in-one
