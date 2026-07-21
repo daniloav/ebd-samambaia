@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
+import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { Campanha } from '../../core/models';
 
@@ -135,6 +136,7 @@ interface ImagemSel { file: File; url: string; }
 export class CampanhasComponent {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private confirm = inject(ConfirmService);
   classeCtx = inject(ClasseContextService);
 
   readonly MAX = 5;
@@ -189,10 +191,15 @@ export class CampanhasComponent {
     });
   }
 
-  enviar(): void {
+  async enviar(): Promise<void> {
     if (!this.titulo.trim()) { this.toast.erro('Informe o título.'); return; }
     if (!this.mensagem.trim()) { this.toast.erro('Informe a mensagem.'); return; }
-    if (!confirm(`Enviar esta campanha para os alunos com opt-in de ${this.nomeAlvo()}?`)) { return; }
+    const ok = await this.confirm.pedir({
+      titulo: 'Enviar campanha',
+      mensagem: `Enviar esta campanha para os alunos com opt-in de ${this.nomeAlvo()}?`,
+      confirmar: 'Enviar',
+    });
+    if (!ok) { return; }
 
     this.enviando.set(true);
     const fd = new FormData();

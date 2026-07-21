@@ -1,5 +1,10 @@
 # Runbook — pós-provisionamento da VM (deploy no ar)
 
+> ℹ️ **Nota:** este guia descreve o **provisionamento inicial de uma VM** e o deploy antigo
+> (build na VM). A **infra atual** são **2 VMs (app + banco) + imagens no GHCR** — veja
+> [`topologia.md`](topologia.md). Use este doc só para criar/reprovisionar uma VM.
+
+
 Siga na ordem quando o `oci-a1-retry.sh` mostrar `✅ SUCESSO!`. Substitua `SEU_IP` pelo IP público da VM.
 
 ## 0. Descobrir o IP público da VM

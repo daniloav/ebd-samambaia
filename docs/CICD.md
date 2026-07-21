@@ -10,7 +10,7 @@ Três workflows em `.github/workflows/`.
                        ▼  (testar local com ./scripts/dev-up.sh)
                     Pull Request ──▶ CI roda no PR (precisa passar p/ poder mergear)
                        │
-                       ▼  merge na main ──▶ CI + CD ──▶ deploy em produção 🚀
+                       ▼  merge na main ──▶ CI + CD ──▶ build imagens (GHCR) + pull na VM 🚀
 ```
 
 - **`develop`** — branch de trabalho. Todo dia-a-dia vai aqui.
@@ -75,44 +75,38 @@ Relatórios do Semgrep e do Trivy ficam como **artefatos** do run (aba *Summary 
 - **Ao tornar o repo público, ele passa a rodar sozinho** e popula a aba **Security → Code scanning**.
 - Enquanto isso, a cobertura de SAST fica com o **Semgrep** (que funciona em repo privado, de graça).
 
-## CD (`cd.yml`) — deploy no OCI
+## CD (`cd.yml`) — deploy no OCI (2 VMs + GHCR)
 
-Dispara **manualmente** (`workflow_dispatch`) ou **após o CI passar** na `main`.
+Dispara **após o CI passar na `main`** (ou `workflow_dispatch`). Topologia atual em
+[`topologia.md`](topologia.md). São **dois jobs**:
 
-### Modo MOCK (atual)
-Enquanto os secrets `OCI_*` não existirem, o job roda em **modo mock**: não faz deploy,
-só registra os passos que executaria. Assim a esteira fica verde até a VM ser provisionada.
+1. **build** — builda `ebd-backend` e `ebd-frontend` no runner e publica no **GHCR privado**
+   (`ghcr.io/daniloav/ebd-*`, tags `latest` + `<sha>`), usando o `GITHUB_TOKEN` embutido.
+   Antes, faz o *bump* de versão (SemVer) e a tag `vX.Y.Z`.
+2. **deploy** — na VM `ebd-server`: envia o `.env`, grava as **chaves JWT** em `~/ebd-samambaia/keys`
+   (a partir dos secrets), sincroniza os arquivos de config (compose/Caddyfile/scripts, **sem build**),
+   faz `docker login ghcr` e `docker compose -f docker-compose.app.yml pull && up -d` → **healthcheck**.
 
-### Ativando o deploy real
-Quando a VM estiver no ar, cadastre em **Settings → Secrets and variables → Actions → New repository secret**:
+O deploy **não builda na VM** (deploy ~2 min) e **não toca o banco** (o Postgres roda na `ebd-db`).
+Rollback: `EBD_IMAGE_TAG=<sha>` no `.env` da VM + `up -d`, ou reverter o merge. Detalhes e ativação
+em [`estagio1-ci-ghcr.md`](estagio1-ci-ghcr.md).
 
-| Secret | Valor |
-|---|---|
-| `OCI_SSH_HOST` | IP público da VM (ex.: `140.238.x.x`) |
-| `OCI_SSH_USER` | `ubuntu` |
-| `OCI_SSH_KEY` | conteúdo da **chave privada** de deploy (ver abaixo) |
-| `OCI_ENV_FILE` | *(opcional)* conteúdo do `.env` de produção (senhas fortes) |
+### Secrets do repositório (Settings → Secrets → Actions)
 
-O deploy então: configura SSH → (envia `.env`) → **rsync** do código para `~/ebd-samambaia`
-na VM → `docker compose up -d --build` → **healthcheck** em `http://IP/q/health`.
+| Secret | Para quê | Sensível? |
+|---|---|---|
+| `OCI_SSH_HOST` / `OCI_SSH_USER` | IP público e usuário SSH da `ebd-server` | não |
+| `OCI_SSH_KEY` | chave **privada** de deploy | **sim** |
+| `OCI_ENV_FILE` | `.env` de produção (senhas do banco/app, SMTP, `EBD_DB_HOST`) | **sim** |
+| `EBD_JWT_PRIVATE_KEY` / `EBD_JWT_PUBLIC_KEY` | chaves JWT persistentes (montadas em `/keys`) | privada: **sim** |
+| `EBD_GHCR_USER` | usuário do GHCR (`daniloav`) — para a VM baixar imagem privada | não |
+| `EBD_GHCR_PAT` | PAT **classic** com `read:packages` (login na VM) | **sim** |
 
-### Chave de deploy (recomendado: chave dedicada)
-Não reutilize sua chave pessoal. Na sua máquina:
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/ebd_deploy -C "deploy-actions" -N ""
-# 1) cole ~/.ssh/ebd_deploy.pub em ~/.ssh/authorized_keys da VM (ou no cloud-init)
-# 2) cole o conteúdo de ~/.ssh/ebd_deploy (PRIVADA) no secret OCI_SSH_KEY
-```
+> O **push** das imagens usa o `GITHUB_TOKEN` (não precisa de PAT). O `EBD_GHCR_PAT` é só para a **VM
+> puxar** imagens privadas. Enquanto os secrets `OCI_*` forem placeholder, o deploy roda em **modo mock**.
 
-## Preparando a VM
+## Provisionamento das VMs
 
-Antes do primeiro deploy, rode o [`scripts/oci-bootstrap.sh`](../scripts/oci-bootstrap.sh) **na VM**
-(instala Docker + Compose e libera as portas 80/443). Detalhes em [`deploy-oracle.md`](deploy-oracle.md).
-
-## Ordem recomendada
-
-1. VM provisionada (script de retry A1) → anote o IP público.
-2. Rodar `oci-bootstrap.sh` na VM.
-3. Gerar a chave de deploy e adicionar `.pub` na VM.
-4. Cadastrar os secrets `OCI_*` no GitHub.
-5. Disparar o **CD** (manual ou push na `main`) → site no ar.
+Feito uma vez por VM (ver [`topologia.md`](topologia.md) e [`deploy-oracle.md`](deploy-oracle.md)):
+lançar a E2.1.Micro (script de retry), rodar `oci-bootstrap.sh` (Docker + portas), e — para a `ebd-db` —
+o split do banco via [`estagio2-db-separado.md`](estagio2-db-separado.md) / `scripts/estagio2-cutover.sh`.
