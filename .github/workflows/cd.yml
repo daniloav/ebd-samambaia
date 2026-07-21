@@ -30,6 +30,8 @@ jobs:
   build:
     name: Build & push imagens (GHCR)
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # roda no dispatch manual, ou quando o CI terminou com sucesso
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
