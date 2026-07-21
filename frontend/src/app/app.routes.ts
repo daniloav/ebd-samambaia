@@ -24,6 +24,11 @@ export const routes: Routes = [
           import('./pages/minha-frequencia/minha-frequencia.component').then((m) => m.MinhaFrequenciaComponent),
       },
       {
+        path: 'meu-boletim',
+        canActivate: [alunoGuard],
+        loadComponent: () => import('./pages/meu-boletim/meu-boletim.component').then((m) => m.MeuBoletimComponent),
+      },
+      {
         path: 'alunos',
         canActivate: [naoAlunoGuard],
         loadComponent: () => import('./pages/alunos/alunos.component').then((m) => m.AlunosComponent),
@@ -57,6 +62,17 @@ export const routes: Routes = [
         path: 'desafios',
         canActivate: [naoAlunoGuard],
         loadComponent: () => import('./pages/desafios/desafios.component').then((m) => m.DesafiosComponent),
+      },
+      {
+        path: 'relatorio-visitantes',
+        canActivate: [naoAlunoGuard],
+        loadComponent: () =>
+          import('./pages/relatorio-visitantes/relatorio-visitantes.component').then((m) => m.RelatorioVisitantesComponent),
+      },
+      {
+        path: 'boletim',
+        canActivate: [naoAlunoGuard],
+        loadComponent: () => import('./pages/boletim/boletim.component').then((m) => m.BoletimComponent),
       },
       {
         path: 'conta',

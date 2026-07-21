@@ -85,6 +85,19 @@ Sem parâmetros = todo o histórico. Resposta:
 }
 ```
 
+### GET `/relatorios/visitantes?inicio=&fim=&classeId=` — A, P
+Visitantes do período. Sem `classeId` = geral (todas as turmas, **só ADMIN**); com `classeId` =
+restrito à turma (professor precisa da turma no seu escopo). Resposta:
+```json
+{
+  "inicio": "2026-01-01", "fim": "2026-12-31", "classeId": null, "classeNome": null, "total": 1,
+  "itens": [
+    { "id": 2, "nome": "Visitante Fulano", "email": "v@x.com", "telefone": "619...",
+      "turma": "Adultos", "dataAula": "2026-08-23", "trazidoPorNome": "Ana Souza" }
+  ]
+}
+```
+
 ## Provas e notas
 
 | Método | Rota | Perfil |
@@ -93,6 +106,7 @@ Sem parâmetros = todo o histórico. Resposta:
 | POST · PUT · DELETE | `/provas` · `/provas/{id}` | A |
 | GET | `/provas/{id}/notas` | A, P |
 | PUT | `/provas/{id}/notas` | A, P |
+| POST | `/provas/{id}/notas/notificar` | A, P |
 
 Prova (POST/PUT): `{ "titulo": "Prova do 1º trimestre", "data": "2026-03-30", "notaMaxima": 10.0 }`
 
@@ -105,6 +119,31 @@ Salvar notas (PUT) — `nota: null` remove a nota do aluno; nota acima da máxim
 ```json
 { "itens": [ { "alunoId": 3, "nota": 8.5 } ] }
 ```
+"Lançar e notificar" (POST `/provas/{id}/notas/notificar`) — envia por e-mail o desempenho a cada
+aluno com nota lançada (com e-mail e opt-in). Resposta: `{ "enviados": 2 }`.
+
+## Boletim
+
+### GET `/boletim?alunoId=&ano=2026&trimestre=3` — A, P
+### GET `/me/boletim?ano=2026&trimestre=3` — ALUNO (próprio)
+Trimestre 1..4 (Jan-Mar, Abr-Jun, Jul-Set, Out-Dez). Resposta:
+```json
+{
+  "alunoId": 3, "alunoNome": "Ana Souza", "turma": "Adultos",
+  "ano": 2026, "trimestre": 3, "periodoInicio": "2026-07-01", "periodoFim": "2026-09-30",
+  "provas": [ { "titulo": "Prova Lição 5", "data": "2026-08-23", "nota": 9.5, "notaMaxima": 10.0, "percentual": 95.0 } ],
+  "mediaNotas": 9.5, "aproveitamentoPct": 95.0,
+  "frequencia": { "totalAulas": 1, "presencas": 1, "faltas": 0, "percentualPresenca": 100.0,
+                  "biblias": 1, "revistas": 1, "licoes": 1 },
+  "visitantesTrazidos": 1, "situacao": "Aprovado"
+}
+```
+
+## Administração
+
+### POST `/admin/aniversarios/executar` — A
+Dispara na hora o envio de parabéns dos aniversariantes de hoje (o mesmo do agendamento das 12:00 BRT).
+Resposta: `{ "total": 1, "enviados": 1, "nomes": ["Ana Souza"] }`.
 
 ## Desafios
 

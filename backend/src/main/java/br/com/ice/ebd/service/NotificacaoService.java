@@ -3,6 +3,7 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Presenca;
+import br.com.ice.ebd.model.Prova;
 import br.com.ice.ebd.model.Visitante;
 import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.PresencaRepository;
@@ -11,6 +12,8 @@ import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -329,5 +332,82 @@ public class NotificacaoService {
         return "<tr>"
                 + "<td style=\"padding:8px 0;border-bottom:1px solid #edf0f4;color:#718096;\">" + rotulo + "</td>"
                 + "<td style=\"padding:8px 0;border-bottom:1px solid #edf0f4;text-align:right;font-weight:bold;\">" + valor + "</td></tr>";
+    }
+
+    // ---------- Aniversário ----------
+
+    /**
+     * Felicitação de aniversário. Vai a todos os alunos ativos com e-mail (ignora o opt-in,
+     * conforme decisão). Retorna {@code true} se o e-mail foi enviado. Nunca lança.
+     */
+    public boolean enviarFelizAniversario(Aluno a) {
+        if (!habilitado || a.getEmail() == null || a.getEmail().isBlank()) {
+            return false;
+        }
+        try {
+            String corpo = ""
+                    + "<h1 style=\"margin:0 0 12px;font-size:22px;color:#1b3a5b;\">Feliz aniversário, "
+                    + esc(a.getNome()) + "! 🎉🎂</h1>"
+                    + "<p style=\"margin:0 0 16px;\">Hoje é um dia especial e queremos celebrar com você! "
+                    + "Que Deus renove as suas forças, encha o seu novo ano de vida de saúde, paz e muitas bênçãos.</p>"
+                    + "<p style=\"margin:0 0 16px;\">\"O Senhor te abençoe e te guarde.\" (Números 6.24)</p>"
+                    + "<p style=\"margin:0;\">Com carinho,<br>Sua família da Escola Bíblica Dominical — ICE Samambaia 🙏</p>";
+            String texto = "Feliz aniversário, " + a.getNome() + "!\n\n"
+                    + "Hoje é um dia especial e queremos celebrar com você. Que Deus renove as suas forças "
+                    + "e encha o seu novo ano de vida de bênçãos.\n"
+                    + "\"O Senhor te abençoe e te guarde.\" (Números 6.24)\n\n"
+                    + "Com carinho, sua família da EBD — ICE Samambaia";
+            mailer.send(Mail.withHtml(a.getEmail(),
+                    "Feliz aniversário! 🎉 — EBD ICE Samambaia", shell("Aniversário", corpo)).setText(texto));
+            LOG.infof("Parabéns de aniversário enviado a %s.", a.getEmail());
+            return true;
+        } catch (Exception e) {
+            LOG.warnf("Falha ao enviar aniversário para %s: %s", a.getEmail(), e.getMessage());
+            return false;
+        }
+    }
+
+    // ---------- Desempenho em prova ----------
+
+    /**
+     * Envia ao aluno o desempenho numa prova corrigida. Respeita o toggle e exige e-mail;
+     * o filtro de opt-in fica no chamador (ProvaService). Retorna {@code true} se enviou.
+     */
+    public boolean enviarNotaProva(Aluno a, Prova prova, BigDecimal nota) {
+        if (!habilitado || a.getEmail() == null || a.getEmail().isBlank()) {
+            return false;
+        }
+        try {
+            BigDecimal max = prova.getNotaMaxima();
+            double pct = max != null && max.signum() > 0
+                    ? nota.multiply(new BigDecimal("100")).divide(max, 1, RoundingMode.HALF_UP).doubleValue()
+                    : 0.0;
+            String elogio = pct >= 90 ? "Excelente desempenho! 👏"
+                    : pct >= 70 ? "Muito bem, continue firme! 💪"
+                    : pct >= 50 ? "Bom trabalho — dá para ir ainda mais longe!"
+                    : "Não desanime: cada estudo é um passo. Conte com a gente! 💛";
+            String notaFmt = nota.stripTrailingZeros().toPlainString();
+            String maxFmt = max != null ? max.stripTrailingZeros().toPlainString() : "—";
+            String corpo = ""
+                    + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Olá, " + esc(a.getNome()) + "!</h1>"
+                    + "<p style=\"margin:0 0 16px;\">Sua prova <b>" + esc(prova.getTitulo()) + "</b> ("
+                    + prova.getData().format(DATA) + ") foi corrigida. Veja o seu resultado:</p>"
+                    + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" "
+                    + "style=\"border-collapse:collapse;margin:0 0 18px;\">"
+                    + linhaContato("Nota", notaFmt + " / " + maxFmt)
+                    + linhaContato("Aproveitamento", pct + "%")
+                    + "</table>"
+                    + "<p style=\"margin:0;\">" + elogio + "</p>";
+            String texto = "Olá " + a.getNome() + ",\n\n"
+                    + "Sua prova \"" + prova.getTitulo() + "\" foi corrigida.\n"
+                    + "Nota: " + notaFmt + " / " + maxFmt + " (" + pct + "%)\n\n"
+                    + elogio + "\nEscola Bíblica Dominical — ICE Samambaia";
+            mailer.send(Mail.withHtml(a.getEmail(),
+                    "EBD — resultado da prova: " + prova.getTitulo(), shell("Provas", corpo)).setText(texto));
+            return true;
+        } catch (Exception e) {
+            LOG.warnf("Falha ao enviar nota para %s: %s", a.getEmail(), e.getMessage());
+            return false;
+        }
     }
 }
