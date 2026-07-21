@@ -5,6 +5,7 @@ import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { RelatorioPresencaResponse } from '../../core/models';
+import { exportarExcel, exportarPdf } from '../../core/export.util';
 
 @Component({
   selector: 'app-relatorio',
@@ -32,6 +33,10 @@ import { RelatorioPresencaResponse } from '../../core/models';
         <div class="form-group"><label>Fim</label><input type="date" [(ngModel)]="fim" /></div>
         <button class="btn" (click)="gerar()">Gerar relatório</button>
         <button class="btn btn-outline" (click)="limpar()">Limpar filtro</button>
+        @if (dados()?.itens?.length) {
+          <button class="btn btn-outline" (click)="exportarPdf()">📄 PDF</button>
+          <button class="btn btn-outline" (click)="exportarExcel()">📊 Excel</button>
+        }
       </div>
 
       @if (dados(); as d) {
@@ -105,5 +110,36 @@ export class RelatorioComponent {
   limpar(): void {
     this.inicio = ''; this.fim = '';
     this.gerar();
+  }
+
+  private cols(): string[] {
+    return ['Aluno', 'Presenças', 'Faltas', '% Presença', 'Bíblia', 'Revista', 'Lição', 'Visitante'];
+  }
+
+  private linhas(d: RelatorioPresencaResponse): (string | number)[][] {
+    return d.itens.map((i) =>
+      [i.nome, i.presencas, i.faltas, `${i.percentualPresenca}%`, i.trouxeBiblia, i.trouxeRevista, i.estudouLicao, i.trouxeVisitante]);
+  }
+
+  private turma(): string {
+    const id = this.classeCtx.selecionadaId();
+    return this.classeCtx.classes().find((c) => c.id === id)?.nome ?? 'Turma';
+  }
+
+  private br(iso: string): string {
+    if (!iso) { return '—'; }
+    const [y, m, dd] = iso.split('-');
+    return `${dd}/${m}/${y}`;
+  }
+
+  async exportarPdf(): Promise<void> {
+    const d = this.dados(); if (!d) { return; }
+    await exportarPdf('relatorio-presencas', `Relatório de presenças — ${this.turma()}`,
+      `Período: ${this.br(d.inicio)} a ${this.br(d.fim)} · Total de aulas: ${d.totalAulas}`, this.cols(), this.linhas(d));
+  }
+
+  async exportarExcel(): Promise<void> {
+    const d = this.dados(); if (!d) { return; }
+    await exportarExcel('relatorio-presencas', 'Presenças', this.cols(), this.linhas(d));
   }
 }
