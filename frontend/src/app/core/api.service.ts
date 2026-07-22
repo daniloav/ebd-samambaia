@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 import {
   Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
-  RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
+  DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
   BoletimResponse, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
@@ -181,5 +181,12 @@ export class ApiService {
   // ---------- Notas: lançar e notificar ----------
   notificarNotas(provaId: number): Observable<{ enviados: number }> {
     return this.http.post<{ enviados: number }>(`${this.api}/provas/${provaId}/notas/notificar`, {});
+  }
+
+  // ---------- Dashboard ----------
+  dashboard(classeId?: number | null): Observable<DashboardResponse> {
+    let params = new HttpParams();
+    if (classeId) params = params.set('classeId', classeId);
+    return this.http.get<DashboardResponse>(`${this.api}/dashboard`, { params });
   }
 }
