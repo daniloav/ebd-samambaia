@@ -52,10 +52,14 @@ public class Fixtures {
     }
 
     public Prova prova(Classe classe, String notaMaxima) {
+        return prova(classe, notaMaxima, LocalDate.now());
+    }
+
+    public Prova prova(Classe classe, String notaMaxima, LocalDate data) {
         Prova p = new Prova();
         p.setClasse(classe);
         p.setTitulo("Prova de teste");
-        p.setData(LocalDate.now());
+        p.setData(data);
         p.setNotaMaxima(new BigDecimal(notaMaxima));
         provaRepo.persist(p);
         return p;
