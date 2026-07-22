@@ -88,6 +88,13 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       (`GET /api/me/boletim`), ADMIN/PROFESSOR extraem de qualquer aluno (`GET /api/boletim`). PDF dedicado.
 - [x] **E-mail de desempenho na prova** — botão "Lançar e notificar" envia a nota/aproveitamento ao
       aluno (respeita opt-in). `POST /api/provas/{id}/notas/notificar`.
+- [x] **Quiz / prova online (auto-corrigida)** — a prova ganhou `tipo` OFFLINE/ONLINE; o professor monta
+      questões (múltipla escolha + V/F) e o aluno responde em `/minhas-provas` (1 tentativa + janela). A
+      correção grava `NotaProva` (→ boletim, rankings, e-mail de nota). Migration V10. Refinos pendentes:
+    - [ ] **Questões dissertativas** (resposta em texto, com correção manual pelo professor).
+    - [ ] **Cronômetro / tempo limite** por prova (encerra e envia automaticamente ao esgotar).
+    - [ ] **Embaralhar alternativas** (e questões) por aluno, para dificultar a cola.
+    - [ ] **Banco de questões reutilizável** (montar provas a partir de questões salvas/tags).
 - [ ] **Observações por aula/aluno** (campo de texto livre na chamada).
 
 ## 🟢 Qualidade e robustez
