@@ -146,3 +146,19 @@ cd ~/claude-trabalho/backend && mvn quarkus:dev    # 2) backend :8080
 cd ~/claude-trabalho/frontend && npm start         # 3) frontend :4200
 # abrir http://localhost:4200  (admin / admin123)
 ```
+
+## Testes automatizados (backend)
+
+Os `@QuarkusTest` rodam contra um **Postgres real** (banco separado `ebd_test`), não o Dev Services
+(este Mac não sobe Docker). Uma vez, crie o banco:
+```bash
+createdb -h localhost -O ebd ebd_test    # dono = role ebd (Flyway precisa criar o schema)
+```
+Depois:
+```bash
+cd backend && mvn test        # ou: mvn verify
+```
+O Flyway aplica as migrations no `ebd_test` no boot do teste; cada teste usa `@TestTransaction`
+(rollback) para não sujar o banco. Cobrem: login/JWT + proteção de rota, chamada (upsert),
+notas (validação + gravação), relatório (agregação) e campanha (e-mail via `MockMailbox`).
+No CI o mesmo `mvn verify` roda contra um serviço Postgres (`ebd_test`).
