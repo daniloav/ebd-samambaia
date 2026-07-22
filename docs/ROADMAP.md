@@ -74,7 +74,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 ## 🟡 Evoluções funcionais (curto prazo)
 
-- [ ] **Dashboard com gráficos** (frequência ao longo do tempo, distribuição de presença).
+- [x] **Dashboard com gráficos** — painel com presença média + gráfico de barras de **frequência por aula** (com meta 75%) e barra de **distribuição por faixa** (Excelente/Boa/Atenção). SVG customizado (sem dependência, dark-mode). Endpoint `GET /api/dashboard`.
 - [ ] **Exportar relatório** de presenças para PDF/Excel.
 - [ ] **Filtro por trimestre/período letivo** em relatórios e rankings (hoje já filtra por turma, falta o recorte de período).
 - [ ] **Histórico da chamada** por aluno (linha do tempo de presença/itens).
