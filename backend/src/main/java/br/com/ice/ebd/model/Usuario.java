@@ -41,6 +41,10 @@ public class Usuario {
     @Column(nullable = false)
     private boolean ativo = true;
 
+    /** Marca que o usuário deve trocar a senha no próximo acesso (1º login do aluno). */
+    @Column(name = "precisa_trocar_senha", nullable = false)
+    private boolean precisaTrocarSenha = false;
+
     @Column(name = "data_cadastro", nullable = false)
     private LocalDateTime dataCadastro = LocalDateTime.now();
 
@@ -73,6 +77,9 @@ public class Usuario {
 
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
+
+    public boolean isPrecisaTrocarSenha() { return precisaTrocarSenha; }
+    public void setPrecisaTrocarSenha(boolean precisaTrocarSenha) { this.precisaTrocarSenha = precisaTrocarSenha; }
 
     public LocalDateTime getDataCadastro() { return dataCadastro; }
     public void setDataCadastro(LocalDateTime dataCadastro) { this.dataCadastro = dataCadastro; }

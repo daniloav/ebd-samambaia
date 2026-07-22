@@ -16,6 +16,16 @@ import { ToastService } from '../../core/toast.service';
       <p class="muted">Trocar a senha de <strong>{{ auth.username() }}</strong>.</p>
     </div>
 
+    @if (auth.precisaTrocarSenha()) {
+      <div class="card" style="max-width:460px;border-left:4px solid var(--azul);margin-bottom:1rem">
+        <strong>Primeiro acesso</strong>
+        <p class="muted" style="margin:.3rem 0 0">
+          Defina uma nova senha para continuar. Sua <strong>senha atual</strong> é a padrão
+          (<code>12345678</code>).
+        </p>
+      </div>
+    }
+
     <div class="card" style="max-width:460px">
       <form (ngSubmit)="salvar()">
         <div class="form-group">
@@ -76,6 +86,7 @@ export class ContaComponent {
     this.api.trocarSenha(this.senhaAtual, this.novaSenha).subscribe({
       next: () => {
         this.salvando.set(false);
+        this.auth.senhaTrocada();
         this.toast.sucesso('Senha alterada com sucesso.');
         this.router.navigate(['/']);
       },

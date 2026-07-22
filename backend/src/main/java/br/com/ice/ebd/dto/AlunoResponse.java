@@ -14,12 +14,17 @@ public record AlunoResponse(
         Long classeId,
         String classeNome,
         String email,
-        boolean recebeNotificacoes) {
+        boolean recebeNotificacoes,
+        String login) {
 
     public static AlunoResponse de(Aluno a) {
+        return de(a, null);
+    }
+
+    public static AlunoResponse de(Aluno a, String login) {
         return new AlunoResponse(a.getId(), a.getNome(), a.getTelefone(),
                 a.getDataNascimento(), a.isAtivo(), a.getDataCadastro(),
                 a.getClasse().getId(), a.getClasse().getNome(),
-                a.getEmail(), a.isRecebeNotificacoes());
+                a.getEmail(), a.isRecebeNotificacoes(), login);
     }
 }

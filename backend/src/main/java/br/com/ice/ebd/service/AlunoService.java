@@ -4,11 +4,13 @@ import br.com.ice.ebd.dto.AlunoRequest;
 import br.com.ice.ebd.dto.AlunoResponse;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.repository.AlunoRepository;
+import br.com.ice.ebd.repository.UsuarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class AlunoService {
@@ -21,6 +23,12 @@ public class AlunoService {
     @Inject
     ClasseService classeService;
 
+    @Inject
+    AcessoAlunoService acessoAluno;
+
+    @Inject
+    UsuarioRepository usuarioRepository;
+
     public List<AlunoResponse> listar(Long classeId, boolean apenasAtivos) {
         escopo.assertClasse(classeId);
         List<Aluno> alunos;
@@ -30,13 +38,14 @@ public class AlunoService {
         } else {
             alunos = apenasAtivos ? repository.listarAtivos() : repository.listarOrdenadoPorNome();
         }
-        return alunos.stream().map(AlunoResponse::de).toList();
+        Map<Long, String> logins = usuarioRepository.loginsPorAluno();
+        return alunos.stream().map(a -> AlunoResponse.de(a, logins.get(a.getId()))).toList();
     }
 
     public AlunoResponse buscar(Long id) {
         Aluno a = obter(id);
         escopo.assertClasse(a.getClasse().getId());
-        return AlunoResponse.de(a);
+        return AlunoResponse.de(a, usuarioRepository.loginDoAluno(a.getId()));
     }
 
     @Transactional
@@ -44,7 +53,9 @@ public class AlunoService {
         Aluno a = new Aluno();
         aplicar(a, req);
         repository.persist(a);
-        return AlunoResponse.de(a);
+        repository.flush();               // garante o id antes de vincular o login
+        acessoAluno.sincronizarAcesso(a); // todo aluno cadastrado ganha acesso (senha padrão + troca no 1º login)
+        return AlunoResponse.de(a, usuarioRepository.loginDoAluno(a.getId()));
     }
 
     @Transactional
@@ -52,12 +63,14 @@ public class AlunoService {
         Aluno a = obter(id);
         escopo.assertClasse(a.getClasse().getId());
         aplicar(a, req);
-        return AlunoResponse.de(a);
+        acessoAluno.sincronizarAcesso(a);
+        return AlunoResponse.de(a, usuarioRepository.loginDoAluno(a.getId()));
     }
 
     @Transactional
     public void deletar(Long id) {
         Aluno a = obter(id);
+        acessoAluno.removerAcesso(a.getId()); // remove o login vinculado (FK)
         repository.delete(a);
     }
 
