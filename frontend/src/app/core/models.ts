@@ -367,3 +367,24 @@ export interface BoletimResponse {
   visitantesTrazidos: number;
   situacao: string;
 }
+
+export interface DashPontoFrequencia {
+  data: string;
+  tema: string | null;
+  presentes: number;
+  total: number;
+  pct: number;
+}
+export interface DashDistribuicao {
+  excelente: number;
+  boa: number;
+  atencao: number;
+}
+export interface DashboardResponse {
+  totalAlunos: number;
+  totalAulas: number;
+  totalProvas: number;
+  presencaMediaPct: number;
+  frequenciaPorAula: DashPontoFrequencia[];
+  distribuicao: DashDistribuicao;
+}
