@@ -92,8 +92,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 ## 🟢 Qualidade e robustez
 
-- [ ] **Testes automatizados**: `@QuarkusTest` para `ChamadaService`, `RelatorioService`,
-      `DesafiosService`, `NotificacaoService`; testes de fluxo de autenticação.
+- [x] **Testes automatizados (backend)** — `@QuarkusTest` cobrindo login/JWT + proteção de rota, `ChamadaService` (upsert), `ProvaService` (validação de nota), `RelatorioService` (agregação) e `NotificacaoService`/campanha (e-mail via `MockMailbox`). Rodam contra Postgres real (`ebd_test`) local e no CI (`mvn verify` com serviço Postgres). Falta cobrir `DesafiosService`.
 - [ ] **Testes de front** (ao menos smoke dos serviços/guards).
 - [ ] **Envio de e-mail assíncrono** — hoje o `NotificacaoService` envia **de forma síncrona** dentro da transação da chamada; migrar para assíncrono (evento/`@Blocking`/fila) para não segurar o salvamento em turmas grandes.
 - [ ] **Soft-delete de aluno** (preservar histórico usando `ativo`, sem cascata destrutiva).
