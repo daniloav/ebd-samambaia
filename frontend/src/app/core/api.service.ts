@@ -128,8 +128,9 @@ export class ApiService {
   listarCampanhas(): Observable<Campanha[]> {
     return this.http.get<Campanha[]>(`${this.api}/campanhas`);
   }
-  criarCampanha(c: CampanhaRequest): Observable<Campanha> {
-    return this.http.post<Campanha>(`${this.api}/campanhas`, c);
+  criarCampanha(form: FormData): Observable<Campanha> {
+    // multipart: campos (titulo, mensagem, classeId) + imagens[] (arte)
+    return this.http.post<Campanha>(`${this.api}/campanhas`, form);
   }
   // ---------- Aluno (visão própria) ----------
   minhaFrequencia(): Observable<MinhaFrequenciaResponse> {

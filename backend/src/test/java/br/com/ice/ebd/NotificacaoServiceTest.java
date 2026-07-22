@@ -34,7 +34,7 @@ class NotificacaoServiceTest {
         Aluno semEmail = fx.aluno("Sem", c, null, true);
 
         int enviados = notificacaoService.enviarCampanha(
-                "Título", "Mensagem", List.of(comEmail, semEmail), "Turma Camp");
+                "Título", "Mensagem", List.of(comEmail, semEmail), "Turma Camp", List.of());
 
         assertEquals(1, enviados);
         assertEquals(1, mailbox.getTotalMessagesSent());
