@@ -85,6 +85,7 @@ import { TemaService } from '../core/tema.service';
         <nav (click)="fecharNoMobile()">
           @if (auth.isAluno()) {
             <a routerLink="/minha-frequencia" routerLinkActive="ativo"><span class="ico">📊</span> Minha frequência</a>
+            <a routerLink="/minhas-provas" routerLinkActive="ativo"><span class="ico">🧠</span> Minhas provas</a>
             <a routerLink="/meu-boletim" routerLinkActive="ativo"><span class="ico">📄</span> Meu boletim</a>
           } @else {
             <a routerLink="/painel" routerLinkActive="ativo"><span class="ico">🏠</span> Painel</a>
