@@ -59,6 +59,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/notas/notas.component').then((m) => m.NotasComponent),
       },
       {
+        path: 'provas/:id/questoes',
+        canActivate: [naoAlunoGuard],
+        loadComponent: () => import('./pages/quiz-editor/quiz-editor.component').then((m) => m.QuizEditorComponent),
+      },
+      {
         path: 'desafios',
         canActivate: [naoAlunoGuard],
         loadComponent: () => import('./pages/desafios/desafios.component').then((m) => m.DesafiosComponent),
