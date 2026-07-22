@@ -48,4 +48,26 @@ class DesafiosServiceTest {
         assertEquals(presente.getId(), d.maisTrouxeBiblia().get(0).alunoId());
         assertEquals(1.0, d.maisTrouxeBiblia().get(0).valor());
     }
+
+    @Test
+    @TestSecurity(user = "admin", roles = "ADMIN")
+    @TestTransaction
+    void aulasFuturasNaoEntramNoRanking() {
+        Classe c = fx.classe("Turma Futuro");
+        Aluno a = fx.aluno("Aluno", c, null, false);
+        Aula passada = fx.aula(c, LocalDate.now().minusDays(7));
+        Aula futura = fx.aula(c, LocalDate.now().plusDays(7));
+
+        // Presença registrada na aula passada e também na futura (ex.: chamada adiantada).
+        chamadaService.salvarChamada(passada.getId(), new SalvarChamadaRequest(List.of(
+                new SalvarChamadaRequest.Item(a.getId(), true, false, false, false))));
+        chamadaService.salvarChamada(futura.getId(), new SalvarChamadaRequest(List.of(
+                new SalvarChamadaRequest.Item(a.getId(), true, false, false, false))));
+
+        DesafiosResponse d = desafiosService.gerar(c.getId());
+
+        // Só a aula passada conta: 1 aula e 1 presença (a futura é ignorada).
+        assertEquals(1, d.totalAulas());
+        assertEquals(1.0, d.menosFaltou().get(0).valor());
+    }
 }
