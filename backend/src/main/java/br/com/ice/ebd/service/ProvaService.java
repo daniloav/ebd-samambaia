@@ -8,9 +8,11 @@ import br.com.ice.ebd.dto.SalvarNotasRequest;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.NotaProva;
 import br.com.ice.ebd.model.Prova;
+import br.com.ice.ebd.model.TipoProva;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.NotaProvaRepository;
 import br.com.ice.ebd.repository.ProvaRepository;
+import br.com.ice.ebd.repository.QuestaoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -30,6 +32,7 @@ public class ProvaService {
     @Inject ProvaRepository provaRepository;
     @Inject ClasseService classeService;
     @Inject NotaProvaRepository notaRepository;
+    @Inject QuestaoRepository questaoRepository;
     @Inject AlunoRepository alunoRepository;
     @Inject NotificacaoService notificacaoService;
 
@@ -39,13 +42,13 @@ public class ProvaService {
         escopo.assertClasse(classeId);
         var provas = classeId != null ? provaRepository.listarPorClasse(classeId)
                                        : provaRepository.listarOrdenadoPorData();
-        return provas.stream().map(ProvaResponse::de).toList();
+        return provas.stream().map(p -> ProvaResponse.de(p, questaoRepository.count("prova.id", p.getId()))).toList();
     }
 
     public ProvaResponse buscar(Long id) {
         Prova p = obter(id);
         escopo.assertClasse(p.getClasse().getId());
-        return ProvaResponse.de(p);
+        return ProvaResponse.de(p, questaoRepository.count("prova.id", p.getId()));
     }
 
     @Transactional
@@ -166,5 +169,8 @@ public class ProvaService {
         p.setTitulo(req.titulo().trim());
         p.setData(req.data());
         p.setNotaMaxima(req.notaMaxima());
+        p.setTipo(req.tipo() != null && req.tipo().equalsIgnoreCase("ONLINE") ? TipoProva.ONLINE : TipoProva.OFFLINE);
+        p.setAbreEm(req.abreEm());
+        p.setFechaEm(req.fechaEm());
     }
 }

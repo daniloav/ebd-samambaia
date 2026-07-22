@@ -60,6 +60,9 @@ export interface ChamadaResponse {
   itens: PresencaItem[];
 }
 
+export type TipoProva = 'OFFLINE' | 'ONLINE';
+export type TipoQuestao = 'MULTIPLA' | 'VF';
+
 export interface Prova {
   id: number;
   titulo: string;
@@ -67,6 +70,10 @@ export interface Prova {
   notaMaxima: number;
   classeId?: number;
   classeNome?: string;
+  tipo?: TipoProva;
+  abreEm?: string | null;
+  fechaEm?: string | null;
+  numQuestoes?: number;
 }
 
 export interface ProvaRequest {
@@ -74,6 +81,77 @@ export interface ProvaRequest {
   titulo: string;
   data: string;
   notaMaxima: number;
+  tipo?: TipoProva;
+  abreEm?: string | null;
+  fechaEm?: string | null;
+}
+
+export interface QuizAlternativaEdit {
+  id?: number;
+  texto: string;
+  correta: boolean;
+}
+export interface QuizQuestaoEdit {
+  id?: number;
+  enunciado: string;
+  tipo: TipoQuestao;
+  pontos: number;
+  alternativas: QuizAlternativaEdit[];
+}
+
+// ---- Visão do aluno (provas ONLINE) ----
+export type StatusProva = 'FUTURA' | 'DISPONIVEL' | 'RESPONDIDA' | 'FECHADA';
+
+export interface MinhaProva {
+  id: number;
+  titulo: string;
+  data: string;
+  notaMaxima: number;
+  numQuestoes: number;
+  status: StatusProva;
+  abreEm: string | null;
+  fechaEm: string | null;
+  nota: number | null;
+}
+
+export interface AlternativaResponder {
+  id: number;
+  texto: string;
+}
+export interface QuestaoResponder {
+  id: number;
+  enunciado: string;
+  tipo: TipoQuestao;
+  pontos: number;
+  alternativas: AlternativaResponder[];
+}
+export interface QuizParaResponder {
+  provaId: number;
+  titulo: string;
+  notaMaxima: number;
+  questoes: QuestaoResponder[];
+}
+
+export interface RespostaIn {
+  questaoId: number;
+  alternativaId: number | null;
+}
+export interface ResultadoQuestao {
+  questaoId: number;
+  enunciado: string;
+  escolhidaId: number | null;
+  corretaId: number | null;
+  acertou: boolean;
+  pontos: number;
+  alternativas: AlternativaResponder[];
+}
+export interface ResultadoProva {
+  titulo: string;
+  nota: number;
+  notaMaxima: number;
+  acertos: number;
+  total: number;
+  questoes: ResultadoQuestao[];
 }
 
 export interface NotaItem {

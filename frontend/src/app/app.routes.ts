@@ -29,6 +29,16 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/meu-boletim/meu-boletim.component').then((m) => m.MeuBoletimComponent),
       },
       {
+        path: 'minhas-provas',
+        canActivate: [alunoGuard],
+        loadComponent: () => import('./pages/minhas-provas/minhas-provas.component').then((m) => m.MinhasProvasComponent),
+      },
+      {
+        path: 'minhas-provas/:id',
+        canActivate: [alunoGuard],
+        loadComponent: () => import('./pages/minhas-provas/responder-prova.component').then((m) => m.ResponderProvaComponent),
+      },
+      {
         path: 'alunos',
         canActivate: [naoAlunoGuard],
         loadComponent: () => import('./pages/alunos/alunos.component').then((m) => m.AlunosComponent),
@@ -57,6 +67,11 @@ export const routes: Routes = [
         path: 'provas/:id/notas',
         canActivate: [naoAlunoGuard],
         loadComponent: () => import('./pages/notas/notas.component').then((m) => m.NotasComponent),
+      },
+      {
+        path: 'provas/:id/questoes',
+        canActivate: [naoAlunoGuard],
+        loadComponent: () => import('./pages/quiz-editor/quiz-editor.component').then((m) => m.QuizEditorComponent),
       },
       {
         path: 'desafios',

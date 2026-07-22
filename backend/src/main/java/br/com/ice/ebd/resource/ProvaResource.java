@@ -4,7 +4,9 @@ import br.com.ice.ebd.dto.NotasProvaResponse;
 import br.com.ice.ebd.dto.ProvaRequest;
 import br.com.ice.ebd.dto.ProvaResponse;
 import br.com.ice.ebd.dto.SalvarNotasRequest;
+import br.com.ice.ebd.dto.QuizDto;
 import br.com.ice.ebd.service.ProvaService;
+import br.com.ice.ebd.service.QuizService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -28,6 +30,9 @@ public class ProvaResource {
 
     @Inject
     ProvaService service;
+
+    @Inject
+    QuizService quizService;
 
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR"})
@@ -85,5 +90,22 @@ public class ProvaResource {
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public Map<String, Integer> notificarNotas(@PathParam("id") Long id) {
         return Map.of("enviados", service.notificarNotas(id));
+    }
+
+    // ----- Questões da prova online (montador do professor) -----
+
+    @GET
+    @Path("/{id}/questoes")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public List<QuizDto.QuestaoEdit> questoes(@PathParam("id") Long id) {
+        return quizService.obterQuestoes(id);
+    }
+
+    @PUT
+    @Path("/{id}/questoes")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public Response salvarQuestoes(@PathParam("id") Long id, QuizDto.Salvar request) {
+        quizService.salvarQuestoes(id, request);
+        return Response.noContent().build();
     }
 }
