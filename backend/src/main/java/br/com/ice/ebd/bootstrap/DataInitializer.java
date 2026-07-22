@@ -26,6 +26,7 @@ public class DataInitializer {
     @Inject UsuarioRepository usuarioRepository;
     @Inject AlunoRepository alunoRepository;
     @Inject ClasseRepository classeRepository;
+    @Inject br.com.ice.ebd.service.AcessoAlunoService acessoAluno;
 
     @ConfigProperty(name = "ebd.seed.admin.username") String adminUser;
     @ConfigProperty(name = "ebd.seed.admin.password") String adminPass;
@@ -36,6 +37,7 @@ public class DataInitializer {
     void onStart(@Observes StartupEvent ev) {
         seedUsuarios();
         seedAlunosExemplo();
+        acessoAluno.garantirAcessoParaTodos(); // todo aluno cadastrado tem login (backfill idempotente)
     }
 
     private void seedUsuarios() {

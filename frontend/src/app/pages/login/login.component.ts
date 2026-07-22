@@ -80,7 +80,7 @@ export class LoginComponent {
     this.carregando.set(true);
     this.erro.set(null);
     this.auth.login(this.username, this.senha).subscribe({
-      next: () => this.router.navigate(['/painel']),
+      next: () => this.router.navigate([this.auth.precisaTrocarSenha() ? '/conta' : '/painel']),
       error: () => {
         this.erro.set('Usuário ou senha inválidos.');
         this.carregando.set(false);

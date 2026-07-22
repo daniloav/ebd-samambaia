@@ -7,6 +7,7 @@ import br.com.ice.ebd.repository.AlunoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -37,7 +38,8 @@ public class DesafiosService {
             nomes.put(a.getId(), a.getNome());
         }
 
-        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where (:cid = -1 or a.classe.id = :cid)").setParameter("cid", cid).getSingleResult()).longValue();
+        LocalDate hoje = LocalDate.now();
+        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where (:cid = -1 or a.classe.id = :cid) and a.data <= :hoje").setParameter("cid", cid).setParameter("hoje", hoje).getSingleResult()).longValue();
         long totalProvas = ((Number) em.createQuery("select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid)").setParameter("cid", cid).getSingleResult()).longValue();
 
         Map<Long, MetricasPresenca> presenca = carregarPresencas(cid);
@@ -99,8 +101,9 @@ public class DesafiosService {
                         "sum(case when p.trouxeBiblia = true then 1 else 0 end), " +
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
                         "sum(case when p.estudouLicao = true then 1 else 0 end) " +
-                        "from Presenca p where (:cid = -1 or p.aula.classe.id = :cid) group by p.aluno.id", Object[].class)
+                        "from Presenca p where (:cid = -1 or p.aula.classe.id = :cid) and p.aula.data <= :hoje group by p.aluno.id", Object[].class)
                 .setParameter("cid", cid)
+                .setParameter("hoje", LocalDate.now())
                 .getResultList();
         Map<Long, Long> visitantes = carregarVisitantesPorAluno(cid);
         for (Object[] l : linhas) {
@@ -118,8 +121,9 @@ public class DesafiosService {
         List<Object[]> linhas = em.createQuery(
                         "select v.trazidoPor.id, count(v) from Visitante v "
                         + "where v.trazidoPor is not null and (:cid = -1 or v.aula.classe.id = :cid) "
-                        + "group by v.trazidoPor.id", Object[].class)
+                        + "and v.aula.data <= :hoje group by v.trazidoPor.id", Object[].class)
                 .setParameter("cid", cid)
+                .setParameter("hoje", LocalDate.now())
                 .getResultList();
         for (Object[] l : linhas) {
             mapa.put((Long) l[0], toLong(l[1]));
