@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 import {
   Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
-  RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
+  QuizQuestaoEdit, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
   BoletimResponse, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
@@ -181,5 +181,13 @@ export class ApiService {
   // ---------- Notas: lançar e notificar ----------
   notificarNotas(provaId: number): Observable<{ enviados: number }> {
     return this.http.post<{ enviados: number }>(`${this.api}/provas/${provaId}/notas/notificar`, {});
+  }
+
+  // ---------- Quiz (questões da prova online) ----------
+  obterQuestoesProva(provaId: number): Observable<QuizQuestaoEdit[]> {
+    return this.http.get<QuizQuestaoEdit[]>(`${this.api}/provas/${provaId}/questoes`);
+  }
+  salvarQuestoesProva(provaId: number, questoes: QuizQuestaoEdit[]): Observable<void> {
+    return this.http.put<void>(`${this.api}/provas/${provaId}/questoes`, { questoes });
   }
 }

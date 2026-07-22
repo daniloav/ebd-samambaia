@@ -60,6 +60,9 @@ export interface ChamadaResponse {
   itens: PresencaItem[];
 }
 
+export type TipoProva = 'OFFLINE' | 'ONLINE';
+export type TipoQuestao = 'MULTIPLA' | 'VF';
+
 export interface Prova {
   id: number;
   titulo: string;
@@ -67,6 +70,10 @@ export interface Prova {
   notaMaxima: number;
   classeId?: number;
   classeNome?: string;
+  tipo?: TipoProva;
+  abreEm?: string | null;
+  fechaEm?: string | null;
+  numQuestoes?: number;
 }
 
 export interface ProvaRequest {
@@ -74,6 +81,22 @@ export interface ProvaRequest {
   titulo: string;
   data: string;
   notaMaxima: number;
+  tipo?: TipoProva;
+  abreEm?: string | null;
+  fechaEm?: string | null;
+}
+
+export interface QuizAlternativaEdit {
+  id?: number;
+  texto: string;
+  correta: boolean;
+}
+export interface QuizQuestaoEdit {
+  id?: number;
+  enunciado: string;
+  tipo: TipoQuestao;
+  pontos: number;
+  alternativas: QuizAlternativaEdit[];
 }
 
 export interface NotaItem {

@@ -1,6 +1,8 @@
 package br.com.ice.ebd.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -11,6 +13,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "prova")
@@ -28,6 +31,18 @@ public class Prova {
 
     @Column(name = "nota_maxima", nullable = false, precision = 5, scale = 2)
     private BigDecimal notaMaxima = new BigDecimal("10.00");
+
+    /** OFFLINE (nota à mão) ou ONLINE (quiz auto-corrigido). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private TipoProva tipo = TipoProva.OFFLINE;
+
+    /** Janela da prova online (opcional). */
+    @Column(name = "abre_em")
+    private LocalDateTime abreEm;
+
+    @Column(name = "fecha_em")
+    private LocalDateTime fechaEm;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "classe_id", nullable = false)
     private Classe classe;
@@ -44,6 +59,15 @@ public class Prova {
 
     public BigDecimal getNotaMaxima() { return notaMaxima; }
     public void setNotaMaxima(BigDecimal notaMaxima) { this.notaMaxima = notaMaxima; }
+
+    public TipoProva getTipo() { return tipo; }
+    public void setTipo(TipoProva tipo) { this.tipo = tipo; }
+
+    public LocalDateTime getAbreEm() { return abreEm; }
+    public void setAbreEm(LocalDateTime abreEm) { this.abreEm = abreEm; }
+
+    public LocalDateTime getFechaEm() { return fechaEm; }
+    public void setFechaEm(LocalDateTime fechaEm) { this.fechaEm = fechaEm; }
 
     public Classe getClasse() { return classe; }
     public void setClasse(Classe classe) { this.classe = classe; }
