@@ -5,7 +5,8 @@ import { environment } from '../../environments/environment';
 import {
   Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
-  QuizQuestaoEdit, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
+  QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
+  RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
   BoletimResponse, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
@@ -189,5 +190,19 @@ export class ApiService {
   }
   salvarQuestoesProva(provaId: number, questoes: QuizQuestaoEdit[]): Observable<void> {
     return this.http.put<void>(`${this.api}/provas/${provaId}/questoes`, { questoes });
+  }
+
+  // ---------- Aluno: minhas provas online ----------
+  minhasProvas(): Observable<MinhaProva[]> {
+    return this.http.get<MinhaProva[]>(`${this.api}/me/provas`);
+  }
+  obterProvaParaResponder(provaId: number): Observable<QuizParaResponder> {
+    return this.http.get<QuizParaResponder>(`${this.api}/me/provas/${provaId}`);
+  }
+  submeterProva(provaId: number, respostas: RespostaIn[]): Observable<ResultadoProva> {
+    return this.http.post<ResultadoProva>(`${this.api}/me/provas/${provaId}/submeter`, { respostas });
+  }
+  obterResultadoProva(provaId: number): Observable<ResultadoProva> {
+    return this.http.get<ResultadoProva>(`${this.api}/me/provas/${provaId}/resultado`);
   }
 }
