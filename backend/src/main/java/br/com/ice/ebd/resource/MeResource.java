@@ -2,21 +2,26 @@ package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.BoletimResponse;
 import br.com.ice.ebd.dto.MinhaFrequenciaResponse;
+import br.com.ice.ebd.dto.QuizAlunoDto;
 import br.com.ice.ebd.dto.TrocarSenhaRequest;
 import br.com.ice.ebd.service.BoletimService;
 import br.com.ice.ebd.service.MinhaFrequenciaService;
+import br.com.ice.ebd.service.QuizAlunoService;
 import br.com.ice.ebd.service.UsuarioService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 import java.util.Map;
 
 /** Dados do usuário autenticado e a visão própria do aluno. */
@@ -35,6 +40,9 @@ public class MeResource {
 
     @Inject
     BoletimService boletimService;
+
+    @Inject
+    QuizAlunoService quizAlunoService;
 
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
@@ -68,5 +76,38 @@ public class MeResource {
     @RolesAllowed("ALUNO")
     public BoletimResponse boletim(@QueryParam("ano") int ano, @QueryParam("trimestre") int trimestre) {
         return boletimService.gerarMeu(ano, trimestre);
+    }
+
+    /** Provas online da turma do aluno, com status (disponível/respondida/fechada/futura). */
+    @GET
+    @Path("/provas")
+    @RolesAllowed("ALUNO")
+    public List<QuizAlunoDto.ProvaResumo> minhasProvas() {
+        return quizAlunoService.listarMinhas();
+    }
+
+    /** O quiz para responder (sem gabarito). Só dentro da janela e se ainda não respondida. */
+    @GET
+    @Path("/provas/{id}")
+    @RolesAllowed("ALUNO")
+    public QuizAlunoDto.ParaResponder responder(@PathParam("id") Long id) {
+        return quizAlunoService.obterParaResponder(id);
+    }
+
+    /** Envia as respostas; corrige automaticamente e devolve a nota + o gabarito. */
+    @POST
+    @Path("/provas/{id}/submeter")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("ALUNO")
+    public QuizAlunoDto.Resultado submeter(@PathParam("id") Long id, QuizAlunoDto.SubmeterRequest req) {
+        return quizAlunoService.submeter(id, req);
+    }
+
+    /** Resultado de uma prova já respondida (nota + gabarito, para rever). */
+    @GET
+    @Path("/provas/{id}/resultado")
+    @RolesAllowed("ALUNO")
+    public QuizAlunoDto.Resultado resultado(@PathParam("id") Long id) {
+        return quizAlunoService.obterResultado(id);
     }
 }

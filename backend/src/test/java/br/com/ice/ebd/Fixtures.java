@@ -4,10 +4,13 @@ import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.model.Prova;
+import br.com.ice.ebd.model.Role;
+import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.ClasseRepository;
 import br.com.ice.ebd.repository.ProvaRepository;
+import br.com.ice.ebd.repository.UsuarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.math.BigDecimal;
@@ -21,6 +24,7 @@ public class Fixtures {
     @Inject AlunoRepository alunoRepo;
     @Inject AulaRepository aulaRepo;
     @Inject ProvaRepository provaRepo;
+    @Inject UsuarioRepository usuarioRepo;
 
     public Classe classe(String nome) {
         Classe c = new Classe();
@@ -59,5 +63,17 @@ public class Fixtures {
         p.setNotaMaxima(new BigDecimal(notaMaxima));
         provaRepo.persist(p);
         return p;
+    }
+
+    /** Usuário com role ALUNO vinculado a um aluno (para @TestSecurity com o mesmo username). */
+    public Usuario usuarioAluno(String username, Aluno aluno) {
+        Usuario u = new Usuario();
+        u.setUsername(username);
+        u.setSenhaHash("x");
+        u.setRole(Role.ALUNO);
+        u.setAtivo(true);
+        u.setAluno(aluno);
+        usuarioRepo.persist(u);
+        return u;
     }
 }

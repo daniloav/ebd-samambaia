@@ -179,6 +179,14 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 - 📧 **Alertas por e-mail** (roadmap item 2): ao salvar a chamada, envia e-mail aos alunos com opt-in
   (`recebe_notificacoes` + `email`, migration V4). Toggle `ebd.notificacoes.enabled` (off em prod até
   configurar SMTP). Validado em dev com mailer *mock*. Guia: [`docs/notificacoes-email.md`](docs/notificacoes-email.md).
+- 🧠 **Quiz / prova online (auto-corrigida)** — a prova ganhou um `tipo`: **OFFLINE** (atual, nota à
+  mão) ou **ONLINE** (quiz respondido pela tela e corrigido na hora). Migration **V10** (questao,
+  alternativa, submissao, resposta + `tipo`/`abre_em`/`fecha_em` na prova). Professor monta as questões
+  (múltipla escolha e V/F, 1 correta) em `/provas/:id/questoes`; a nota máxima vira a soma dos pontos.
+  Aluno responde em **`/minhas-provas`** (1 tentativa + janela opcional): a correção grava `NotaProva`
+  (→ boletim, rankings e e-mail de nota) e mostra o gabarito. Endpoints do aluno em `/api/me/provas*`.
+  Validado: `mvn test` (2 testes de auto-correção, 11 no total), `ng build`, e ponta-a-ponta em dev
+  (montar → responder → nota 6/10 → 2ª tentativa bloqueada → boletim). Branch `feature/quiz-prova-online`.
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
 
 ## 10. Como pedir evoluções (dica para o Danilo)
