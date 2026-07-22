@@ -41,6 +41,10 @@ import { Aluno, AlunoRequest } from '../../core/models';
                  placeholder="🔎 Buscar por nome..." aria-label="Buscar aluno" />
           @if (busca()) { <button class="btn btn-outline btn-sm" (click)="busca.set('')">Limpar</button> }
         </div>
+        <p class="muted" style="font-size:.82rem;margin:-.4rem 0 1rem">
+          Todo aluno cadastrado recebe acesso ao sistema com a senha padrão <code>12345678</code>,
+          trocada obrigatoriamente no 1º login.
+        </p>
 
         @if (alunosFiltrados().length === 0) {
           <app-vazio icone="🔎" titulo="Nenhum aluno encontrado"
@@ -50,7 +54,7 @@ import { Aluno, AlunoRequest } from '../../core/models';
             <table class="tabela tabela-cards">
               <thead>
                 <tr>
-                  <th>Nome</th><th>Telefone</th><th>Nascimento</th><th>Situação</th>
+                  <th>Nome</th><th>Login</th><th>Telefone</th><th>Nascimento</th><th>Situação</th>
                   @if (auth.isAdmin() || auth.isProfessor()) { <th style="width:130px">Ações</th> }
                 </tr>
               </thead>
@@ -58,6 +62,7 @@ import { Aluno, AlunoRequest } from '../../core/models';
                 @for (a of alunosFiltrados(); track a.id) {
                   <tr>
                     <td data-label="Nome">{{ a.nome }}</td>
+                    <td data-label="Login"><code>{{ a.login || '—' }}</code></td>
                     <td data-label="Telefone">{{ a.telefone || '—' }}</td>
                     <td data-label="Nascimento">{{ a.dataNascimento ? (a.dataNascimento | date:'dd/MM/yyyy') : '—' }}</td>
                     <td data-label="Situação">
@@ -206,7 +211,7 @@ export class AlunosComponent {
   async confirmarExclusao(a: Aluno): Promise<void> {
     const ok = await this.confirm.pedir({
       titulo: 'Excluir aluno',
-      mensagem: `Excluir o aluno "${a.nome}"? Isso remove também seus registros de chamada e notas.`,
+      mensagem: `Excluir o aluno "${a.nome}"? Isso remove também seu acesso ao sistema, registros de chamada e notas.`,
       confirmar: 'Excluir', perigo: true,
     });
     if (!ok) { return; }
