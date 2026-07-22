@@ -38,6 +38,6 @@ public class AuthService {
         protecao.registrarSucesso(req.username());
         String token = tokenService.gerarToken(usuario);
         return new LoginResponse(token, usuario.getUsername(), usuario.getRole().name(),
-                tokenService.getDurationSeconds());
+                tokenService.getDurationSeconds(), usuario.isPrecisaTrocarSenha());
     }
 }

@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateChildFn, CanActivateFn, RouterStateSnapshot, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
 /** Exige usuário autenticado. */
@@ -44,4 +44,18 @@ export const alunoGuard: CanActivateFn = () => {
   }
   router.navigate(['/']);
   return false;
+};
+
+/**
+ * 1º acesso: enquanto o usuário precisar trocar a senha, prende-o na tela de conta.
+ * Liberado apenas o caminho /conta (onde a troca acontece).
+ */
+export const senhaGuard: CanActivateChildFn = (_route, state: RouterStateSnapshot) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.precisaTrocarSenha() && !state.url.startsWith('/conta')) {
+    router.navigate(['/conta']);
+    return false;
+  }
+  return true;
 };

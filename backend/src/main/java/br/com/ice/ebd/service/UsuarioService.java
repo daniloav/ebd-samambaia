@@ -124,6 +124,7 @@ public class UsuarioService {
                     Response.Status.BAD_REQUEST);
         }
         u.setSenhaHash(BcryptUtil.bcryptHash(req.novaSenha()));
+        u.setPrecisaTrocarSenha(false); // 1º acesso concluído
     }
 
     /** Exige senha com pelo menos {@link #SENHA_MIN} caracteres. */

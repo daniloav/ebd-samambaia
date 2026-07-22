@@ -5,6 +5,7 @@ export interface LoginResponse {
   username: string;
   role: Role;
   expiresInSeconds: number;
+  precisaTrocarSenha: boolean;
 }
 
 export interface Aluno {
@@ -18,6 +19,7 @@ export interface Aluno {
   classeNome?: string;
   email?: string | null;
   recebeNotificacoes?: boolean;
+  login?: string | null;
 }
 
 export interface AlunoRequest {

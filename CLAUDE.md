@@ -187,6 +187,14 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   (→ boletim, rankings e e-mail de nota) e mostra o gabarito. Endpoints do aluno em `/api/me/provas*`.
   Validado: `mvn test` (2 testes de auto-correção, 11 no total), `ng build`, e ponta-a-ponta em dev
   (montar → responder → nota 6/10 → 2ª tentativa bloqueada → boletim). Branch `feature/quiz-prova-online`.
+- 🔑 **Acesso automático do aluno** — todo aluno cadastrado passa a ter um **login** (usuário ALUNO
+  vinculado) criado na hora, com **senha padrão `12345678`** e **troca obrigatória no 1º acesso**
+  (`precisa_trocar_senha`, migration **V11**). Login = `nome.sobrenome` (sem acento, sufixo numérico em
+  colisão). `AcessoAlunoService` cuida disso (criar aluno, backfill idempotente no boot p/ os existentes,
+  espelha ativo/e-mail, remove o login ao excluir o aluno). Login retorna `precisaTrocarSenha`; o front
+  prende o usuário em `/conta` (guard) até trocar. Tela de alunos mostra a coluna **Login**. Testes:
+  `AcessoAlunoServiceTest` (login gerado, colisão, idempotência). Branch `feature/acesso-aluno-automatico`
+  (empilhada sobre a do quiz — a V11 vem após a V10).
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
 
 ## 10. Como pedir evoluções (dica para o Danilo)

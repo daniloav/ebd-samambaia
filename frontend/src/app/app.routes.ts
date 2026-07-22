@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, naoAlunoGuard, alunoGuard } from './core/guards';
+import { authGuard, adminGuard, naoAlunoGuard, alunoGuard, senhaGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -10,6 +10,7 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
+    canActivateChild: [senhaGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'painel' },
       {
