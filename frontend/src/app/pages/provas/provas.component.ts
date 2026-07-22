@@ -15,7 +15,7 @@ import { Prova, ProvaRequest } from '../../core/models';
   imports: [FormsModule, DatePipe, RouterLink],
   template: `
     <div class="flex-between" style="margin-bottom:1.25rem">
-      <div><h2>Provas</h2><p class="muted">Avaliações da classe (submódulo dos desafios).</p></div>
+      <div><h2>Provas</h2><p class="muted">Avaliações da classe — offline (nota à mão) ou quiz online (auto-corrigido).</p></div>
       @if (auth.isAdmin() || auth.isProfessor()) {
         <button class="btn" (click)="abrirNovo()">+ Nova prova</button>
       }
@@ -30,16 +30,24 @@ import { Prova, ProvaRequest } from '../../core/models';
         <div class="tabela-scroll">
           <table class="tabela">
             <thead>
-              <tr><th>Título</th><th>Data</th><th>Nota máxima</th><th style="width:230px">Ações</th></tr>
+              <tr><th>Título</th><th>Tipo</th><th>Data</th><th>Nota máx.</th><th style="width:300px">Ações</th></tr>
             </thead>
             <tbody>
               @for (p of provas(); track p.id) {
                 <tr>
                   <td>{{ p.titulo }}</td>
+                  <td>
+                    @if (p.tipo === 'ONLINE') {
+                      <span class="badge badge-dourado">🧠 Quiz · {{ p.numQuestoes }} q</span>
+                    } @else { <span class="badge badge-cinza">Offline</span> }
+                  </td>
                   <td>{{ p.data | date:'dd/MM/yyyy' }}</td>
                   <td>{{ p.notaMaxima }}</td>
                   <td>
-                    <a class="btn btn-dourado btn-sm" [routerLink]="['/provas', p.id, 'notas']">Lançar notas</a>
+                    @if (p.tipo === 'ONLINE') {
+                      <a class="btn btn-sm" [routerLink]="['/provas', p.id, 'questoes']">Editar questões</a>
+                    }
+                    <a class="btn btn-dourado btn-sm" [routerLink]="['/provas', p.id, 'notas']">Notas</a>
                     @if (auth.isAdmin() || auth.isProfessor()) {
                       <button class="btn btn-outline btn-sm" (click)="editar(p)">Editar</button>
                     }
@@ -62,10 +70,24 @@ import { Prova, ProvaRequest } from '../../core/models';
           <div class="modal-body">
             <div class="form-group"><label>Título *</label>
               <input type="text" [(ngModel)]="form.titulo" maxlength="200" /></div>
+            <div class="form-group"><label>Tipo</label>
+              <select [(ngModel)]="form.tipo">
+                <option value="OFFLINE">Offline (nota lançada à mão)</option>
+                <option value="ONLINE">Online (quiz respondido pelo aluno)</option>
+              </select>
+            </div>
             <div class="form-group"><label>Data *</label>
               <input type="date" [(ngModel)]="form.data" /></div>
-            <div class="form-group"><label>Nota máxima *</label>
-              <input type="number" [(ngModel)]="form.notaMaxima" min="0.5" step="0.5" /></div>
+            @if (form.tipo === 'ONLINE') {
+              <div class="form-group"><label>Disponível a partir de (opcional)</label>
+                <input type="datetime-local" [(ngModel)]="form.abreEm" /></div>
+              <div class="form-group"><label>Fecha em (opcional)</label>
+                <input type="datetime-local" [(ngModel)]="form.fechaEm" /></div>
+              <p class="muted" style="font-size:.82rem">A nota máxima do quiz é a <b>soma dos pontos</b> das questões (definida ao montar o quiz).</p>
+            } @else {
+              <div class="form-group"><label>Nota máxima *</label>
+                <input type="number" [(ngModel)]="form.notaMaxima" min="0.5" step="0.5" /></div>
+            }
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="fechar()">Cancelar</button>
@@ -95,7 +117,7 @@ export class ProvasComponent {
   constructor() { effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true }); }
 
   private formVazio(): ProvaRequest {
-    return { titulo: '', data: '', notaMaxima: 10 };
+    return { titulo: '', data: '', notaMaxima: 10, tipo: 'OFFLINE', abreEm: null, fechaEm: null };
   }
 
   carregar(): void {
@@ -109,7 +131,12 @@ export class ProvasComponent {
   abrirNovo(): void { this.editando.set(null); this.form = this.formVazio(); this.modalAberto.set(true); }
   editar(p: Prova): void {
     this.editando.set(p);
-    this.form = { titulo: p.titulo, data: p.data, notaMaxima: p.notaMaxima };
+    this.form = {
+      titulo: p.titulo, data: p.data, notaMaxima: p.notaMaxima,
+      tipo: p.tipo ?? 'OFFLINE',
+      abreEm: p.abreEm ? p.abreEm.slice(0, 16) : null,
+      fechaEm: p.fechaEm ? p.fechaEm.slice(0, 16) : null,
+    };
     this.modalAberto.set(true);
   }
   fechar(): void { this.modalAberto.set(false); }
@@ -119,15 +146,20 @@ export class ProvasComponent {
     const classeId = this.classeCtx.selecionadaId();
     if (!classeId) { this.toast.erro('Selecione uma turma no menu.'); return; }
     this.salvando.set(true);
-    const payload = { ...this.form, classeId };
+    const payload: ProvaRequest = {
+      ...this.form, classeId,
+      abreEm: this.form.tipo === 'ONLINE' ? (this.form.abreEm || null) : null,
+      fechaEm: this.form.tipo === 'ONLINE' ? (this.form.fechaEm || null) : null,
+    };
     const alvo = this.editando();
     const req$ = alvo ? this.api.atualizarProva(alvo.id, payload) : this.api.criarProva(payload);
     req$.subscribe({
       next: () => {
-        this.toast.sucesso(alvo ? 'Prova atualizada!' : 'Prova criada!');
         this.salvando.set(false); this.fechar(); this.carregar();
+        this.toast.sucesso(alvo ? 'Prova atualizada!'
+          : (this.form.tipo === 'ONLINE' ? 'Prova online criada! Agora monte as questões.' : 'Prova criada!'));
       },
-      error: () => { this.toast.erro('Erro ao salvar prova.'); this.salvando.set(false); },
+      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao salvar prova.'); this.salvando.set(false); },
     });
   }
 

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record ProvaRequest(
         @NotNull(message = "A classe é obrigatória")
@@ -17,5 +18,10 @@ public record ProvaRequest(
         LocalDate data,
         @NotNull(message = "A nota máxima é obrigatória")
         @DecimalMin(value = "0.01", message = "A nota máxima deve ser maior que zero")
-        BigDecimal notaMaxima) {
+        BigDecimal notaMaxima,
+        /** OFFLINE (padrão) ou ONLINE (quiz). Nulo = OFFLINE. */
+        String tipo,
+        /** Janela da prova online (opcional). */
+        LocalDateTime abreEm,
+        LocalDateTime fechaEm) {
 }
