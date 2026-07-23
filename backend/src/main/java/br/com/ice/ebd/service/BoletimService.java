@@ -127,15 +127,22 @@ public class BoletimService {
                 .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult()).longValue();
 
-        String situacao = situacao(totalAulas, comNota, percPresenca, aproveitamento);
+        boolean trimestreEncerrado = hoje.isAfter(fim); // enquanto não fecha, não dá veredito
+        String situacao = situacao(totalAulas, comNota, percPresenca, aproveitamento, trimestreEncerrado);
 
         return new BoletimResponse(aid, aluno.getNome(), aluno.getClasse().getNome(),
                 ano, trimestre, ini, fim, provas, mediaNotas, aproveitamento, freq, visitantes, situacao);
     }
 
-    private String situacao(long totalAulas, int comNota, double percPresenca, double aproveitamento) {
+    private String situacao(long totalAulas, int comNota, double percPresenca, double aproveitamento,
+                            boolean trimestreEncerrado) {
         if (totalAulas == 0 && comNota == 0) {
             return "Sem registros no período";
+        }
+        // Boletim é por trimestre: enquanto o trimestre não encerra, não há veredito (pode mudar
+        // com aulas/provas futuras). Só ao fechar calcula Aprovado/Em recuperação.
+        if (!trimestreEncerrado) {
+            return "Trimestre em andamento";
         }
         boolean freqOk = percPresenca >= FREQUENCIA_MIN;
         boolean notaOk = comNota == 0 || aproveitamento >= APROVEITAMENTO_MIN;
