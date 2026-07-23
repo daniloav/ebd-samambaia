@@ -19,5 +19,8 @@ public record AlunoRequest(
         @Size(max = 150, message = "O e-mail deve ter no máximo 150 caracteres")
         String email,
         Boolean recebeNotificacoes,
-        Boolean ativo) {
+        Boolean ativo,
+        /** Login desejado (opcional). Em branco na criação = gerado automaticamente (nome.sobrenome). */
+        @Size(max = 60, message = "O login deve ter no máximo 60 caracteres")
+        String login) {
 }

@@ -55,6 +55,9 @@ public class AlunoService {
         repository.persist(a);
         repository.flush();               // garante o id antes de vincular o login
         acessoAluno.sincronizarAcesso(a); // todo aluno cadastrado ganha acesso (senha padrão + troca no 1º login)
+        if (req.login() != null && !req.login().isBlank()) {
+            acessoAluno.definirLogin(a.getId(), req.login()); // login customizado (senão fica o automático)
+        }
         return AlunoResponse.de(a, usuarioRepository.loginDoAluno(a.getId()));
     }
 
@@ -64,6 +67,9 @@ public class AlunoService {
         escopo.assertClasse(a.getClasse().getId());
         aplicar(a, req);
         acessoAluno.sincronizarAcesso(a);
+        if (req.login() != null && !req.login().isBlank()) {
+            acessoAluno.definirLogin(a.getId(), req.login()); // troca o login se informado (e diferente)
+        }
         return AlunoResponse.de(a, usuarioRepository.loginDoAluno(a.getId()));
     }
 
