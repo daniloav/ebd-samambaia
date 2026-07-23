@@ -27,6 +27,7 @@ public class UsuarioService {
     public static final int SENHA_MIN = 8;
 
     @Inject UsuarioRepository repository;
+    @Inject LoginService loginService;
     @Inject AlunoRepository alunoRepository;
     @Inject ClasseRepository classeRepository;
 
@@ -45,9 +46,8 @@ public class UsuarioService {
                     Response.Status.BAD_REQUEST);
         }
         validarForcaSenha(req.senha());
-        validarUsernameUnico(req.username(), null);
         Usuario u = new Usuario();
-        u.setUsername(req.username().trim());
+        u.setUsername(loginService.preparar(req.username(), null));
         u.setSenhaHash(BcryptUtil.bcryptHash(req.senha()));
         aplicarComuns(u, req);
         repository.persist(u);
@@ -57,8 +57,9 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponse atualizar(Long id, UsuarioRequest req) {
         Usuario u = obter(id);
-        validarUsernameUnico(req.username(), id);
-        u.setUsername(req.username().trim());
+        if (!loginService.normalizar(req.username()).equals(u.getUsername())) {
+            u.setUsername(loginService.preparar(req.username(), id));
+        }
         if (req.senha() != null && !req.senha().isBlank()) {
             validarForcaSenha(req.senha());
             u.setSenhaHash(BcryptUtil.bcryptHash(req.senha()));
@@ -142,14 +143,6 @@ public class UsuarioService {
             throw new NotFoundException("Usuário não encontrado: " + id);
         }
         return u;
-    }
-
-    private void validarUsernameUnico(String username, Long idAtual) {
-        Optional<Usuario> existente = repository.findByUsername(username.trim());
-        if (existente.isPresent() && !existente.get().getId().equals(idAtual)) {
-            throw new WebApplicationException("Já existe um usuário com este nome.",
-                    Response.Status.CONFLICT);
-        }
     }
 
     private long contarAdmins() {

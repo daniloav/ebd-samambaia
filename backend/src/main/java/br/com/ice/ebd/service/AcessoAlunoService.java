@@ -30,6 +30,7 @@ public class AcessoAlunoService {
     public static final String SENHA_PADRAO = "12345678";
 
     @Inject UsuarioRepository usuarioRepository;
+    @Inject LoginService loginService;
     @Inject AlunoRepository alunoRepository;
 
     /**
@@ -58,6 +59,25 @@ public class AcessoAlunoService {
     @Transactional
     public void removerAcesso(Long alunoId) {
         usuarioRepository.delete("aluno.id", alunoId);
+    }
+
+    /**
+     * Edita o login do usuário vinculado a um aluno. Idempotente: se o novo login for igual ao
+     * atual, não faz nada. Valida formato e unicidade pelo {@link LoginService}.
+     */
+    @Transactional
+    public void definirLogin(Long alunoId, String novoLoginRaw) {
+        Usuario u = usuarioRepository.find("aluno.id", alunoId).firstResult();
+        if (u == null) {
+            return; // aluno sem login (não deveria ocorrer); nada a renomear
+        }
+        String novo = loginService.normalizar(novoLoginRaw);
+        if (novo.equals(u.getUsername())) {
+            return; // sem mudança
+        }
+        loginService.validarFormato(novo);
+        loginService.validarUnico(novo, u.getId());
+        u.setUsername(novo);
     }
 
     /** Backfill idempotente: cria login para todo aluno que ainda não tem. Retorna quantos criou. */

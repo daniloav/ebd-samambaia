@@ -53,8 +53,9 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header"><h3>{{ editando() ? 'Editar usuário' : 'Novo usuário' }}</h3></div>
           <div class="modal-body">
-            <div class="form-group"><label>Usuário *</label>
-              <input type="text" [(ngModel)]="form.username" maxlength="60" autocomplete="off" /></div>
+            <div class="form-group"><label>Usuário (login) *</label>
+              <input type="text" [(ngModel)]="form.username" maxlength="60" autocomplete="off" />
+              <small class="muted">Só minúsculas, números, ponto, hífen ou sublinhado (ex.: joao.silva).</small></div>
             <div class="form-group">
               <label>Senha {{ editando() ? '(deixe em branco para manter)' : '*' }}</label>
               <input type="password" [(ngModel)]="form.senha" autocomplete="new-password" />
