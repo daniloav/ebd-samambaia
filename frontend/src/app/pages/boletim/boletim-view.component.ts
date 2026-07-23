@@ -19,6 +19,7 @@ import { exportarBoletimPdf } from '../../core/export.util';
     .situacao.ok { background: #c6f6d5; color: #22543d; }
     .situacao.rec { background: #fed7d7; color: #822727; }
     .situacao.neutra { background: #e2e8f0; color: #2d3748; }
+    .situacao.andamento { background: #dbeafe; color: #1e40af; }
     h3 { margin: 1.2rem 0 .5rem; }
   `],
   template: `
@@ -38,7 +39,8 @@ import { exportarBoletimPdf } from '../../core/export.util';
         <div class="box">Presença<br><b>{{ b.frequencia.percentualPresenca }}%</b></div>
         <div class="box" style="display:flex;flex-direction:column;justify-content:center">
           <span class="situacao" [class.ok]="situacaoOk()" [class.rec]="situacaoRec()"
-                [class.neutra]="!situacaoOk() && !situacaoRec()">{{ b.situacao }}</span>
+                [class.andamento]="situacaoAndamento()"
+                [class.neutra]="!situacaoOk() && !situacaoRec() && !situacaoAndamento()">{{ b.situacao }}</span>
         </div>
       </div>
 
@@ -94,6 +96,7 @@ export class BoletimViewComponent {
 
   situacaoOk(): boolean { return this.b.situacao === 'Aprovado'; }
   situacaoRec(): boolean { return this.b.situacao === 'Em recuperação'; }
+  situacaoAndamento(): boolean { return this.b.situacao === 'Trimestre em andamento'; }
 
   baixarPdf(): void {
     exportarBoletimPdf(this.b);
