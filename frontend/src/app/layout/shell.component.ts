@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
@@ -53,24 +53,58 @@ import { TemaService } from '../core/tema.service';
     .link-tema { background: none; border: none; padding: 0; cursor: pointer; font: inherit; text-align: left; }
     .conteudo { flex: 1; padding: 1.75rem 2rem; max-width: 1100px; }
     .topo-mobile { display: none; }
+    .topbar-mobile { display: none; }
+    .backdrop-menu { display: none; }
     @media (max-width: 820px) {
       .layout { flex-direction: column; }
-      .sidebar { width: 100%; height: auto; position: relative; }
-      .sidebar.fechado nav, .sidebar.fechado .rodape { display: none; }
-      .conteudo { padding: 1.25rem; }
+      /* barra fixa de topo (fora da gaveta) com o botão do menu */
+      .topbar-mobile {
+        display: flex; align-items: center; gap: .7rem;
+        position: fixed; top: 0; left: 0; right: 0; height: 54px; z-index: 1200;
+        background: var(--azul); color: #fff; padding: 0 .9rem; box-shadow: var(--sombra-md);
+      }
+      .topbar-mobile h1 { margin: 0; font-size: 1rem; color: #fff; line-height: 1.1; }
+      .topbar-mobile span { color: var(--dourado-claro); font-size: .72rem; }
+      .hamburguer {
+        background: rgba(255,255,255,.14); color: #fff; border: none;
+        font-size: 1.25rem; line-height: 1; padding: .35rem .65rem; border-radius: 8px; cursor: pointer;
+      }
+      /* a barra lateral vira gaveta deslizante POR CIMA do conteúdo */
+      .sidebar {
+        position: fixed; top: 0; left: 0; height: 100vh; width: 270px; max-width: 82%;
+        z-index: 1300; transform: translateX(-100%); transition: transform .25s ease;
+        box-shadow: var(--sombra-md);
+      }
+      .sidebar.aberto { transform: translateX(0); }
+      .backdrop-menu {
+        display: block; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+        z-index: 1250; animation: fadein .2s ease;
+      }
+      .conteudo { padding: calc(54px + 1.1rem) 1.1rem 1.5rem; max-width: 100%; }
       .topo-mobile { display: flex; }
     }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
   `],
   template: `
     <div class="layout">
-      <aside class="sidebar" [class.fechado]="!menuAberto()">
+      <header class="topbar-mobile">
+        <button class="hamburguer" (click)="menuAberto.set(true)" aria-label="Abrir menu">☰</button>
+        <div>
+          <h1>EBD ICES</h1>
+          <span>ICE Samambaia</span>
+        </div>
+      </header>
+      @if (menuAberto()) {
+        <div class="backdrop-menu" (click)="menuAberto.set(false)"></div>
+      }
+      <aside class="sidebar" [class.aberto]="menuAberto()">
         <div class="marca flex-between">
           <div>
             <h1>EBD ICES</h1>
             <span>ICE Samambaia · v{{ versao }}</span>
           </div>
           <button class="btn-sair topo-mobile" style="width:auto;padding:.3rem .6rem"
-                  (click)="menuAberto.set(!menuAberto())">☰</button>
+                  (click)="menuAberto.set(false)" aria-label="Fechar menu">✕</button>
         </div>
         @if (!auth.isAluno() && classeCtx.classes().length) {
           <div class="seletor-classe">
@@ -131,8 +165,15 @@ export class ShellComponent implements OnInit {
   tema = inject(TemaService);
   classeCtx = inject(ClasseContextService);
   private router = inject(Router);
-  menuAberto = signal(true);
+  menuAberto = signal(false);
   versao = APP_VERSION;
+
+  constructor() {
+    // trava a rolagem do body enquanto a gaveta está aberta (mobile)
+    effect(() => {
+      document.body.style.overflow = this.menuAberto() ? 'hidden' : '';
+    });
+  }
 
   ngOnInit(): void {
     if (!this.auth.isAluno()) {
@@ -146,9 +187,7 @@ export class ShellComponent implements OnInit {
   }
 
   fecharNoMobile(): void {
-    if (window.innerWidth <= 820) {
-      this.menuAberto.set(false);
-    }
+    this.menuAberto.set(false);
   }
 
   sair(): void {
