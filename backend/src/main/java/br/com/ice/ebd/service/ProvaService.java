@@ -8,6 +8,8 @@ import br.com.ice.ebd.dto.SalvarNotasRequest;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.NotaProva;
 import br.com.ice.ebd.model.Prova;
+import br.com.ice.ebd.model.AcaoAuditoria;
+import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.model.TipoProva;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.NotaProvaRepository;
@@ -28,6 +30,8 @@ import java.util.Map;
 public class ProvaService {
 
     @Inject EscopoService escopo;
+
+    @Inject AuditoriaService auditoria;
 
     @Inject ProvaRepository provaRepository;
     @Inject ClasseService classeService;
@@ -57,6 +61,7 @@ public class ProvaService {
         Prova p = new Prova();
         aplicar(p, req);
         provaRepository.persist(p);
+        auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.PROVA, p.getId(), p.getTitulo());
         return ProvaResponse.de(p);
     }
 
@@ -65,12 +70,14 @@ public class ProvaService {
         escopo.assertClasse(req.classeId());
         Prova p = obter(id);
         aplicar(p, req);
+        auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.PROVA, p.getId(), p.getTitulo());
         return ProvaResponse.de(p);
     }
 
     @Transactional
     public void deletar(Long id) {
         Prova p = obter(id);
+        auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.PROVA, p.getId(), p.getTitulo());
         provaRepository.delete(p); // notas removidas em cascata
     }
 
