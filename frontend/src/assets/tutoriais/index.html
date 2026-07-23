@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutoriais — EBD ICES</title>
+<style>
+  :root{
+    --paper:#f0ece2; --card:#fbf9f4; --ink:#243040; --ink-soft:#5f6c7c;
+    --gold:#a9781f; --gold-2:#c9a24b; --line:#e4dccb; --navy:#263c60; --navy2:#1d2f4d;
+    --shadow:0 14px 40px rgba(40,52,70,.14); --em:#e7f0e9; --em-ink:#3a6b4e;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#121924; --card:#1c2634; --ink:#e9eef4; --ink-soft:#9db0c3; --gold:#e2b662;
+      --gold-2:#e7c982; --line:#2a3849; --shadow:0 16px 44px rgba(0,0,0,.5); --em:#1e2c25; --em-ink:#8fd0a8; }
+  }
+  :root[data-theme="dark"]{ --paper:#121924; --card:#1c2634; --ink:#e9eef4; --ink-soft:#9db0c3; --gold:#e2b662;
+    --gold-2:#e7c982; --line:#2a3849; --shadow:0 16px 44px rgba(0,0,0,.5); --em:#1e2c25; --em-ink:#8fd0a8; }
+  :root[data-theme="light"]{ --paper:#f0ece2; --card:#fbf9f4; --ink:#243040; --ink-soft:#5f6c7c;
+    --gold:#a9781f; --gold-2:#c9a24b; --line:#e4dccb; --shadow:0 14px 40px rgba(40,52,70,.14); --em:#e7f0e9; --em-ink:#3a6b4e; }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; color:var(--ink); background:
+      radial-gradient(1100px 520px at 50% -8%, color-mix(in srgb,var(--gold) 12%,transparent), transparent 60%), var(--paper);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; min-height:100vh; }
+  .serif{ font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif; }
+  .wrap{ max-width:820px; margin:0 auto; padding:clamp(28px,7vw,64px) 20px 60px; }
+
+  header{ text-align:center; margin-bottom:34px; }
+  .bk{ font-size:2.6rem; }
+  h1{ margin:.3rem 0 .2rem; font-size:clamp(1.7rem,5vw,2.4rem); text-wrap:balance; }
+  .rule{ width:54px; height:3px; background:var(--gold-2); border-radius:2px; margin:.5rem auto .7rem; }
+  header p{ margin:0 auto; max-width:52ch; color:var(--ink-soft); font-size:clamp(.92rem,2.4vw,1.05rem); line-height:1.55; }
+  .eyebrow{ text-transform:uppercase; letter-spacing:.16em; font-size:.68rem; font-weight:800; color:var(--gold); }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:620px){ .grid{ grid-template-columns:1fr; } }
+
+  .guia{ display:flex; flex-direction:column; gap:8px; background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:20px 20px 18px; box-shadow:var(--shadow); text-decoration:none; color:inherit;
+    position:relative; transition:transform .16s ease, box-shadow .16s ease, border-color .16s; }
+  a.guia:hover{ transform:translateY(-3px); border-color:var(--gold-2); box-shadow:0 20px 46px rgba(40,52,70,.2); }
+  .guia .top{ display:flex; align-items:center; gap:12px; }
+  .guia .ico{ font-size:1.7rem; width:48px; height:48px; display:grid; place-items:center;
+    background:color-mix(in srgb,var(--navy) 8%,transparent); border-radius:12px; }
+  .guia h2{ margin:0; font-size:1.12rem; }
+  .guia .desc{ color:var(--ink-soft); font-size:.9rem; line-height:1.5; margin:2px 0 6px; }
+  .guia .cta{ font-weight:700; color:var(--gold); font-size:.9rem; }
+  .badge{ position:absolute; top:16px; right:16px; font-size:.66rem; font-weight:800; letter-spacing:.05em;
+    text-transform:uppercase; padding:4px 9px; border-radius:99px; }
+  .badge.ok{ background:var(--em); color:var(--em-ink); }
+  .badge.soon{ background:color-mix(in srgb,var(--ink) 9%,transparent); color:var(--ink-soft); }
+  .guia.soon{ opacity:.72; }
+
+  .tip{ margin-top:26px; text-align:center; color:var(--ink-soft); font-size:.82rem; line-height:1.6; }
+  .tip b{ color:var(--ink); }
+  footer{ margin-top:30px; text-align:center; color:var(--ink-soft); font-size:.76rem; }
+  footer a{ color:var(--gold); text-decoration:none; }
+  a:focus-visible,.guia:focus-visible{ outline:2px solid var(--gold-2); outline-offset:3px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="bk">📖</div>
+      <div class="eyebrow">EBD ICES · Escola Bíblica Dominical</div>
+      <h1 class="serif">Central de tutoriais</h1>
+      <div class="rule"></div>
+      <p>Guias curtos e ilustrados para professores e alunos aprenderem a usar o sistema.
+         Cada um passa sozinho, com legendas — é só assistir.</p>
+    </header>
+
+    <div class="grid">
+      <a class="guia" href="visao-geral.html">
+        <span class="badge ok">Disponível</span>
+        <div class="top"><div class="ico">📖</div><h2 class="serif">Visão geral</h2></div>
+        <div class="desc">O que é o app, como entrar, os perfis e o uso no celular. Comece por aqui.</div>
+        <span class="cta">Assistir →</span>
+      </a>
+
+      <div class="guia soon">
+        <span class="badge soon">Em breve</span>
+        <div class="top"><div class="ico">✅</div><h2 class="serif">Chamada</h2></div>
+        <div class="desc">Escolher a aula e marcar presença, Bíblia, revista e lição por toque.</div>
+        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
+      </div>
+
+      <div class="guia soon">
+        <span class="badge soon">Em breve</span>
+        <div class="top"><div class="ico">👥</div><h2 class="serif">Alunos</h2></div>
+        <div class="desc">Cadastrar e editar alunos, e o acesso automático (login e senha).</div>
+        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
+      </div>
+
+      <div class="guia soon">
+        <span class="badge soon">Em breve</span>
+        <div class="top"><div class="ico">📝</div><h2 class="serif">Provas</h2></div>
+        <div class="desc">Provas com nota à mão e quiz online que corrige sozinho.</div>
+        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
+      </div>
+
+      <div class="guia soon">
+        <span class="badge soon">Em breve</span>
+        <div class="top"><div class="ico">📄</div><h2 class="serif">Boletim</h2></div>
+        <div class="desc">Ler notas, frequência e situação do aluno por trimestre.</div>
+        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
+      </div>
+    </div>
+
+    <p class="tip">💡 Dica: dá para <b>assistir pelo celular</b> e, se quiser, deixar <b>tela cheia</b> para ver melhor.</p>
+    <footer><a href="/">← Voltar para o login</a> · EBD ICES · ICE Samambaia</footer>
+  </div>
+</body>
+</html>

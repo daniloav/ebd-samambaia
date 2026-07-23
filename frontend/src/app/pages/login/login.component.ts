@@ -28,6 +28,11 @@ import { APP_VERSION } from '../../version';
     .dica { margin-top: 1.25rem; font-size: .78rem; color: var(--cinza-texto);
             text-align: center; line-height: 1.5; }
     .versao { display:block; margin-top:.5rem; opacity:.55; font-size:.72rem; }
+    .tutorial { display:flex; align-items:center; justify-content:center; gap:.5rem;
+                margin-top:1.1rem; padding:.62rem .8rem; border:1px solid #d7dee8;
+                border-radius:9px; color:#2c4770; font-size:.86rem; font-weight:600;
+                text-decoration:none; transition:background .15s, border-color .15s; }
+    .tutorial:hover { background:#f4f7fb; border-color:#2c4770; text-decoration:none; }
   `],
   template: `
     <div class="tela">
@@ -55,6 +60,10 @@ import { APP_VERSION } from '../../version';
             {{ carregando() ? 'Entrando...' : 'Entrar' }}
           </button>
         </form>
+
+        <a class="tutorial" href="/assets/tutoriais/index.html" target="_blank" rel="noopener">
+          📖 Primeira vez? Veja como usar o app
+        </a>
 
         <p class="dica">Acesso restrito à coordenação da classe.
           <span class="versao">v{{ versao }}</span></p>
