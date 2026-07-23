@@ -69,8 +69,13 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       de toque (célula inteira clicável, alvos ≥44px) e testar a tabela de 5 colunas em 360px de largura.
 - [x] **P2 · Responsividade das páginas** — `.tabela-cards`: no ≤600px as linhas viram cartão. Aplicado a **alunos** e à **chamada** (nome = cabeçalho; itens = linhas grandes de toque).
 - [x] **P2 · Ícones PNG do PWA (192/512px)** — PNGs 192/512 + apple-touch-icon + favicon 32/48 no manifest e index.html.
+- [x] **Menu em gaveta no celular** — a barra lateral vira **off-canvas drawer** (desliza da esquerda,
+      com backdrop e barra de topo fixa com ☰); tocar num item/fora/✕ fecha, com trava de rolagem. Router
+      com scroll-to-top ao navegar. Antes o menu empilhava no topo e a página abria "abaixo". Desktop igual.
 - [ ] **P3 · Ajustes finos de PWA** — `safe-area-inset` para notch, splash screens iOS, atalhos de app
       (`shortcuts` no manifest, ex.: "Fazer chamada" direto).
+- [ ] **P3 · Refinos mobile** — gestos de swipe p/ a gaveta, revisão de tap-targets nas telas internas,
+      unificar breakpoints (tabelas-cartão a 600px vs. menu a 820px).
 
 ## 🟡 Evoluções funcionais (curto prazo)
 
@@ -95,11 +100,22 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
     - [ ] **Cronômetro / tempo limite** por prova (encerra e envia automaticamente ao esgotar).
     - [ ] **Embaralhar alternativas** (e questões) por aluno, para dificultar a cola.
     - [ ] **Banco de questões reutilizável** (montar provas a partir de questões salvas/tags).
+- [x] **Acesso automático do aluno** — todo aluno cadastrado ganha um **login** (usuário ALUNO vinculado),
+      com **senha padrão `12345678`** e **troca obrigatória no 1º acesso** (`precisa_trocar_senha`,
+      migration V11). Login = `nome.sobrenome` (sem acento, sufixo em colisão); backfill idempotente no
+      boot para os já cadastrados. Tela de alunos mostra a coluna **Login**.
+- [x] **Login editável + validações** — o login pode ser trocado no cadastro do Aluno e na tela de
+      Usuários, com regras num único ponto (`LoginService`): normaliza (minúsculas), formato
+      `[a-z0-9]`+`. - _` (3–60, sem espaço/acento) e unicidade.
+- [ ] **"Esqueci minha senha" / reset do aluno** — reset por e-mail (SMTP já existe) ou botão do professor
+      para voltar o aluno à senha padrão (útil agora que todo aluno tem login).
 - [ ] **Observações por aula/aluno** (campo de texto livre na chamada).
 
 ## 🟢 Qualidade e robustez
 
-- [x] **Testes automatizados (backend)** — 12 `@QuarkusTest` cobrindo login/JWT + proteção de rota, `ChamadaService` (upsert), `ProvaService` (validação de nota), `RelatorioService` (agregação), `DesafiosService` (rankings), `BoletimService` (trimestre) e `NotificacaoService`/campanha (e-mail via `MockMailbox`). Rodam contra Postgres real (`ebd_test`) local e no CI (`mvn verify` com serviço Postgres).
+- [x] **Testes automatizados (backend)** — 23 `@QuarkusTest` cobrindo login/JWT + proteção de rota, `ChamadaService` (upsert), `ProvaService` (validação de nota), `RelatorioService` (agregação), `DesafiosService` (rankings), `BoletimService` (trimestre), `NotificacaoService`/campanha (e-mail via `MockMailbox`), **auto-correção do quiz** (`QuizAlunoService`) e **acesso/login do aluno** (`AcessoAlunoService`: geração, colisão, edição de login). Rodam contra Postgres real (`ebd_test`) local e no CI (`mvn verify` com serviço Postgres).
+- [x] **Correção — aulas futuras não contam** — ranking e boletim passaram a considerar só aulas com
+      **data ≤ hoje** (total de aulas, presenças e visitantes); antes inflavam as faltas do trimestre corrente.
 - [ ] **Testes de front** (ao menos smoke dos serviços/guards).
 - [ ] **Envio de e-mail assíncrono** — hoje o `NotificacaoService` envia **de forma síncrona** dentro da transação da chamada; migrar para assíncrono (evento/`@Blocking`/fila) para não segurar o salvamento em turmas grandes.
 - [ ] **Soft-delete de aluno** (preservar histórico usando `ativo`, sem cascata destrutiva).
