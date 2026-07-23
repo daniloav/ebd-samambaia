@@ -63,6 +63,7 @@ public class BoletimService {
         }
         LocalDate ini = LocalDate.of(ano, (trimestre - 1) * 3 + 1, 1);
         LocalDate fim = ini.plusMonths(3).minusDays(1);
+        LocalDate hoje = LocalDate.now(); // aulas contam só até hoje (não conta as futuras do trimestre corrente)
         Long cid = aluno.getClasse().getId();
         Long aid = aluno.getId();
 
@@ -100,8 +101,8 @@ public class BoletimService {
 
         // Frequência do aluno no período.
         long totalAulas = ((Number) em.createQuery(
-                        "select count(a) from Aula a where a.classe.id = :cid and a.data between :ini and :fim")
-                .setParameter("cid", cid).setParameter("ini", ini).setParameter("fim", fim)
+                        "select count(a) from Aula a where a.classe.id = :cid and a.data between :ini and :fim and a.data <= :hoje")
+                .setParameter("cid", cid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult()).longValue();
         Object[] ag = (Object[]) em.createQuery(
                         "select "
@@ -109,8 +110,8 @@ public class BoletimService {
                         + "sum(case when p.trouxeBiblia = true then 1 else 0 end), "
                         + "sum(case when p.trouxeRevista = true then 1 else 0 end), "
                         + "sum(case when p.estudouLicao = true then 1 else 0 end) "
-                        + "from Presenca p where p.aluno.id = :aid and p.aula.data between :ini and :fim")
-                .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim)
+                        + "from Presenca p where p.aluno.id = :aid and p.aula.data between :ini and :fim and p.aula.data <= :hoje")
+                .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult();
         long presencas = toLong(ag[0]);
         long faltas = Math.max(0, totalAulas - presencas);
@@ -122,8 +123,8 @@ public class BoletimService {
 
         long visitantes = ((Number) em.createQuery(
                         "select count(v) from Visitante v where v.trazidoPor.id = :aid "
-                        + "and v.aula.data between :ini and :fim")
-                .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim)
+                        + "and v.aula.data between :ini and :fim and v.aula.data <= :hoje")
+                .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult()).longValue();
 
         String situacao = situacao(totalAulas, comNota, percPresenca, aproveitamento);
