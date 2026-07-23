@@ -7,7 +7,7 @@ import {
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
-  BoletimResponse, Usuario, UsuarioRequest,
+  BoletimResponse, Auditoria, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
 
@@ -211,5 +211,14 @@ export class ApiService {
     let params = new HttpParams();
     if (classeId) params = params.set('classeId', classeId);
     return this.http.get<DashboardResponse>(`${this.api}/dashboard`, { params });
+  }
+
+  // ---------- Auditoria (admin) ----------
+  listarAuditoria(entidade?: string | null, inicio?: string | null, fim?: string | null): Observable<Auditoria[]> {
+    let params = new HttpParams();
+    if (entidade) { params = params.set('entidade', entidade); }
+    if (inicio) { params = params.set('inicio', inicio); }
+    if (fim) { params = params.set('fim', fim); }
+    return this.http.get<Auditoria[]>(`${this.api}/auditoria`, { params });
   }
 }

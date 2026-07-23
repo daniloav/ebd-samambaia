@@ -3,6 +3,8 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.dto.AlunoRequest;
 import br.com.ice.ebd.dto.AlunoResponse;
 import br.com.ice.ebd.model.Aluno;
+import br.com.ice.ebd.model.AcaoAuditoria;
+import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -28,6 +30,9 @@ public class AlunoService {
 
     @Inject
     UsuarioRepository usuarioRepository;
+
+    @Inject
+    AuditoriaService auditoria;
 
     public List<AlunoResponse> listar(Long classeId, boolean apenasAtivos) {
         escopo.assertClasse(classeId);
@@ -58,6 +63,7 @@ public class AlunoService {
         if (req.login() != null && !req.login().isBlank()) {
             acessoAluno.definirLogin(a.getId(), req.login()); // login customizado (senão fica o automático)
         }
+        auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.ALUNO, a.getId(), a.getNome());
         return AlunoResponse.de(a, usuarioRepository.loginDoAluno(a.getId()));
     }
 
@@ -70,12 +76,14 @@ public class AlunoService {
         if (req.login() != null && !req.login().isBlank()) {
             acessoAluno.definirLogin(a.getId(), req.login()); // troca o login se informado (e diferente)
         }
+        auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.ALUNO, a.getId(), a.getNome());
         return AlunoResponse.de(a, usuarioRepository.loginDoAluno(a.getId()));
     }
 
     @Transactional
     public void deletar(Long id) {
         Aluno a = obter(id);
+        auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.ALUNO, a.getId(), a.getNome());
         acessoAluno.removerAcesso(a.getId()); // remove o login vinculado (FK)
         repository.delete(a);
     }

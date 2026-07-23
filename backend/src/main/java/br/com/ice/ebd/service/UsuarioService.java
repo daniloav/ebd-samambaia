@@ -7,6 +7,8 @@ import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
+import br.com.ice.ebd.model.AcaoAuditoria;
+import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.ClasseRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
@@ -27,6 +29,7 @@ public class UsuarioService {
     public static final int SENHA_MIN = 8;
 
     @Inject UsuarioRepository repository;
+    @Inject AuditoriaService auditoria;
     @Inject LoginService loginService;
     @Inject AlunoRepository alunoRepository;
     @Inject ClasseRepository classeRepository;
@@ -51,6 +54,7 @@ public class UsuarioService {
         u.setSenhaHash(BcryptUtil.bcryptHash(req.senha()));
         aplicarComuns(u, req);
         repository.persist(u);
+        auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.USUARIO, u.getId(), u.getUsername());
         return UsuarioResponse.de(u);
     }
 
@@ -65,6 +69,7 @@ public class UsuarioService {
             u.setSenhaHash(BcryptUtil.bcryptHash(req.senha()));
         }
         aplicarComuns(u, req);
+        auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.USUARIO, u.getId(), u.getUsername());
         return UsuarioResponse.de(u);
     }
 
@@ -75,6 +80,7 @@ public class UsuarioService {
             throw new WebApplicationException("Não é possível excluir o último administrador.",
                     Response.Status.CONFLICT);
         }
+        auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.USUARIO, u.getId(), u.getUsername());
         repository.delete(u);
     }
 
