@@ -68,4 +68,28 @@ class BoletimServiceTest {
         assertEquals(0, b.provas().size());
         assertEquals(0, b.frequencia().totalAulas());
     }
+
+    @Test
+    @TestSecurity(user = "admin", roles = "ADMIN")
+    @TestTransaction
+    void aulaFuturaDoTrimestreNaoContaNoBoletim() {
+        Classe c = fx.classe("Turma Boletim Futuro");
+        Aluno a = fx.aluno("Beltrano", c, null, false);
+
+        // Trimestre corrente: uma aula no início (já realizada) e outra no fim (pode ser futura).
+        LocalDate hoje = LocalDate.now();
+        int tri = (hoje.getMonthValue() - 1) / 3 + 1;
+        int ano = hoje.getYear();
+        LocalDate iniTri = LocalDate.of(ano, (tri - 1) * 3 + 1, 1);
+        LocalDate fimTri = iniTri.plusMonths(3).minusDays(1);
+
+        fx.aula(c, iniTri);   // <= hoje: conta
+        fx.aula(c, fimTri);   // fim do trimestre: só conta se já passou
+
+        BoletimResponse b = boletimService.gerar(a.getId(), ano, tri);
+
+        long esperado = fimTri.isAfter(hoje) ? 1 : 2; // a aula futura não entra
+        assertEquals(esperado, b.frequencia().totalAulas());
+        assertEquals(esperado, b.frequencia().faltas()); // faltas não infla com aula futura
+    }
 }
