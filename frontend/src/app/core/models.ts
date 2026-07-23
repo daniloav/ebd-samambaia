@@ -28,6 +28,7 @@ export interface AlunoRequest {
   telefone?: string | null;
   dataNascimento?: string | null;
   email?: string | null;
+  login?: string | null;
   recebeNotificacoes?: boolean;
   ativo?: boolean;
 }
