@@ -139,6 +139,7 @@ import { TemaService } from '../core/tema.service';
               <a routerLink="/usuarios" routerLinkActive="ativo"><span class="ico">🔑</span> Usuários</a>
               <a routerLink="/campanhas" routerLinkActive="ativo"><span class="ico">📣</span> Campanhas</a>
             <a routerLink="/relatorio-geral" routerLinkActive="ativo"><span class="ico">📋</span> Relatório geral</a>
+            <a routerLink="/auditoria" routerLinkActive="ativo"><span class="ico">📜</span> Auditoria</a>
             }
           }
         </nav>

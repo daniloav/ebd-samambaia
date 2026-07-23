@@ -391,3 +391,16 @@ export interface DashboardResponse {
   frequenciaPorAula: DashPontoFrequencia[];
   distribuicao: DashDistribuicao;
 }
+
+// ---- Auditoria de ações (admin) ----
+export type AcaoAuditoria = 'CRIAR' | 'ATUALIZAR' | 'EXCLUIR';
+export type EntidadeAuditoria = 'ALUNO' | 'AULA' | 'PROVA' | 'USUARIO';
+export interface Auditoria {
+  id: number;
+  dataHora: string;
+  usuario: string;
+  acao: AcaoAuditoria;
+  entidade: EntidadeAuditoria;
+  entidadeId: number | null;
+  descricao: string | null;
+}
