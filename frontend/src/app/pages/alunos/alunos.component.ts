@@ -107,6 +107,12 @@ import { Aluno, AlunoRequest } from '../../core/models';
               <label>E-mail</label>
               <input type="email" [(ngModel)]="form.email" maxlength="150" placeholder="aluno@email.com" />
             </div>
+            <div class="form-group">
+              <label>Login de acesso</label>
+              <input type="text" [(ngModel)]="form.login" maxlength="60" autocomplete="off"
+                     [placeholder]="editando() ? '' : 'gerado automaticamente (nome.sobrenome)'" />
+              <small class="muted">Usado para entrar no sistema — só minúsculas, números, ponto, hífen ou sublinhado.</small>
+            </div>
             <div class="form-group" style="flex-direction:row;align-items:center;gap:.5rem">
               <input type="checkbox" id="notif" [(ngModel)]="form.recebeNotificacoes" />
               <label for="notif" style="margin:0">Receber alertas de chamada por e-mail</label>
@@ -156,7 +162,7 @@ export class AlunosComponent {
   }
 
   private formVazio(): AlunoRequest {
-    return { nome: '', telefone: '', dataNascimento: null, email: '', recebeNotificacoes: false, ativo: true };
+    return { nome: '', telefone: '', dataNascimento: null, email: '', login: '', recebeNotificacoes: false, ativo: true };
   }
 
   carregar(): void {
@@ -175,7 +181,7 @@ export class AlunosComponent {
 
   editar(a: Aluno): void {
     this.editando.set(a);
-    this.form = { nome: a.nome, telefone: a.telefone ?? '', dataNascimento: a.dataNascimento ?? null, email: a.email ?? '', recebeNotificacoes: a.recebeNotificacoes ?? false, ativo: a.ativo };
+    this.form = { nome: a.nome, telefone: a.telefone ?? '', dataNascimento: a.dataNascimento ?? null, email: a.email ?? '', login: a.login ?? '', recebeNotificacoes: a.recebeNotificacoes ?? false, ativo: a.ativo };
     this.modalAberto.set(true);
   }
 
@@ -192,6 +198,7 @@ export class AlunosComponent {
       telefone: this.form.telefone || null,
       dataNascimento: this.form.dataNascimento || null,
       email: this.form.email || null,
+      login: this.form.login?.trim() || null,
       recebeNotificacoes: this.form.recebeNotificacoes,
       ativo: this.form.ativo,
     };
@@ -204,7 +211,7 @@ export class AlunosComponent {
         this.fechar();
         this.carregar();
       },
-      error: () => { this.toast.erro('Erro ao salvar aluno.'); this.salvando.set(false); },
+      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao salvar aluno.'); this.salvando.set(false); },
     });
   }
 
