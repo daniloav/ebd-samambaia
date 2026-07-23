@@ -195,6 +195,11 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   prende o usuário em `/conta` (guard) até trocar. Tela de alunos mostra a coluna **Login**. Testes:
   `AcessoAlunoServiceTest` (login gerado, colisão, idempotência). Branch `feature/acesso-aluno-automatico`
   (empilhada sobre a do quiz — a V11 vem após a V10).
+- ✏️ **Login editável (nome.sobrenome pode ser trocado)** — o login (username) agora pode ser editado
+  no cadastro do **Aluno** (campo "Login de acesso") e na tela de **Usuários**, com regras num único
+  ponto (`LoginService`): normaliza (trim+minúsculas), valida formato (`[a-z0-9]` + `. - _`, 3–60, sem
+  espaço/acento) e unicidade. `AcessoAlunoService.definirLogin` renomeia o login do aluno (idempotente).
+  Branch `feature/editar-login-usuario`. Testes em `AcessoAlunoServiceTest` (23 no total).
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
 
 ## 10. Como pedir evoluções (dica para o Danilo)
