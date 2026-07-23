@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EBD ICES — Guia: Visão geral</title>
+<style>
+  /* ---------- Tokens: moldura (tema-aware) ---------- */
+  :root{
+    --paper:#f0ece2; --card:#fbf9f4; --ink:#243040; --ink-soft:#5f6c7c;
+    --gold:#b0812b; --gold-soft:#c9a24b; --line:#e4dccb; --shadow:0 18px 50px rgba(40,52,70,.16);
+    /* Tela do app (fixa — retrata o EBD ICES no tema claro) */
+    --ap-navy:#263c60; --ap-navy2:#1d2f4d; --ap-gold:#cda352; --ap-gold-lt:#e7c982;
+    --ap-bg:#f4f6f9; --ap-surface:#ffffff; --ap-ink:#2d3748; --ap-muted:#7a8aa1;
+    --ap-green:#37a06e; --ap-border:#e7ebf1; --ap-red:#df615b; --ap-side-txt:#c7d2e2;
+    --band:#182636; --band-ink:#f4f7fb;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --paper:#131a24; --card:#1d2734; --ink:#e9eef4; --ink-soft:#9db0c3;
+      --gold:#e2b662; --gold-soft:#e7c982; --line:#2b3a4c; --shadow:0 18px 50px rgba(0,0,0,.5); }
+  }
+  :root[data-theme="light"]{ --paper:#f0ece2; --card:#fbf9f4; --ink:#243040; --ink-soft:#5f6c7c;
+    --gold:#b0812b; --gold-soft:#c9a24b; --line:#e4dccb; --shadow:0 18px 50px rgba(40,52,70,.16); }
+  :root[data-theme="dark"]{ --paper:#131a24; --card:#1d2734; --ink:#e9eef4; --ink-soft:#9db0c3;
+    --gold:#e2b662; --gold-soft:#e7c982; --line:#2b3a4c; --shadow:0 18px 50px rgba(0,0,0,.5); }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; }
+  .wrap{
+    min-height:100vh; background:
+      radial-gradient(1200px 600px at 50% -10%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 60%),
+      var(--paper);
+    color:var(--ink); font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; align-items:center; padding:clamp(14px,3vw,34px) 16px 30px;
+  }
+  .serif{ font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif; }
+
+  /* ---------- Cabeçalho ---------- */
+  .head{ width:100%; max-width:900px; display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .brand{ display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:.02em; }
+  .brand .bk{ font-size:1.25rem; }
+  .brand small{ color:var(--ink-soft); font-weight:600; letter-spacing:.08em; text-transform:uppercase; font-size:.66rem; }
+  .step{ font-variant-numeric:tabular-nums; color:var(--ink-soft); font-weight:700; letter-spacing:.04em; font-size:.82rem; }
+
+  /* ---------- Player ---------- */
+  .player{ width:100%; max-width:900px; background:var(--card); border:1px solid var(--line);
+    border-radius:18px; box-shadow:var(--shadow); overflow:hidden; }
+  .stage{ position:relative; aspect-ratio:16/9; background:var(--ap-bg); overflow:hidden; }
+  @media (max-width:560px){ .stage{ aspect-ratio:4/5; } }
+
+  .scene{ position:absolute; inset:0; opacity:0; transform:translateY(8px) scale(.995);
+    transition:opacity .5s ease, transform .5s ease; pointer-events:none; display:flex; }
+  .scene.on{ opacity:1; transform:none; }
+
+  /* ---------- Legenda (subtitle band) ---------- */
+  .cap{ background:var(--band); color:var(--band-ink); padding:15px clamp(16px,4vw,30px) 16px;
+    min-height:74px; display:flex; align-items:center; justify-content:center; text-align:center; }
+  .cap p{ margin:0; font-size:clamp(1rem,2.5vw,1.28rem); line-height:1.45; font-weight:500; text-wrap:balance; max-width:44ch; }
+  .cap .lead{ color:var(--ap-gold-lt); font-weight:700; }
+
+  /* ---------- Controles ---------- */
+  .ctrl{ display:flex; align-items:center; gap:12px; padding:12px clamp(14px,3vw,22px); background:var(--card); }
+  .segs{ flex:1; display:flex; gap:6px; }
+  .seg{ flex:1; height:6px; border-radius:99px; background:color-mix(in srgb, var(--ink) 14%, transparent); overflow:hidden; cursor:pointer; }
+  .seg i{ display:block; height:100%; width:0; background:var(--gold); border-radius:99px; }
+  .seg.done i{ width:100%; }
+  .btn{ border:none; background:transparent; color:var(--ink); cursor:pointer; font-size:1.15rem;
+    width:38px; height:38px; border-radius:50%; display:grid; place-items:center; transition:background .15s; }
+  .btn:hover{ background:color-mix(in srgb, var(--gold) 22%, transparent); }
+  .btn:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .btn.play{ background:var(--ap-navy); color:#fff; }
+  .btn.play:hover{ background:var(--ap-navy2); }
+
+  /* ================= Mockups do app ================= */
+  .app{ flex:1; display:flex; font-size:12px; color:var(--ap-ink); }
+  .side{ width:38%; max-width:230px; background:linear-gradient(180deg,var(--ap-navy),var(--ap-navy2));
+    color:var(--ap-side-txt); display:flex; flex-direction:column; padding:12px 0; }
+  .side .mk{ padding:0 14px 10px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:8px; }
+  .side .mk b{ color:#fff; font-size:14px; display:block; }
+  .side .mk span{ color:var(--ap-gold-lt); font-size:9.5px; }
+  .side .grp{ padding:9px 14px 3px; font-size:8.5px; letter-spacing:.09em; text-transform:uppercase; color:#8fa3c0; }
+  .side a{ display:flex; align-items:center; gap:8px; padding:7px 14px; color:var(--ap-side-txt);
+    border-left:3px solid transparent; text-decoration:none; }
+  .side a.act{ background:rgba(205,163,82,.16); color:#fff; border-left-color:var(--ap-gold); font-weight:600; }
+  .side a .ic{ width:15px; text-align:center; }
+  .main{ flex:1; background:var(--ap-bg); padding:16px 18px; overflow:hidden; }
+  .main h4{ margin:0 0 3px; font-size:16px; color:var(--ap-ink); }
+  .main .sub{ color:var(--ap-muted); font-size:11px; margin-bottom:12px; }
+  .cardui{ background:var(--ap-surface); border:1px solid var(--ap-border); border-radius:10px; padding:13px 15px; box-shadow:0 1px 3px rgba(40,60,90,.05); }
+  .pill{ display:inline-block; font-size:9.5px; font-weight:700; padding:2px 8px; border-radius:99px; }
+  .pill.g{ background:#dcfce7; color:#166534; } .pill.b{ background:#dbeafe; color:#1d4ed8; } .pill.au{ background:#dbeafe; color:#1e40af; }
+  .glow{ box-shadow:0 0 0 3px var(--ap-gold), 0 0 0 8px color-mix(in srgb,var(--ap-gold) 35%, transparent); border-radius:6px; animation:pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 3px var(--ap-gold),0 0 0 7px color-mix(in srgb,var(--ap-gold) 30%,transparent);} 50%{ box-shadow:0 0 0 3px var(--ap-gold),0 0 0 12px color-mix(in srgb,var(--ap-gold) 8%,transparent);} }
+
+  /* Cena capa / encerramento */
+  .cover{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    background:radial-gradient(900px 500px at 50% 0%, #2c477040, transparent), linear-gradient(160deg,var(--ap-navy),var(--ap-navy2)); color:#fff; padding:22px; }
+  .cover .bk{ font-size:clamp(2.4rem,8vw,3.4rem); }
+  .cover h1{ margin:.35rem 0 .1rem; font-size:clamp(1.5rem,5vw,2.3rem); color:#fff; text-wrap:balance; }
+  .cover .rule{ width:52px; height:3px; background:var(--ap-gold); border-radius:2px; margin:.5rem 0 .6rem; }
+  .cover p{ margin:0; color:#cdd8ea; font-size:clamp(.85rem,2.5vw,1rem); }
+  .cover .tag{ margin-top:.4rem; color:var(--ap-gold-lt); letter-spacing:.14em; text-transform:uppercase; font-size:.66rem; font-weight:700; }
+
+  /* Cena perfis */
+  .roles{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:12px; padding:6vh clamp(18px,5vw,44px); background:var(--ap-bg); }
+  .roles .r{ display:flex; gap:12px; align-items:flex-start; background:var(--ap-surface); border:1px solid var(--ap-border);
+    border-left:4px solid var(--ap-gold); border-radius:11px; padding:12px 15px; box-shadow:0 2px 6px rgba(40,60,90,.05); }
+  .roles .r .em{ font-size:1.5rem; line-height:1; }
+  .roles .r b{ font-size:14px; color:var(--ap-ink); }
+  .roles .r span{ display:block; color:var(--ap-muted); font-size:11.5px; margin-top:2px; line-height:1.4; }
+
+  /* Cena celular */
+  .phonewrap{ flex:1; display:flex; align-items:center; justify-content:center; gap:clamp(14px,4vw,40px); background:linear-gradient(160deg,#eef1f6,#e4e9f1); padding:20px; flex-wrap:wrap; }
+  .phone{ width:190px; max-width:44vw; aspect-ratio:9/18.5; background:#0e1420; border-radius:26px; padding:9px; box-shadow:0 20px 44px rgba(30,45,70,.3); position:relative; }
+  .phone .scr{ position:relative; width:100%; height:100%; background:var(--ap-bg); border-radius:18px; overflow:hidden; }
+  .phone .top{ height:34px; background:linear-gradient(180deg,var(--ap-navy),var(--ap-navy2)); display:flex; align-items:center; gap:8px; padding:0 10px; color:#fff; }
+  .phone .ham{ width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,.16); display:grid; place-items:center; font-size:13px; }
+  .phone .top b{ font-size:10px; }
+  .drawer{ position:absolute; inset:0 34% 0 0; background:linear-gradient(180deg,var(--ap-navy),var(--ap-navy2)); padding:10px 0; box-shadow:6px 0 20px rgba(0,0,0,.35); }
+  .drawer .di{ padding:6px 12px; color:var(--ap-side-txt); font-size:9.5px; display:flex; gap:7px; }
+  .drawer .di.act{ background:rgba(205,163,82,.18); border-left:3px solid var(--ap-gold); color:#fff; }
+  .phone .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.32); }
+  .callout{ max-width:230px; }
+  .callout b{ font-family:Georgia,serif; font-size:clamp(1.05rem,3.4vw,1.35rem); color:var(--ap-ink); display:block; margin-bottom:6px; }
+  .callout span{ color:#54627a; font-size:12.5px; line-height:1.5; }
+
+  .next{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
+  .next .chip{ background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.22); color:#fff; border-radius:99px; padding:5px 12px; font-size:11.5px; font-weight:600; }
+  .replay{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(16,24,36,.55); z-index:5; }
+  .replay.show{ display:flex; }
+  .replay button{ background:var(--ap-gold); color:#26333f; border:none; font-weight:800; padding:12px 22px; border-radius:99px; font-size:14px; cursor:pointer; box-shadow:0 10px 24px rgba(0,0,0,.3); }
+
+  .foot{ max-width:900px; width:100%; margin-top:12px; color:var(--ink-soft); font-size:.78rem; text-align:center; }
+
+  @media (prefers-reduced-motion:reduce){ .scene{ transition:none; } .glow{ animation:none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="head">
+    <div class="brand"><span class="bk">📖</span> EBD ICES <small>· Guia de uso</small></div>
+    <div class="step"><span id="stepNow">1</span> / <span id="stepTot">6</span> · Visão geral</div>
+  </div>
+
+  <div class="player">
+    <div class="stage" id="stage">
+
+      <!-- 1 · Capa -->
+      <section class="scene on">
+        <div class="cover">
+          <div class="bk">📖</div>
+          <h1 class="serif">EBD ICES</h1>
+          <div class="rule"></div>
+          <p>Escola Bíblica Dominical — ICE Samambaia</p>
+          <div class="tag">Visão geral do aplicativo</div>
+        </div>
+      </section>
+
+      <!-- 2 · Menu / módulos -->
+      <section class="scene">
+        <div class="app">
+          <nav class="side glow">
+            <div class="mk"><b>EBD ICES</b><span>ICE Samambaia</span></div>
+            <a class="act"><span class="ic">🏠</span> Painel</a>
+            <div class="grp">Chamada</div>
+            <a><span class="ic">✅</span> Fazer chamada</a>
+            <a><span class="ic">📅</span> Aulas</a>
+            <a><span class="ic">👥</span> Alunos</a>
+            <a><span class="ic">📊</span> Relatório</a>
+            <div class="grp">Desafios</div>
+            <a><span class="ic">🏆</span> Rankings</a>
+            <a><span class="ic">📝</span> Provas</a>
+            <a><span class="ic">📄</span> Boletins</a>
+          </nav>
+          <div class="main">
+            <h4>Painel</h4>
+            <div class="sub">Tudo da Escola Bíblica num só lugar</div>
+            <div class="cardui" style="margin-bottom:9px">📊 Presença média da turma · frequência por aula</div>
+            <div class="cardui">🏆 Rankings · 📝 Provas · 📄 Boletins</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3 · Login -->
+      <section class="scene">
+        <div class="app" style="background:linear-gradient(150deg,#2c4770,#1d2f4d); align-items:center; justify-content:center; padding:20px;">
+          <div class="cardui glow" style="width:290px; max-width:86%; text-align:center; padding:22px 20px;">
+            <div style="font-size:2rem">📖</div>
+            <div style="font-weight:800; font-size:15px; margin:.2rem 0 2px; color:var(--ap-ink)">EBD ICES</div>
+            <div style="color:var(--ap-muted); font-size:10.5px; margin-bottom:14px">Igreja Cristã Evangélica · Samambaia</div>
+            <div style="text-align:left; font-size:10px; color:var(--ap-muted)">Usuário</div>
+            <div style="border:1px solid var(--ap-border); border-radius:7px; padding:7px 9px; font-size:11px; margin:2px 0 8px; color:var(--ap-ink)">professor</div>
+            <div style="text-align:left; font-size:10px; color:var(--ap-muted)">Senha</div>
+            <div style="border:1px solid var(--ap-border); border-radius:7px; padding:7px 9px; font-size:11px; margin:2px 0 12px; color:var(--ap-ink)">••••••••</div>
+            <div style="background:var(--ap-navy); color:#fff; border-radius:8px; padding:9px; font-weight:700; font-size:12px">Entrar</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 · Perfis -->
+      <section class="scene">
+        <div class="roles">
+          <div class="r"><div class="em">🔑</div><div><b>Administrador</b><span>Comanda tudo: turmas, usuários, cadastros e a auditoria de ações.</span></div></div>
+          <div class="r"><div class="em">✅</div><div><b>Professor</b><span>Faz a chamada, cria aulas, lança notas e acompanha relatórios e rankings.</span></div></div>
+          <div class="r"><div class="em">🎓</div><div><b>Aluno</b><span>Vê a própria frequência, responde provas online e acompanha o boletim.</span></div></div>
+        </div>
+      </section>
+
+      <!-- 5 · Celular -->
+      <section class="scene">
+        <div class="phonewrap">
+          <div class="phone">
+            <div class="scr">
+              <div class="top"><div class="ham glow">☰</div><b>EBD ICES</b></div>
+              <div class="backdrop"></div>
+              <div class="drawer">
+                <div class="di act">✅ Fazer chamada</div>
+                <div class="di">👥 Alunos</div>
+                <div class="di">📝 Provas</div>
+                <div class="di">📄 Boletins</div>
+                <div class="di">🏆 Rankings</div>
+              </div>
+            </div>
+          </div>
+          <div class="callout">
+            <b>Feito para o celular</b>
+            <span>Toque no <b style="display:inline">☰</b> para abrir o menu. Dá para fazer a chamada no domingo direto do telefone.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6 · Encerramento -->
+      <section class="scene">
+        <div class="cover">
+          <div class="bk">🎬</div>
+          <h1 class="serif">Vamos começar!</h1>
+          <div class="rule"></div>
+          <p>Nos próximos guias, detalhamos cada função:</p>
+          <div class="next">
+            <span class="chip">✅ Chamada</span>
+            <span class="chip">👥 Alunos</span>
+            <span class="chip">📝 Provas</span>
+            <span class="chip">📄 Boletim</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="replay" id="replay"><button id="replayBtn">↻ Assistir de novo</button></div>
+    </div>
+
+    <div class="cap"><p id="caption"></p></div>
+
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="Anterior">⏮</button>
+      <button class="btn play" id="play" aria-label="Pausar">⏸</button>
+      <button class="btn" id="next" aria-label="Próximo">⏭</button>
+      <div class="segs" id="segs"></div>
+    </div>
+  </div>
+
+  <div class="foot">Guia de uso do EBD ICES · avança sozinho — use ⏸ para pausar e ⏭ / ⏮ para navegar. Grave a tela para virar vídeo.</div>
+</div>
+
+<script>
+  const captions = [
+    ['Bem-vindo! ', 'Este é o sistema da nossa Escola Bíblica Dominical. Em poucos minutos você vai saber usar.'],
+    ['Tudo num lugar só: ', 'chamada, alunos, provas, boletins e rankings — pela internet, no computador ou no celular.'],
+    ['Para entrar, ', 'cada pessoa tem seu login e senha. Professores e alunos usam a mesma tela de acesso.'],
+    ['O que você vê ', 'depende do seu perfil: administrador, professor ou aluno — cada um com as suas funções.'],
+    ['No celular, ', 'toque no ☰ para abrir o menu. É prático para fazer a chamada no domingo.'],
+    ['Pronto! ', 'Nos próximos vídeos detalhamos Chamada, Alunos, Provas e Boletim. Bons estudos!']
+  ];
+  const DUR = [6000, 8500, 8000, 9000, 8500, 7000];
+  const scenes = [...document.querySelectorAll('.scene')];
+  const segsEl = document.getElementById('segs');
+  const capEl = document.getElementById('caption');
+  const stepNow = document.getElementById('stepNow');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  scenes.forEach((_, i) => {
+    const s = document.createElement('div'); s.className = 'seg'; s.innerHTML = '<i></i>';
+    s.addEventListener('click', () => goTo(i, true));
+    segsEl.appendChild(s);
+  });
+  const segEls = [...segsEl.children];
+  document.getElementById('stepTot').textContent = scenes.length;
+
+  let cur = 0, playing = true, t0 = 0, raf = 0, elapsed = 0;
+
+  function renderCaption(i){
+    capEl.innerHTML = '<span class="lead">' + captions[i][0] + '</span>' + captions[i][1];
+  }
+  function setScene(i){
+    scenes.forEach((s, k) => s.classList.toggle('on', k === i));
+    segEls.forEach((s, k) => { s.classList.toggle('done', k < i); s.querySelector('i').style.width = k < i ? '100%' : '0'; });
+    stepNow.textContent = i + 1;
+    renderCaption(i);
+  }
+  function goTo(i, fromClick){
+    document.getElementById('replay').classList.remove('show');
+    cur = (i + scenes.length) % scenes.length;
+    setScene(cur); elapsed = 0; t0 = performance.now();
+    if (fromClick && !playing) { setPlay(true); }
+    if (playing) loop();
+  }
+  function tick(now){
+    if (!playing) return;
+    const dt = now - t0; const frac = Math.min(dt / DUR[cur], 1);
+    segEls[cur].querySelector('i').style.width = (frac * 100) + '%';
+    if (frac >= 1){
+      if (cur === scenes.length - 1){ finish(); return; }
+      goTo(cur + 1); return;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  function loop(){ cancelAnimationFrame(raf); t0 = performance.now() - elapsed; raf = requestAnimationFrame(tick); }
+  function setPlay(p){
+    playing = p; document.getElementById('play').textContent = p ? '⏸' : '▶';
+    document.getElementById('play').setAttribute('aria-label', p ? 'Pausar' : 'Reproduzir');
+    if (p) loop(); else { cancelAnimationFrame(raf); elapsed = performance.now() - t0; }
+  }
+  function finish(){
+    playing = false; document.getElementById('play').textContent = '▶';
+    segEls[cur].querySelector('i').style.width = '100%'; segEls[cur].classList.add('done');
+    document.getElementById('replay').classList.add('show');
+  }
+
+  document.getElementById('play').addEventListener('click', () => setPlay(!playing));
+  document.getElementById('next').addEventListener('click', () => goTo(cur + 1, true));
+  document.getElementById('prev').addEventListener('click', () => goTo(cur - 1, true));
+  document.getElementById('replayBtn').addEventListener('click', () => { goTo(0); setPlay(true); });
+
+  setScene(0);
+  if (reduce){ setPlay(false); } else { t0 = performance.now(); raf = requestAnimationFrame(tick); }
+</script>
+</body>
+</html>
