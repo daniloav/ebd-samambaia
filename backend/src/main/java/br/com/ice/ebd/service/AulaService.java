@@ -3,6 +3,8 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
 import br.com.ice.ebd.model.Aula;
+import br.com.ice.ebd.model.AcaoAuditoria;
+import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.repository.AulaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -17,6 +19,7 @@ import java.util.Optional;
 public class AulaService {
 
     @Inject EscopoService escopo;
+    @Inject AuditoriaService auditoria;
 
     @Inject
     AulaRepository repository;
@@ -46,6 +49,7 @@ public class AulaService {
         a.setData(req.data());
         a.setTema(req.tema());
         repository.persist(a);
+        auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         return AulaResponse.de(a);
     }
 
@@ -58,12 +62,14 @@ public class AulaService {
         a.setClasse(classe);
         a.setData(req.data());
         a.setTema(req.tema());
+        auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         return AulaResponse.de(a);
     }
 
     @Transactional
     public void deletar(Long id) {
         Aula a = obter(id);
+        auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         repository.delete(a); // presenças são removidas em cascata (FK ON DELETE CASCADE)
     }
 
@@ -81,5 +87,10 @@ public class AulaService {
             throw new WebApplicationException("Já existe uma aula desta classe nesta data.",
                     Response.Status.CONFLICT);
         }
+    }
+
+    private static String rotulo(br.com.ice.ebd.model.Aula a) {
+        String tema = a.getTema() == null ? "" : a.getTema();
+        return a.getData() + (tema.isBlank() ? "" : " · " + tema);
     }
 }

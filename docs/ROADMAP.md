@@ -39,8 +39,10 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       trocar a dele (e as senhas atuais foram definidas pelo admin). Endpoint `PUT /api/me/senha` + tela.
 - [x] **P2 · Chaves JWT persistentes** (ver Infra) — CD grava as chaves dos secrets `EBD_JWT_PRIVATE_KEY`/`EBD_JWT_PUBLIC_KEY` a cada deploy (opt-in; sem secret = comportamento antigo). Antes cada deploy gerava chaves novas e **deslogava
       todo mundo**; com volume, sessões sobrevivem ao deploy.
-- [ ] **P3 · Auditoria de ações** — log de quem excluiu/alterou aluno, aula, prova, usuário (tabela
-      `auditoria` simples). Útil quando houver mais professores.
+- [x] **P3 · Auditoria de ações** — tabela `auditoria` (migration V12) registra **quem** criou/alterou/excluiu
+      **aluno, aula, prova e usuário** (usuário, data/hora, ação, entidade, id e rótulo). `AuditoriaService`
+      grava dentro da transação da própria operação; tela admin `/auditoria` (só ADMIN) com filtros por
+      entidade/período. Testes em `AuditoriaServiceTest`.
 - [ ] **P3 · Token em localStorage** — acessível a XSS (Angular escapa por padrão; risco baixo). Alternativa
       robusta (cookie httpOnly + CSRF) só se o app crescer.
 
