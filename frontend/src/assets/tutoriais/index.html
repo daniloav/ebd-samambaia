@@ -36,7 +36,7 @@
   .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   @media (max-width:620px){ .grid{ grid-template-columns:1fr; } }
 
-  .guia{ display:flex; flex-direction:column; gap:8px; background:var(--card); border:1px solid var(--line);
+  a.guia{ display:flex; flex-direction:column; gap:8px; background:var(--card); border:1px solid var(--line);
     border-radius:16px; padding:20px 20px 18px; box-shadow:var(--shadow); text-decoration:none; color:inherit;
     position:relative; transition:transform .16s ease, box-shadow .16s ease, border-color .16s; }
   a.guia:hover{ transform:translateY(-3px); border-color:var(--gold-2); box-shadow:0 20px 46px rgba(40,52,70,.2); }
@@ -47,16 +47,13 @@
   .guia .desc{ color:var(--ink-soft); font-size:.9rem; line-height:1.5; margin:2px 0 6px; }
   .guia .cta{ font-weight:700; color:var(--gold); font-size:.9rem; }
   .badge{ position:absolute; top:16px; right:16px; font-size:.66rem; font-weight:800; letter-spacing:.05em;
-    text-transform:uppercase; padding:4px 9px; border-radius:99px; }
-  .badge.ok{ background:var(--em); color:var(--em-ink); }
-  .badge.soon{ background:color-mix(in srgb,var(--ink) 9%,transparent); color:var(--ink-soft); }
-  .guia.soon{ opacity:.72; }
+    text-transform:uppercase; padding:4px 9px; border-radius:99px; background:var(--em); color:var(--em-ink); }
 
   .tip{ margin-top:26px; text-align:center; color:var(--ink-soft); font-size:.82rem; line-height:1.6; }
   .tip b{ color:var(--ink); }
   footer{ margin-top:30px; text-align:center; color:var(--ink-soft); font-size:.76rem; }
   footer a{ color:var(--gold); text-decoration:none; }
-  a:focus-visible,.guia:focus-visible{ outline:2px solid var(--gold-2); outline-offset:3px; }
+  a:focus-visible{ outline:2px solid var(--gold-2); outline-offset:3px; }
 </style>
 </head>
 <body>
@@ -72,39 +69,35 @@
 
     <div class="grid">
       <a class="guia" href="visao-geral.html">
-        <span class="badge ok">Disponível</span>
+        <span class="badge">Disponível</span>
         <div class="top"><div class="ico">📖</div><h2 class="serif">Visão geral</h2></div>
         <div class="desc">O que é o app, como entrar, os perfis e o uso no celular. Comece por aqui.</div>
         <span class="cta">Assistir →</span>
       </a>
-
-      <div class="guia soon">
-        <span class="badge soon">Em breve</span>
+      <a class="guia" href="chamada.html">
+        <span class="badge">Disponível</span>
         <div class="top"><div class="ico">✅</div><h2 class="serif">Chamada</h2></div>
         <div class="desc">Escolher a aula e marcar presença, Bíblia, revista e lição por toque.</div>
-        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
-      </div>
-
-      <div class="guia soon">
-        <span class="badge soon">Em breve</span>
+        <span class="cta">Assistir →</span>
+      </a>
+      <a class="guia" href="alunos.html">
+        <span class="badge">Disponível</span>
         <div class="top"><div class="ico">👥</div><h2 class="serif">Alunos</h2></div>
         <div class="desc">Cadastrar e editar alunos, e o acesso automático (login e senha).</div>
-        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
-      </div>
-
-      <div class="guia soon">
-        <span class="badge soon">Em breve</span>
+        <span class="cta">Assistir →</span>
+      </a>
+      <a class="guia" href="provas.html">
+        <span class="badge">Disponível</span>
         <div class="top"><div class="ico">📝</div><h2 class="serif">Provas</h2></div>
         <div class="desc">Provas com nota à mão e quiz online que corrige sozinho.</div>
-        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
-      </div>
-
-      <div class="guia soon">
-        <span class="badge soon">Em breve</span>
+        <span class="cta">Assistir →</span>
+      </a>
+      <a class="guia" href="boletim.html">
+        <span class="badge">Disponível</span>
         <div class="top"><div class="ico">📄</div><h2 class="serif">Boletim</h2></div>
         <div class="desc">Ler notas, frequência e situação do aluno por trimestre.</div>
-        <span class="cta" style="color:var(--ink-soft)">Em produção</span>
-      </div>
+        <span class="cta">Assistir →</span>
+      </a>
     </div>
 
     <p class="tip">💡 Dica: dá para <b>assistir pelo celular</b> e, se quiser, deixar <b>tela cheia</b> para ver melhor.</p>
