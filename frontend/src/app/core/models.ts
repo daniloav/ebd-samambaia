@@ -61,6 +61,7 @@ export interface ChamadaResponse {
   data: string;
   tema?: string | null;
   itens: PresencaItem[];
+  emailsEnviados?: number | null;
 }
 
 export type TipoProva = 'OFFLINE' | 'ONLINE';

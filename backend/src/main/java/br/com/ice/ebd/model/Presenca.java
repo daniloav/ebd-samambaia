@@ -40,6 +40,10 @@ public class Presenca {
     @Column(name = "estudou_licao", nullable = false)
     private boolean estudouLicao = false;
 
+    /** Assinatura do estado já notificado por e-mail (presente+itens); null = nunca notificado. */
+    @jakarta.persistence.Column(name = "notificada_assinatura", length = 16)
+    private String notificadaAssinatura;
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -61,5 +65,8 @@ public class Presenca {
 
     public boolean isEstudouLicao() { return estudouLicao; }
     public void setEstudouLicao(boolean estudouLicao) { this.estudouLicao = estudouLicao; }
+
+    public String getNotificadaAssinatura() { return notificadaAssinatura; }
+    public void setNotificadaAssinatura(String notificadaAssinatura) { this.notificadaAssinatura = notificadaAssinatura; }
 
 }
