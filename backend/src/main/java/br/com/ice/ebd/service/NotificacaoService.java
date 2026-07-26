@@ -55,17 +55,19 @@ public class NotificacaoService {
     /**
      * Notifica os alunos da chamada da aula. Nunca lança exceção para o chamador:
      * uma falha de e-mail não pode quebrar o salvamento da chamada.
-     * Observação (MVP): o envio é síncrono; migrar para assíncrono está no ROADMAP.
+     * <p>Só notifica <b>eventos novos</b>: guarda por presença a assinatura do estado já enviado
+     * (presente+itens) e pula quem não mudou desde o último e-mail. Retorna quantos e-mails novos
+     * foram enviados. Observação (MVP): envio síncrono; assíncrono está no ROADMAP.
      */
     @Transactional
-    public void notificarChamada(Long aulaId) {
+    public int notificarChamada(Long aulaId) {
         if (!habilitado) {
-            return;
+            return 0;
         }
         try {
             Aula aula = aulaRepository.findById(aulaId);
             if (aula == null) {
-                return;
+                return 0;
             }
             String quando = aula.getData().format(DATA);
             int enviados = 0;
@@ -73,6 +75,10 @@ public class NotificacaoService {
                 Aluno a = p.getAluno();
                 if (a.getEmail() == null || a.getEmail().isBlank() || !a.isRecebeNotificacoes()) {
                     continue;
+                }
+                String assinatura = assinaturaChamada(p);
+                if (assinatura.equals(p.getNotificadaAssinatura())) {
+                    continue; // mesmo evento, nada mudou para este aluno — não reenvia
                 }
                 try {
                     String assunto = p.isPresente()
@@ -85,15 +91,27 @@ public class NotificacaoService {
                             ? textoPresente(a, quando, tema(aula), p)
                             : textoAusente(a, quando, tema(aula));
                     mailer.send(Mail.withHtml(a.getEmail(), assunto, html).setText(texto));
+                    p.setNotificadaAssinatura(assinatura); // marca o estado notificado (evita reenvio)
                     enviados++;
                 } catch (Exception e) {
                     LOG.warnf("Falha ao enviar e-mail para %s: %s", a.getEmail(), e.getMessage());
                 }
             }
-            LOG.infof("Notificações da chamada da aula %d: %d e-mail(s) enviado(s).", aulaId, enviados);
+            LOG.infof("Notificações da chamada da aula %d: %d e-mail(s) novo(s) enviado(s).", aulaId, enviados);
+            return enviados;
         } catch (Exception e) {
             LOG.warnf("Notificação da chamada %d falhou: %s", aulaId, e.getMessage());
+            return 0;
         }
+    }
+
+    /** Assinatura do e-mail que seria enviado: ausente ("A") ou presente com os itens ("P" + b/r/l). */
+    private static String assinaturaChamada(Presenca p) {
+        if (!p.isPresente()) {
+            return "A";
+        }
+        return "P" + (p.isTrouxeBiblia() ? '1' : '0') + (p.isTrouxeRevista() ? '1' : '0')
+                + (p.isEstudouLicao() ? '1' : '0');
     }
 
     /**

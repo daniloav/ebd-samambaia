@@ -35,7 +35,7 @@ public class ChamadaResource {
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public ChamadaResponse salvar(@PathParam("aulaId") Long aulaId, @Valid SalvarChamadaRequest request) {
         ChamadaResponse resp = service.salvarChamada(aulaId, request);
-        notificacaoService.notificarChamada(aulaId);
-        return resp;
+        int emailsEnviados = notificacaoService.notificarChamada(aulaId);
+        return resp.comEmailsEnviados(emailsEnviados);
     }
 }
