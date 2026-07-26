@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EBD ICES — Guia: Alunos</title>
+<link rel="stylesheet" href="player.css">
+<style>
+  .tbl{ width:100%; border-collapse:collapse; font-size:11px; }
+  .tbl th{ text-align:left; color:var(--ap-muted); font-size:8.5px; text-transform:uppercase; letter-spacing:.06em; padding:6px 8px; border-bottom:1px solid var(--ap-border); }
+  .tbl td{ padding:8px; border-bottom:1px solid var(--ap-border); color:var(--ap-ink); }
+  .tbl code{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:10.5px; color:#3a4b63; }
+  .toolbar{ display:flex; justify-content:flex-end; margin-bottom:9px; }
+  .modalov{ position:absolute; inset:0; background:rgba(20,30,45,.5); display:flex; align-items:center; justify-content:center; padding:14px; }
+  .formcard{ background:var(--ap-surface); width:300px; max-width:88%; border-radius:12px; padding:16px 17px; box-shadow:0 18px 44px rgba(0,0,0,.32); }
+  .formcard h5{ margin:0 0 11px; font-size:13.5px; color:var(--ap-ink); }
+  .ff{ margin-bottom:8px; }
+  .ff label{ display:block; font-size:9px; color:var(--ap-muted); margin-bottom:2px; }
+  .ff .inp{ border:1px solid var(--ap-border); border-radius:7px; padding:6px 9px; font-size:10.5px; color:var(--ap-ink); background:var(--ap-bg); }
+  .hint{ font-size:8.5px; color:var(--ap-muted); margin-top:2px; }
+</style>
+</head>
+<body data-titulo="Alunos">
+<div class="wrap">
+  <div class="head">
+    <div class="brand"><span class="bk">👥</span> EBD ICES <small>· Guia de uso</small></div>
+    <div class="step"><span id="stepNow">1</span> / <span id="stepTot">6</span> · Alunos</div>
+  </div>
+  <div class="player">
+    <div class="stage" id="stage">
+
+      <section class="scene on">
+        <div class="cover">
+          <div class="bk">👥</div>
+          <h1 class="serif">Alunos</h1>
+          <div class="rule"></div>
+          <p>Cadastrar a turma — e o acesso de cada aluno ao sistema.</p>
+          <div class="tag">Administrador e professor</div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app">
+          <nav class="side">
+            <div class="mk"><b>EBD ICES</b><span>ICE Samambaia</span></div>
+            <div class="grp">Chamada</div>
+            <a><span class="ic">✅</span> Fazer chamada</a>
+            <a class="act"><span class="ic">👥</span> Alunos</a>
+            <a><span class="ic">📝</span> Provas</a>
+          </nav>
+          <div class="main">
+            <h4>Alunos</h4>
+            <div class="sub">Cadastro da turma de adultos</div>
+            <div class="toolbar"><div class="btnp glow">+ Novo aluno</div></div>
+            <div class="cardui" style="padding:4px 6px">
+              <table class="tbl">
+                <thead><tr><th>Nome</th><th>Login</th><th>Situação</th></tr></thead>
+                <tbody>
+                  <tr><td>Ana Beatriz Souza</td><td><code>ana</code></td><td><span class="pill g">Ativo</span></td></tr>
+                  <tr><td>Carlos Eduardo Lima</td><td><code>carlos.lima</code></td><td><span class="pill g">Ativo</span></td></tr>
+                  <tr><td>Débora Martins</td><td><code>debora.martins</code></td><td><span class="pill g">Ativo</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app">
+          <nav class="side"><div class="mk"><b>EBD ICES</b><span>ICE Samambaia</span></div>
+            <div class="grp">Chamada</div><a><span class="ic">✅</span> Fazer chamada</a><a class="act"><span class="ic">👥</span> Alunos</a></nav>
+          <div class="main"><h4>Alunos</h4><div class="sub">Cadastro da turma de adultos</div></div>
+          <div class="modalov">
+            <div class="formcard">
+              <h5>Novo aluno</h5>
+              <div class="ff"><label>Nome *</label><div class="inp">João da Silva Pereira</div></div>
+              <div class="ff"><label>Telefone</label><div class="inp">(61) 90000-0000</div></div>
+              <div class="ff"><label>E-mail</label><div class="inp">joao@email.com</div></div>
+              <div class="btng" style="display:block; text-align:center; margin-top:10px">Salvar</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app">
+          <nav class="side"><div class="mk"><b>EBD ICES</b><span>ICE Samambaia</span></div>
+            <div class="grp">Chamada</div><a><span class="ic">✅</span> Fazer chamada</a><a class="act"><span class="ic">👥</span> Alunos</a></nav>
+          <div class="main"><h4>Alunos</h4><div class="sub">Cadastro da turma de adultos</div></div>
+          <div class="modalov">
+            <div class="formcard">
+              <h5>Novo aluno</h5>
+              <div class="ff"><label>Nome *</label><div class="inp">João da Silva Pereira</div></div>
+              <div class="ff"><label>Login de acesso</label><div class="inp glow">joao.pereira</div>
+                <div class="hint">Gerado automático · senha padrão <b>12345678</b> (troca no 1º acesso)</div></div>
+              <div class="btng" style="display:block; text-align:center; margin-top:10px">Salvar</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app">
+          <nav class="side"><div class="mk"><b>EBD ICES</b><span>ICE Samambaia</span></div>
+            <div class="grp">Chamada</div><a><span class="ic">✅</span> Fazer chamada</a><a class="act"><span class="ic">👥</span> Alunos</a></nav>
+          <div class="main">
+            <h4>Alunos</h4>
+            <div class="sub">Cada aluno já entra no sistema</div>
+            <div class="cardui glow" style="padding:4px 6px">
+              <table class="tbl">
+                <thead><tr><th>Nome</th><th>Login</th><th>Situação</th></tr></thead>
+                <tbody>
+                  <tr><td>João da Silva Pereira</td><td><code>joao.pereira</code></td><td><span class="pill g">Ativo</span></td></tr>
+                  <tr><td>Ana Beatriz Souza</td><td><code>ana</code></td><td><span class="pill g">Ativo</span></td></tr>
+                  <tr><td>Carlos Eduardo Lima</td><td><code>carlos.lima</code></td><td><span class="pill g">Ativo</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="cover">
+          <div class="bk">🔑</div>
+          <h1 class="serif">Cadastrou, já tem acesso</h1>
+          <div class="rule"></div>
+          <p>Todo aluno cadastrado recebe login e senha. Dá para editar os dados e até trocar o login quando quiser.</p>
+        </div>
+      </section>
+
+      <div class="replay" id="replay"><button id="replayBtn">↻ Assistir de novo</button></div>
+    </div>
+    <div class="cap"><p id="caption"></p></div>
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="Anterior">⏮</button>
+      <button class="btn play" id="play" aria-label="Pausar">⏸</button>
+      <button class="btn" id="next" aria-label="Próximo">⏭</button>
+      <div class="segs" id="segs"></div>
+    </div>
+  </div>
+  <div class="foot">Guia de uso do EBD ICES · avança sozinho — ⏸ pausa, ⏭ / ⏮ navegam. Grave a tela para virar vídeo.</div>
+</div>
+<script>
+  window.CAPTIONS = [
+    ['Alunos: ', 'é onde você cadastra e organiza a turma da Escola Bíblica.'],
+    ['Para incluir alguém, ', 'toque em "+ Novo aluno". A lista mostra o nome, o login e a situação de cada um.'],
+    ['Preencha os dados: ', 'o nome é obrigatório; telefone e e-mail são opcionais.'],
+    ['Acesso automático: ', 'ao salvar, o aluno já ganha um login (nome.sobrenome) com a senha padrão 12345678, trocada no 1º acesso.'],
+    ['Na lista, ', 'você vê o login de cada aluno — e pode editá-lo se precisar trocar.'],
+    ['Simples assim: ', 'cadastrou, o aluno já pode entrar e acompanhar frequência, provas e boletim.']
+  ];
+  window.DURS = [6000, 8500, 8000, 10000, 8000, 7500];
+</script>
+<script src="player.js"></script>
+</body>
+</html>
