@@ -383,6 +383,10 @@ public class NotificacaoService {
         if (!habilitado || a.getEmail() == null || a.getEmail().isBlank()) {
             return false;
         }
+        java.time.LocalDate hoje = java.time.LocalDate.now(java.time.ZoneId.of("America/Sao_Paulo"));
+        if (hoje.equals(a.getAniversarioNotificadoEm())) {
+            return false; // já parabenizado hoje — não reenvia
+        }
         try {
             String corpo = ""
                     + "<h1 style=\"margin:0 0 12px;font-size:22px;color:#1b3a5b;\">Feliz aniversário, "
@@ -398,6 +402,7 @@ public class NotificacaoService {
                     + "Com carinho, sua família da EBD — ICE Samambaia";
             mailer.send(Mail.withHtml(a.getEmail(),
                     "Feliz aniversário! 🎉 — EBD ICE Samambaia", shell("Aniversário", corpo)).setText(texto));
+            a.setAniversarioNotificadoEm(hoje); // dedup: não reenvia no mesmo dia
             LOG.infof("Parabéns de aniversário enviado a %s.", a.getEmail());
             return true;
         } catch (Exception e) {
