@@ -154,7 +154,11 @@ public class ProvaService {
             if (a.getEmail() == null || a.getEmail().isBlank() || !a.isRecebeNotificacoes()) {
                 continue;
             }
+            if (n.getNotificadaNota() != null && n.getNotificadaNota().compareTo(n.getNota()) == 0) {
+                continue; // mesma nota já notificada — não reenvia
+            }
             if (notificacaoService.enviarNotaProva(a, prova, n.getNota())) {
+                n.setNotificadaNota(n.getNota()); // marca a nota notificada
                 enviados++;
             }
         }
