@@ -307,7 +307,11 @@ export class ChamadaComponent {
       estudouLicao: i.estudouLicao,
     }));
     this.api.salvarChamada(this.aulaSelecionadaId, payload).subscribe({
-      next: () => { this.toast.sucesso('Chamada salva com sucesso!'); this.salvando.set(false); },
+      next: (r) => {
+        const n = r?.emailsEnviados ?? 0;
+        this.toast.sucesso(n > 0 ? `Chamada salva! ${n} e-mail(s) de notificação enviado(s).` : 'Chamada salva com sucesso!');
+        this.salvando.set(false);
+      },
       error: () => { this.toast.erro('Erro ao salvar a chamada.'); this.salvando.set(false); },
     });
   }

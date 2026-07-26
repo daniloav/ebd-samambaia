@@ -35,6 +35,10 @@ public class Aluno {
     @Column(name = "recebe_notificacoes", nullable = false)
     private boolean recebeNotificacoes = false;
 
+    /** Último dia em que o aluno foi parabenizado por e-mail (dedup do aniversário). */
+    @jakarta.persistence.Column(name = "aniversario_notificado_em")
+    private java.time.LocalDate aniversarioNotificadoEm;
+
     @Column(nullable = false)
     private boolean ativo = true;
 
@@ -62,6 +66,9 @@ public class Aluno {
 
     public boolean isRecebeNotificacoes() { return recebeNotificacoes; }
     public void setRecebeNotificacoes(boolean recebeNotificacoes) { this.recebeNotificacoes = recebeNotificacoes; }
+
+    public java.time.LocalDate getAniversarioNotificadoEm() { return aniversarioNotificadoEm; }
+    public void setAniversarioNotificadoEm(java.time.LocalDate d) { this.aniversarioNotificadoEm = d; }
 
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
