@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EBD ICES — Guia: Provas</title>
+<link rel="stylesheet" href="player.css">
+<style>
+  .tbl{ width:100%; border-collapse:collapse; font-size:11px; }
+  .tbl th{ text-align:left; color:var(--ap-muted); font-size:8.5px; text-transform:uppercase; letter-spacing:.06em; padding:6px 8px; border-bottom:1px solid var(--ap-border); }
+  .tbl td{ padding:8px; border-bottom:1px solid var(--ap-border); color:var(--ap-ink); }
+  .qcard{ background:var(--ap-surface); border:1px solid var(--ap-border); border-radius:10px; padding:11px 13px; }
+  .qcard .en{ font-size:11.5px; font-weight:600; color:var(--ap-ink); margin-bottom:8px; }
+  .opt{ display:flex; align-items:center; gap:8px; border:1px solid var(--ap-border); border-radius:7px; padding:6px 9px; margin-bottom:5px; font-size:11px; color:var(--ap-ink); }
+  .opt .rd{ width:12px; height:12px; border-radius:50%; border:2px solid var(--ap-muted); flex:none; }
+  .opt.correct{ border-color:var(--ap-green); background:#ecfaf1; }
+  .opt.correct .rd{ border-color:var(--ap-green); background:var(--ap-green); }
+  .opt.sel{ border-color:var(--ap-navy); background:#eef3fb; }
+  .opt.sel .rd{ border-color:var(--ap-navy); background:var(--ap-navy); }
+  .opt.wrong{ border-color:var(--ap-red); background:#fdeceb; }
+  .placar{ text-align:center; background:var(--ap-bg); border-radius:10px; padding:12px; margin-bottom:9px; }
+  .placar .n{ font-size:1.9rem; font-weight:800; color:var(--ap-ink); }
+  .placar .s{ font-size:10.5px; color:var(--ap-muted); }
+</style>
+</head>
+<body data-titulo="Provas">
+<div class="wrap">
+  <div class="head">
+    <div class="brand"><span class="bk">📝</span> EBD ICES <small>· Guia de uso</small></div>
+    <div class="step"><span id="stepNow">1</span> / <span id="stepTot">6</span> · Provas</div>
+  </div>
+  <div class="player">
+    <div class="stage" id="stage">
+
+      <section class="scene on">
+        <div class="cover">
+          <div class="bk">📝</div>
+          <h1 class="serif">Provas</h1>
+          <div class="rule"></div>
+          <p>Avaliações com nota à mão — ou um quiz online que corrige sozinho.</p>
+          <div class="tag">Professor e aluno</div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app">
+          <nav class="side"><div class="mk"><b>EBD ICES</b><span>ICE Samambaia</span></div>
+            <div class="grp">Desafios</div><a><span class="ic">🏆</span> Rankings</a><a class="act"><span class="ic">📝</span> Provas</a><a><span class="ic">📄</span> Boletins</a></nav>
+          <div class="main">
+            <h4>Provas</h4>
+            <div class="sub">Offline (nota à mão) ou quiz online (auto-corrigido)</div>
+            <div class="cardui" style="padding:4px 6px">
+              <table class="tbl">
+                <thead><tr><th>Título</th><th>Tipo</th><th>Nota máx.</th></tr></thead>
+                <tbody>
+                  <tr><td>Quiz Lição 1</td><td><span class="pill b">🧠 Quiz · 2 q</span></td><td>10</td></tr>
+                  <tr><td>Prova Lição 5</td><td><span class="pill gray">Offline</span></td><td>10</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app">
+          <nav class="side"><div class="mk"><b>EBD ICES</b><span>ICE Samambaia</span></div>
+            <div class="grp">Desafios</div><a><span class="ic">🏆</span> Rankings</a><a class="act"><span class="ic">📝</span> Provas</a></nav>
+          <div class="main">
+            <h4>Montar quiz — Quiz Lição 1</h4>
+            <div class="sub">Cada questão tem 1 alternativa correta</div>
+            <div class="qcard">
+              <div class="en">1. Quantos livros tem o Novo Testamento?</div>
+              <div class="opt correct glow"><span class="rd"></span> 27</div>
+              <div class="opt"><span class="rd"></span> 39</div>
+              <div class="opt"><span class="rd"></span> 66</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <div class="main" style="flex:1">
+            <h4>Quiz Lição 1</h4>
+            <div class="sub">Você tem 1 tentativa · vale 10 pontos</div>
+            <div class="qcard">
+              <div class="en">1. Quantos livros tem o Novo Testamento?</div>
+              <div class="opt sel glow"><span class="rd"></span> 27</div>
+              <div class="opt"><span class="rd"></span> 39</div>
+              <div class="opt"><span class="rd"></span> 66</div>
+            </div>
+            <div style="text-align:right; margin-top:9px"><span class="btng">Enviar respostas</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <div class="main" style="flex:1">
+            <h4>Resultado — Quiz Lição 1</h4>
+            <div class="placar"><div class="n">6 <span style="font-size:1rem; color:var(--ap-muted)">/ 10</span></div><div class="s">Você acertou 1 de 2 questões</div></div>
+            <div class="qcard" style="margin-bottom:7px">
+              <div class="en">1. Quantos livros tem o Novo Testamento? <span class="pill g">acertou</span></div>
+              <div class="opt correct"><span class="rd"></span> 27 ✔</div>
+            </div>
+            <div class="qcard">
+              <div class="en">2. O livro de Atos foi escrito por Lucas. <span class="pill gray">errou</span></div>
+              <div class="opt correct"><span class="rd"></span> Verdadeiro ✔</div>
+              <div class="opt wrong"><span class="rd"></span> Falso · sua resposta</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="cover">
+          <div class="bk">🎯</div>
+          <h1 class="serif">Nota na hora</h1>
+          <div class="rule"></div>
+          <p>O quiz corrige sozinho e a nota já entra no boletim e nos rankings. Provas offline você digita a nota à mão.</p>
+        </div>
+      </section>
+
+      <div class="replay" id="replay"><button id="replayBtn">↻ Assistir de novo</button></div>
+    </div>
+    <div class="cap"><p id="caption"></p></div>
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="Anterior">⏮</button>
+      <button class="btn play" id="play" aria-label="Pausar">⏸</button>
+      <button class="btn" id="next" aria-label="Próximo">⏭</button>
+      <div class="segs" id="segs"></div>
+    </div>
+  </div>
+  <div class="foot">Guia de uso do EBD ICES · avança sozinho — ⏸ pausa, ⏭ / ⏮ navegam. Grave a tela para virar vídeo.</div>
+</div>
+<script>
+  window.CAPTIONS = [
+    ['Provas: ', 'aqui ficam as avaliações da turma — de dois tipos.'],
+    ['Dois tipos: ', 'Offline (o professor digita a nota) ou Quiz online, que o sistema corrige sozinho.'],
+    ['No quiz, ', 'o professor monta as questões (múltipla escolha ou verdadeiro/falso) e marca a resposta certa.'],
+    ['O aluno responde ', 'pela tela, em "Minhas provas" — tem 1 tentativa e envia quando terminar.'],
+    ['A correção é na hora: ', 'a nota aparece na tela com o gabarito, mostrando o que acertou e o que errou.'],
+    ['E o melhor: ', 'a nota entra sozinha no boletim e nos rankings. Nada de recalcular à mão.']
+  ];
+  window.DURS = [6000, 8500, 9000, 8500, 9000, 8000];
+</script>
+<script src="player.js"></script>
+</body>
+</html>
