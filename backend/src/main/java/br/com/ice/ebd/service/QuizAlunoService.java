@@ -164,8 +164,9 @@ public class QuizAlunoService {
         notaRepository.persist(np);
 
         // E-mail de desempenho (respeita o opt-in do aluno), como no "lançar e notificar".
-        if (aluno.getEmail() != null && !aluno.getEmail().isBlank() && aluno.isRecebeNotificacoes()) {
-            notificacaoService.enviarNotaProva(aluno, p, nota);
+        if (aluno.getEmail() != null && !aluno.getEmail().isBlank() && aluno.isRecebeNotificacoes()
+                && notificacaoService.enviarNotaProva(aluno, p, nota)) {
+            np.setNotificadaNota(nota); // dedup: não reenvia esta nota depois
         }
 
         return new QuizAlunoDto.Resultado(p.getTitulo(), nota, p.getNotaMaxima(), acertos, questoes.size(), detalhe);

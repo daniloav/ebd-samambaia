@@ -32,6 +32,10 @@ public class NotaProva {
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal nota;
 
+    /** Nota já notificada por e-mail (dedup); null = nunca notificada. */
+    @Column(name = "notificada_nota", precision = 5, scale = 2)
+    private BigDecimal notificadaNota;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -43,4 +47,7 @@ public class NotaProva {
 
     public BigDecimal getNota() { return nota; }
     public void setNota(BigDecimal nota) { this.nota = nota; }
+
+    public BigDecimal getNotificadaNota() { return notificadaNota; }
+    public void setNotificadaNota(BigDecimal notificadaNota) { this.notificadaNota = notificadaNota; }
 }
