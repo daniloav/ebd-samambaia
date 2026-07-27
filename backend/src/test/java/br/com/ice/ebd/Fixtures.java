@@ -80,4 +80,16 @@ public class Fixtures {
         usuarioRepo.persist(u);
         return u;
     }
+
+    /** Usuário PROFESSOR vinculado a um aluno (o aluno correlato que não conta nas aulas que ele dá). */
+    public Usuario usuarioProfessor(String username, Aluno aluno) {
+        Usuario u = new Usuario();
+        u.setUsername(username);
+        u.setSenhaHash("x");
+        u.setRole(Role.PROFESSOR);
+        u.setAtivo(true);
+        u.setAluno(aluno);
+        usuarioRepo.persist(u);
+        return u;
+    }
 }

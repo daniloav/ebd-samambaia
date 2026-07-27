@@ -28,6 +28,11 @@ public class Aula {
     @JoinColumn(name = "classe_id", nullable = false)
     private Classe classe;
 
+    /** Professor (usuário PROFESSOR) que deu esta aula; o aluno vinculado a ele não conta na chamada/ranking. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "professor_id")
+    private Usuario professor;
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -40,4 +45,7 @@ public class Aula {
 
     public Classe getClasse() { return classe; }
     public void setClasse(Classe classe) { this.classe = classe; }
+
+    public Usuario getProfessor() { return professor; }
+    public void setProfessor(Usuario professor) { this.professor = professor; }
 }

@@ -89,6 +89,15 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
                   <span class="muted">Nenhuma turma cadastrada.</span>
                 }
               </div>
+              <div class="form-group"><label>Aluno vinculado (participante)</label>
+                <select [(ngModel)]="form.alunoId">
+                  <option [ngValue]="null">— nenhum —</option>
+                  @for (a of alunos(); track a.id) {
+                    <option [ngValue]="a.id">{{ a.nome }}{{ a.classeNome ? ' (' + a.classeNome + ')' : '' }}</option>
+                  }
+                </select>
+                <span class="muted" style="font-size:.8rem">Quando este professor der uma aula, o aluno vinculado fica desabilitado na chamada e no ranking daquela aula.</span>
+              </div>
             }
 
             @if (form.role === 'ALUNO') {
@@ -196,7 +205,7 @@ export class UsuariosComponent {
       username: this.form.username.trim(),
       senha: this.form.senha || null,
       role: this.form.role,
-      alunoId: this.form.role === 'ALUNO' ? (this.form.alunoId ?? null) : null,
+      alunoId: (this.form.role === 'ALUNO' || this.form.role === 'PROFESSOR') ? (this.form.alunoId ?? null) : null,
       classeIds: this.form.role === 'PROFESSOR' ? (this.form.classeIds ?? []) : null,
       email: this.form.email || null,
       ativo: this.form.ativo,
