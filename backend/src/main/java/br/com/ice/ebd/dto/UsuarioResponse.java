@@ -7,7 +7,9 @@ import java.util.List;
 public record UsuarioResponse(
         Long id,
         String username,
-        String role,
+        boolean ehAdmin,
+        boolean ehProfessor,
+        boolean ehAluno,
         boolean ativo,
         Long alunoId,
         String alunoNome,
@@ -26,7 +28,8 @@ public record UsuarioResponse(
                 .sorted(Comparator.comparing(ClasseResumo::nome))
                 .toList();
         return new UsuarioResponse(
-                u.getId(), u.getUsername(), u.getRole().name(), u.isAtivo(),
+                u.getId(), u.getUsername(),
+                u.isEhAdmin(), u.isEhProfessor(), u.isEhAluno(), u.isAtivo(),
                 u.getAluno() != null ? u.getAluno().getId() : null,
                 u.getAluno() != null ? u.getAluno().getNome() : null,
                 u.getEmail(),

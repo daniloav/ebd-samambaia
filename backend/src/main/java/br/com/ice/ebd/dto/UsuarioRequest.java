@@ -1,8 +1,6 @@
 package br.com.ice.ebd.dto;
 
-import br.com.ice.ebd.model.Role;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
@@ -12,8 +10,9 @@ public record UsuarioRequest(
         @Size(max = 60, message = "O usuário deve ter no máximo 60 caracteres")
         String username,
         String senha,
-        @NotNull(message = "O perfil é obrigatório")
-        Role role,
+        Boolean ehAdmin,
+        Boolean ehProfessor,
+        Boolean ehAluno,
         Long alunoId,
         /** Turmas vinculadas ao professor (RBAC). Ignorado para ADMIN/ALUNO. */
         List<Long> classeIds,

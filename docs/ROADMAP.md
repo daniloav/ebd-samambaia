@@ -45,6 +45,12 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       entidade/período. Testes em `AuditoriaServiceTest`.
 - [ ] **P3 · Token em localStorage** — acessível a XSS (Angular escapa por padrão; risco baixo). Alternativa
       robusta (cookie httpOnly + CSRF) só se o app crescer.
+- [ ] **P3 · "Entrar como" com restrição no backend** — hoje o alternador de perfil "Atuando como"
+      (Gestão ↔ Aluno) é **só foco de UI**: o JWT carrega **todos** os papéis do usuário, então um
+      usuário com múltiplos papéis consegue, por **URL direta**, acessar telas do outro perfil (ele
+      tem a permissão de fato). Se um dia for preciso um verdadeiro "entrar como" que **restrinja no
+      servidor**, seria emitir/derivar o token pelo perfil ativo (ou um claim de escopo) e checar isso
+      nos endpoints — passo a mais, hoje fora de escopo. Ver [`unificacao-papeis.md`](unificacao-papeis.md).
 
 ### 🧭 Usabilidade
 - [x] **P1 · Aviso de sessão expirada** — o 401 redireciona ao login em silêncio; mostrar toast
@@ -206,5 +212,8 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
 - ~~Rankings/relatórios não recortavam por trimestre/período~~ — **resolvido**: recorte por trimestre em ambos (ver Evoluções funcionais).
 - ~~E-mail de chamada é síncrono na transação~~ — **resolvido**: envio assíncrono via EventBus (ver Qualidade).
 - Textos dos e-mails (presente/ausente) são **fixos no código** — ainda não configuráveis pela UI.
+- O alternador de perfil "Atuando como" é **só de UI** — o token carrega todos os papéis, então um
+  usuário multi-papel pode acessar telas do outro perfil por URL direta (tem a permissão). Um "entrar
+  como" que restrinja no backend está no backlog (Segurança, P3).
 - Sem testes automatizados; validação por build (`mvn package` / `ng build`) e smoke manual.
 - Uma única VM (1 GB) roda tudo (db + api + front + caddy) — suficiente para o MVP, não para alta disponibilidade.

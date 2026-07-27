@@ -2,7 +2,6 @@ package br.com.ice.ebd;
 
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Classe;
-import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import br.com.ice.ebd.service.AcessoAlunoService;
@@ -41,7 +40,7 @@ class AcessoAlunoServiceTest {
         Usuario u = loginDe(a);
         assertNotNull(u, "deveria ter criado um login para o aluno");
         assertEquals("maria.santos", u.getUsername());
-        assertEquals(Role.ALUNO, u.getRole());
+        assertTrue(u.isEhAluno());
         assertTrue(u.isPrecisaTrocarSenha(), "deve exigir troca no 1º acesso");
         assertTrue(BcryptUtil.matches(AcessoAlunoService.SENHA_PADRAO, u.getSenhaHash()),
                 "a senha padrão deve autenticar");

@@ -2,8 +2,6 @@ package br.com.ice.ebd.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -34,16 +32,24 @@ public class Usuario {
     @Column(length = 150)
     private String email;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Role role;
-
     @Column(nullable = false)
     private boolean ativo = true;
 
     /** Marca que o usuário deve trocar a senha no próximo acesso (1º login do aluno). */
     @Column(name = "precisa_trocar_senha", nullable = false)
     private boolean precisaTrocarSenha = false;
+
+    /** Papel: administrador (superusuário). */
+    @Column(name = "eh_admin", nullable = false)
+    private boolean ehAdmin = false;
+
+    /** Papel: professor (superfície de ensino/gestão). */
+    @Column(name = "eh_professor", nullable = false)
+    private boolean ehProfessor = false;
+
+    /** Papel: aluno (visão própria em /api/me/*). */
+    @Column(name = "eh_aluno", nullable = false)
+    private boolean ehAluno = false;
 
     /** Capacidade funcional: pode atuar como tesoureiro (independe da role base). */
     @Column(name = "eh_tesoureiro", nullable = false)
@@ -80,14 +86,20 @@ public class Usuario {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
-
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
 
     public boolean isPrecisaTrocarSenha() { return precisaTrocarSenha; }
     public void setPrecisaTrocarSenha(boolean precisaTrocarSenha) { this.precisaTrocarSenha = precisaTrocarSenha; }
+
+    public boolean isEhAdmin() { return ehAdmin; }
+    public void setEhAdmin(boolean ehAdmin) { this.ehAdmin = ehAdmin; }
+
+    public boolean isEhProfessor() { return ehProfessor; }
+    public void setEhProfessor(boolean ehProfessor) { this.ehProfessor = ehProfessor; }
+
+    public boolean isEhAluno() { return ehAluno; }
+    public void setEhAluno(boolean ehAluno) { this.ehAluno = ehAluno; }
 
     public boolean isEhTesoureiro() { return ehTesoureiro; }
     public void setEhTesoureiro(boolean ehTesoureiro) { this.ehTesoureiro = ehTesoureiro; }
