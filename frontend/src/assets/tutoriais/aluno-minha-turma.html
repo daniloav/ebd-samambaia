@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EBD ICES — Aluno: frequência, ranking e boletim</title>
+<link rel="stylesheet" href="player.css">
+<style>
+  .frow{ display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--ap-border); padding:7px 2px; font-size:10.5px; color:var(--ap-ink); }
+  .frow .dt{ width:54px; color:var(--ap-muted); font-size:9px; } .frow .ic4{ margin-left:auto; letter-spacing:2px; }
+  .yes{ color:var(--ap-green); } .no{ color:var(--ap-red); }
+  .big{ text-align:center; background:var(--ap-surface); border:1px solid var(--ap-border); border-radius:11px; padding:11px; margin-bottom:10px; }
+  .big b{ font-size:24px; color:var(--ap-navy); } .big .lb{ font-size:9px; color:var(--ap-muted); }
+  .podio{ display:flex; align-items:flex-end; justify-content:center; gap:8px; margin:6px 0 10px; }
+  .col{ text-align:center; } .col .av{ font-size:20px; } .col .nm{ font-size:8.5px; color:var(--ap-ink); }
+  .col .bar{ width:44px; border-radius:8px 8px 0 0; background:var(--ap-gold); margin-top:3px; color:#5a4310; font-weight:800; font-size:11px; display:flex; align-items:flex-start; justify-content:center; padding-top:3px; }
+  .col.p1 .bar{ height:52px; } .col.p2 .bar{ height:38px; background:#cbd5e0; color:#334155; } .col.p3 .bar{ height:28px; background:#e2c08a; }
+  .mine{ display:flex; align-items:center; gap:8px; background:#fdf6e6; border:1px solid var(--ap-gold); border-radius:9px; padding:8px 10px; font-size:10.5px; color:var(--ap-ink); }
+  .mine .pos{ font-weight:800; color:var(--ap-gold); }
+  .metrics{ display:flex; gap:8px; margin-bottom:10px; }
+  .mbox{ flex:1; background:var(--ap-surface); border:1px solid var(--ap-border); border-radius:9px; padding:8px; text-align:center; }
+  .mbox .lb{ font-size:8px; color:var(--ap-muted); } .mbox b{ display:block; font-size:15px; color:var(--ap-navy); }
+  .sit{ display:inline-block; padding:4px 12px; border-radius:99px; font-weight:800; font-size:11px; background:#c6f6d5; color:#22543d; }
+</style>
+</head>
+<body data-titulo="Aluno · minha turma">
+<div class="wrap">
+  <div class="head">
+    <div class="brand"><span class="bk">📊</span> EBD ICES <small>· Guia do aluno</small></div>
+    <div class="step"><span id="stepNow">1</span> / <span id="stepTot">5</span> · Frequência, ranking e boletim</div>
+  </div>
+  <div class="player">
+    <div class="stage" id="stage">
+
+      <section class="scene on">
+        <div class="cover">
+          <div class="bk">📊</div>
+          <h1 class="serif">Frequência, ranking e boletim</h1>
+          <div class="rule"></div>
+          <p>Acompanhe as suas presenças, a sua posição na turma e o seu boletim.</p>
+          <div class="tag">Para o aluno</div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <nav class="side"><div class="mk"><b>EBD ICES</b><span>Ana · Aluno</span></div>
+            <a class="act"><span class="ic">📊</span> Minha frequência</a><a><span class="ic">🏆</span> Ranking</a></nav>
+          <div class="main" style="flex:1">
+            <h4>Minha frequência</h4>
+            <div class="big"><span class="lb">Presença no trimestre</span><br><b>92%</b></div>
+            <div class="frow"><span class="dt">07/07</span> Lição 5 <span class="ic4"><span class="yes">✅</span> 📖 📗 ✏️</span></div>
+            <div class="frow"><span class="dt">30/06</span> Lição 4 <span class="ic4"><span class="yes">✅</span> 📖 <span class="no">✕</span> ✏️</span></div>
+            <div class="frow" style="border:none"><span class="dt">23/06</span> Lição 3 <span class="ic4"><span class="no">✕ faltou</span></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <div class="main" style="flex:1">
+            <h4>Ranking da turma 🏆</h4>
+            <div class="sub">Os destaques da Escola Bíblica</div>
+            <div class="podio">
+              <div class="col p2"><div class="av">🥈</div><div class="nm">Pedro</div><div class="bar">2º</div></div>
+              <div class="col p1"><div class="av">🥇</div><div class="nm">Marta</div><div class="bar">1º</div></div>
+              <div class="col p3"><div class="av">🥉</div><div class="nm">João</div><div class="bar">3º</div></div>
+            </div>
+            <div class="mine"><span class="pos">5º</span> Você, Ana — mandando bem! 👏</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <div class="main" style="flex:1">
+            <h4>Meu boletim 📄</h4>
+            <div class="sub">Ana Beatriz · 2º trimestre 2026</div>
+            <div class="metrics">
+              <div class="mbox"><span class="lb">Presença</span><b>92%</b></div>
+              <div class="mbox"><span class="lb">Média</span><b>8,5</b></div>
+              <div class="mbox"><span class="lb">Situação</span><b style="font-size:10px; color:#22543d">Aprovada</b></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px">
+              <span class="sit">Aprovada</span>
+              <span class="btnp glow" style="margin-left:auto">📄 Baixar PDF</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="cover">
+          <div class="bk">🎓</div>
+          <h1 class="serif">Acompanhe o seu progresso</h1>
+          <div class="rule"></div>
+          <p>Presença em dia, provas feitas e lição estudada te levam ao topo do ranking. Bons estudos!</p>
+        </div>
+      </section>
+
+      <div class="replay" id="replay"><button id="replayBtn">↻ Assistir de novo</button></div>
+    </div>
+    <div class="cap"><p id="caption"></p></div>
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="Anterior">⏮</button>
+      <button class="btn play" id="play" aria-label="Pausar">⏸</button>
+      <button class="btn" id="next" aria-label="Próximo">⏭</button>
+      <div class="segs" id="segs"></div>
+    </div>
+  </div>
+  <div class="foot">Guia do aluno · EBD ICES · avança sozinho — ⏸ pausa, ⏭ / ⏮ navegam.</div>
+</div>
+<script>
+  window.CAPTIONS = [
+    ['Sua turma no app: ', 'frequência, ranking e boletim, tudo à sua mão.'],
+    ['Minha frequência: ', 'sua presença no trimestre e, aula por aula, se você trouxe Bíblia, revista e estudou a lição.'],
+    ['Ranking da turma: ', 'o pódio dos destaques — e a sua própria posição em destaque.'],
+    ['Meu boletim: ', 'presença, média e situação do trimestre; dá até para baixar em PDF.'],
+    ['Presença em dia e lição estudada ', 'te levam ao topo. Continue firme — bons estudos!']
+  ];
+  window.DURS = [6000, 9000, 8000, 8500, 8000];
+</script>
+<script src="player.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EBD ICES — Aluno: fazer prova online</title>
+<link rel="stylesheet" href="player.css">
+<style>
+  .plist{ display:flex; flex-direction:column; gap:8px; }
+  .pcard{ display:flex; align-items:center; gap:9px; background:var(--ap-surface); border:1px solid var(--ap-border);
+    border-radius:10px; padding:9px 11px; }
+  .pcard .nm{ font-size:11px; color:var(--ap-navy); font-weight:700; } .pcard .mt{ font-size:8.5px; color:var(--ap-muted); }
+  .st{ font-size:8px; font-weight:800; padding:2px 7px; border-radius:99px; margin-left:auto; white-space:nowrap; }
+  .st.disp{ background:#dbeafe; color:#1e40af; } .st.resp{ background:#c6f6d5; color:#22543d; }
+  .q{ font-size:11.5px; color:var(--ap-ink); font-weight:700; margin:2px 0 9px; }
+  .opt{ display:flex; align-items:center; gap:8px; border:1px solid var(--ap-border); border-radius:9px; padding:8px 10px; margin-bottom:7px; font-size:10.5px; color:var(--ap-ink); }
+  .opt .ck{ width:15px; height:15px; border-radius:50%; border:2px solid var(--ap-border); flex:none; }
+  .opt.sel{ border-color:var(--ap-gold); background:#fdf6e6; } .opt.sel .ck{ border-color:var(--ap-gold); background:var(--ap-gold); }
+  .opt.ok{ border-color:var(--ap-green); background:#eaf7ee; } .opt.ok .ck{ border-color:var(--ap-green); background:var(--ap-green); }
+  .opt.no{ border-color:var(--ap-red); background:#fdeaea; }
+  .grade{ text-align:center; background:var(--ap-surface); border:1px solid var(--ap-border); border-radius:11px; padding:12px; margin-bottom:10px; }
+  .grade b{ font-size:26px; color:var(--ap-green); } .grade .lb{ font-size:9px; color:var(--ap-muted); }
+</style>
+</head>
+<body data-titulo="Aluno · fazer prova online">
+<div class="wrap">
+  <div class="head">
+    <div class="brand"><span class="bk">🧠</span> EBD ICES <small>· Guia do aluno</small></div>
+    <div class="step"><span id="stepNow">1</span> / <span id="stepTot">6</span> · Minhas provas</div>
+  </div>
+  <div class="player">
+    <div class="stage" id="stage">
+
+      <section class="scene on">
+        <div class="cover">
+          <div class="bk">🧠</div>
+          <h1 class="serif">Fazer prova online</h1>
+          <div class="rule"></div>
+          <p>Responder um quiz da lição pelo celular — o app corrige na hora.</p>
+          <div class="tag">Para o aluno</div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <nav class="side"><div class="mk"><b>EBD ICES</b><span>Ana · Aluno</span></div>
+            <a class="act"><span class="ic">🧠</span> Minhas provas</a><a><span class="ic">📄</span> Meu boletim</a></nav>
+          <div class="main" style="flex:1">
+            <h4>Minhas provas</h4>
+            <div class="sub">As provas online da sua turma</div>
+            <div class="plist">
+              <div class="pcard"><div><div class="nm">Quiz — Lição 5</div><div class="mt">10 pontos · 1 tentativa</div></div><span class="st disp">Disponível</span></div>
+              <div class="pcard"><div><div class="nm">Quiz — Lição 4</div><div class="mt">respondida</div></div><span class="st resp">Nota 9,0</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <div class="main" style="flex:1">
+            <h4>Quiz — Lição 5 <span class="mt" style="font-size:9px; color:var(--ap-muted)">· questão 1 de 3</span></h4>
+            <div class="q">Quem conduziu o povo de Israel na travessia do Mar Vermelho?</div>
+            <div class="opt"><span class="ck"></span> Josué</div>
+            <div class="opt sel"><span class="ck"></span> Moisés</div>
+            <div class="opt"><span class="ck"></span> Davi</div>
+            <div style="text-align:right"><span class="btnp glow">Próxima →</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="justify-content:center">
+          <div class="main" style="flex:1; text-align:center">
+            <div class="cardui" style="max-width:220px; margin:10px auto">
+              <div style="font-size:24px">📤</div>
+              <div style="font-size:11.5px; color:var(--ap-navy); font-weight:700; margin:4px 0">Enviar respostas?</div>
+              <div style="font-size:9.5px; color:var(--ap-muted); margin-bottom:10px">Você tem só <b>1 tentativa</b>. Confira antes de enviar.</div>
+              <span class="btnp glow">Enviar prova</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <div class="main" style="flex:1">
+            <div class="grade"><div class="lb">Sua nota</div><b>6,7</b><div class="lb">de 10 · acertou 2 de 3</div></div>
+            <div class="sub">Veja o gabarito:</div>
+            <div class="opt ok"><span class="ck"></span> Moisés — sua resposta ✓</div>
+            <div class="opt no"><span class="ck" style="border-color:var(--ap-red)"></span> Davi — você marcou, mas o certo era <b>Salomão</b></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="cover">
+          <div class="bk">🎓</div>
+          <h1 class="serif">Nota na hora!</h1>
+          <div class="rule"></div>
+          <p>A nota já entra no seu boletim e no ranking. Estude a lição e mande bem no próximo quiz!</p>
+        </div>
+      </section>
+
+      <div class="replay" id="replay"><button id="replayBtn">↻ Assistir de novo</button></div>
+    </div>
+    <div class="cap"><p id="caption"></p></div>
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="Anterior">⏮</button>
+      <button class="btn play" id="play" aria-label="Pausar">⏸</button>
+      <button class="btn" id="next" aria-label="Próximo">⏭</button>
+      <div class="segs" id="segs"></div>
+    </div>
+  </div>
+  <div class="foot">Guia do aluno · EBD ICES · avança sozinho — ⏸ pausa, ⏭ / ⏮ navegam.</div>
+</div>
+<script>
+  window.CAPTIONS = [
+    ['Minhas provas: ', 'aqui você responde os quizzes da lição direto no celular.'],
+    ['Na lista, ', 'a prova "Disponível" é para fazer; as respondidas já mostram a sua nota.'],
+    ['Responder é fácil: ', 'leia a pergunta e toque na alternativa certa. Depois, "Próxima".'],
+    ['No fim, confira e envie. ', 'Atenção: é só 1 tentativa por prova.'],
+    ['A nota aparece na hora, ', 'com o gabarito: o que você acertou e qual era a resposta certa.'],
+    ['E pronto: ', 'a nota já vai para o seu boletim e para o ranking da turma. Bons estudos!']
+  ];
+  window.DURS = [6000, 8000, 8500, 8000, 9000, 8000];
+</script>
+<script src="player.js"></script>
+</body>
+</html>
