@@ -149,7 +149,7 @@ public class NotificacaoService {
             }
         }
         LOG.infof("Campanha '%s' (%s): %d e-mail(s) enviado(s) com %d imagem(ns).",
-                titulo, turmaLabel, enviados, imagens != null ? imagens.size() : 0);
+                limparParaLog(titulo), limparParaLog(turmaLabel), enviados, imagens != null ? imagens.size() : 0);
         return enviados;
     }
 
@@ -543,5 +543,11 @@ public class NotificacaoService {
             LOG.warnf("Falha ao enviar nota para %s: %s", a.getEmail(), e.getMessage());
             return false;
         }
+    }
+
+    /** Neutraliza quebras de linha/caracteres de controle de valores de usuário antes de logar
+     *  (evita log-injection: forjar linhas de log com \n). */
+    private static String limparParaLog(String s) {
+        return s == null ? null : s.replaceAll("\\p{Cntrl}", "_");
     }
 }

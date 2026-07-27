@@ -42,7 +42,7 @@ class NotificacaoServiceTest {
         // O envio agora é assíncrono (EventBus): espera a entrega no mailbox.
         await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertEquals(1, mailbox.getTotalMessagesSent());
-            assertEquals(1, mailbox.getMessagesSentTo("com@teste.local").size());
+            assertEquals(1, mailbox.getMailMessagesSentTo("com@teste.local").size());
         });
     }
 }
