@@ -5,7 +5,6 @@ import br.com.ice.ebd.dto.RequisicaoRequest;
 import br.com.ice.ebd.dto.RequisicaoResponse;
 import br.com.ice.ebd.model.RequisicaoAnexo;
 import br.com.ice.ebd.model.RequisicaoTesouraria;
-import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.StatusRequisicao;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.RequisicaoAnexoRepository;
@@ -166,7 +165,7 @@ public class RequisicaoService {
     }
 
     private boolean podeVerTodas(Usuario u) {
-        return escopo.isAdmin() || u.getRole() == Role.TESOUREIRO;
+        return escopo.isAdmin() || u.isEhTesoureiro();
     }
 
     private void assertPodeVer(RequisicaoTesouraria r) {

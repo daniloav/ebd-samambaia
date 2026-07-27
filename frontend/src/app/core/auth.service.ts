@@ -8,6 +8,8 @@ const CHAVE_TOKEN = 'ebd_token';
 const CHAVE_USER = 'ebd_user';
 const CHAVE_ROLE = 'ebd_role';
 const CHAVE_TROCAR = 'ebd_trocar_senha';
+const CHAVE_TES = 'ebd_eh_tesoureiro';
+const CHAVE_LID = 'ebd_eh_lider';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -19,12 +21,15 @@ export class AuthService {
   readonly username = signal<string | null>(localStorage.getItem(CHAVE_USER));
   readonly role = signal<Role | null>(localStorage.getItem(CHAVE_ROLE) as Role | null);
   readonly precisaTrocarSenha = signal<boolean>(localStorage.getItem(CHAVE_TROCAR) === '1');
+  // Capacidades funcionais (somam-se à role base); ADMIN tem tudo por padrão.
+  private readonly ehTesoureiroSig = signal<boolean>(localStorage.getItem(CHAVE_TES) === '1');
+  private readonly ehLiderSig = signal<boolean>(localStorage.getItem(CHAVE_LID) === '1');
   readonly logado = computed(() => this.tokenSignal() !== null);
   readonly isAdmin = computed(() => this.role() === 'ADMIN');
   readonly isProfessor = computed(() => this.role() === 'PROFESSOR');
   readonly isAluno = computed(() => this.role() === 'ALUNO');
-  readonly isTesoureiro = computed(() => this.role() === 'TESOUREIRO');
-  readonly isLider = computed(() => this.role() === 'LIDER');
+  readonly isTesoureiro = computed(() => this.isAdmin() || this.ehTesoureiroSig());
+  readonly isLider = computed(() => this.isAdmin() || this.ehLiderSig());
 
   constructor(private http: HttpClient) {}
 
@@ -39,10 +44,14 @@ export class AuthService {
         localStorage.setItem(CHAVE_USER, res.username);
         localStorage.setItem(CHAVE_ROLE, res.role);
         localStorage.setItem(CHAVE_TROCAR, res.precisaTrocarSenha ? '1' : '0');
+        localStorage.setItem(CHAVE_TES, res.ehTesoureiro ? '1' : '0');
+        localStorage.setItem(CHAVE_LID, res.ehLider ? '1' : '0');
         this.tokenSignal.set(res.token);
         this.username.set(res.username);
         this.role.set(res.role);
         this.precisaTrocarSenha.set(!!res.precisaTrocarSenha);
+        this.ehTesoureiroSig.set(!!res.ehTesoureiro);
+        this.ehLiderSig.set(!!res.ehLider);
       })
     );
   }
@@ -52,10 +61,14 @@ export class AuthService {
     localStorage.removeItem(CHAVE_USER);
     localStorage.removeItem(CHAVE_ROLE);
     localStorage.removeItem(CHAVE_TROCAR);
+    localStorage.removeItem(CHAVE_TES);
+    localStorage.removeItem(CHAVE_LID);
     this.tokenSignal.set(null);
     this.username.set(null);
     this.role.set(null);
     this.precisaTrocarSenha.set(false);
+    this.ehTesoureiroSig.set(false);
+    this.ehLiderSig.set(false);
   }
 
   /** Marca que o 1º acesso foi concluído (senha trocada). */
