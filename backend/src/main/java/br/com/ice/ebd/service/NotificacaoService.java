@@ -10,7 +10,6 @@ import br.com.ice.ebd.model.Visitante;
 import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.PresencaRepository;
 import io.quarkus.mailer.Mail;
-import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -41,7 +40,7 @@ public class NotificacaoService {
     private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String SITE = "https://ebd-ices.duckdns.org";
 
-    @Inject Mailer mailer;
+    @Inject EmailDispatcher dispatcher;
     @Inject PresencaRepository presencaRepository;
     @Inject AulaRepository aulaRepository;
 
@@ -91,7 +90,7 @@ public class NotificacaoService {
                     String texto = p.isPresente()
                             ? textoPresente(a, quando, tema(aula), p)
                             : textoAusente(a, quando, tema(aula));
-                    mailer.send(Mail.withHtml(a.getEmail(), assunto, html).setText(texto));
+                    dispatcher.enfileirar(Mail.withHtml(a.getEmail(), assunto, html).setText(texto));
                     p.setNotificadaAssinatura(assinatura); // marca o estado notificado (evita reenvio)
                     enviados++;
                 } catch (Exception e) {
@@ -143,7 +142,7 @@ public class NotificacaoService {
                         mail.addInlineAttachment(nome, img.getConteudo(), img.getTipo(), "img" + i);
                     }
                 }
-                mailer.send(mail);
+                dispatcher.enfileirar(mail);
                 enviados++;
             } catch (Exception e) {
                 LOG.warnf("Falha ao enviar campanha para %s: %s", a.getEmail(), e.getMessage());
@@ -232,7 +231,7 @@ public class NotificacaoService {
                 + " (" + r.getMinisterio() + "): " + moeda(r.getValorSolicitado()) + ". Acesse o app para avaliar.";
         for (String em : emailsTesoureiros) {
             try {
-                mailer.send(Mail.withHtml(em, "Tesouraria — nova requisição " + r.getNumero(), shell(TES, corpo)).setText(texto));
+                dispatcher.enfileirar(Mail.withHtml(em, "Tesouraria — nova requisição " + r.getNumero(), shell(TES, corpo)).setText(texto));
             } catch (Exception e) {
                 LOG.warnf("Falha ao avisar tesoureiro %s: %s", em, e.getMessage());
             }
@@ -260,7 +259,7 @@ public class NotificacaoService {
                 + "<p style=\"margin:0;\"><a href=\"" + SITE + "\">Abrir o app</a></p>";
         String texto = "Requisição " + r.getNumero() + (aprovada ? " APROVADA (" + moeda(r.getValorAprovado()) + "). Anexe a nota fiscal após usar." : " negada.")
                 + (r.getParecerTesoureiro() != null ? " Obs.: " + r.getParecerTesoureiro() : "");
-        try { mailer.send(Mail.withHtml(u.getEmail(), assunto, shell(TES, corpo)).setText(texto)); }
+        try { dispatcher.enfileirar(Mail.withHtml(u.getEmail(), assunto, shell(TES, corpo)).setText(texto)); }
         catch (Exception e) { LOG.warnf("Falha ao avisar solicitante %s: %s", u.getEmail(), e.getMessage()); }
     }
 
@@ -275,7 +274,7 @@ public class NotificacaoService {
         String texto = "Requisição " + r.getNumero() + " finalizada por " + r.getSolicitante().getUsername()
                 + ". Valor gasto: " + moeda(r.getValorGasto()) + ".";
         for (String em : emailsTesoureiros) {
-            try { mailer.send(Mail.withHtml(em, "Tesouraria — requisição " + r.getNumero() + " finalizada", shell(TES, corpo)).setText(texto)); }
+            try { dispatcher.enfileirar(Mail.withHtml(em, "Tesouraria — requisição " + r.getNumero() + " finalizada", shell(TES, corpo)).setText(texto)); }
             catch (Exception e) { LOG.warnf("Falha ao avisar finalização a %s: %s", em, e.getMessage()); }
         }
     }
@@ -291,7 +290,7 @@ public class NotificacaoService {
                 + "<p style=\"margin:0;\"><a href=\"" + SITE + "\">Anexar agora</a></p>";
         String texto = "Pendência: anexe a nota fiscal da requisição " + r.getNumero() + " no app.";
         try {
-            mailer.send(Mail.withHtml(u.getEmail(), "Tesouraria — pendência de nota fiscal (" + r.getNumero() + ")", shell(TES, corpo)).setText(texto));
+            dispatcher.enfileirar(Mail.withHtml(u.getEmail(), "Tesouraria — pendência de nota fiscal (" + r.getNumero() + ")", shell(TES, corpo)).setText(texto));
             return true;
         } catch (Exception e) { LOG.warnf("Falha ao cobrar nota de %s: %s", u.getEmail(), e.getMessage()); return false; }
     }
@@ -385,7 +384,7 @@ public class NotificacaoService {
             String texto = "Olá " + v.getNome() + ",\n\n"
                     + "Que alegria receber você na nossa Escola Bíblica Dominical! "
                     + "Esperamos você no próximo domingo.\n\nEscola Bíblica Dominical — ICE Samambaia";
-            mailer.send(Mail.withHtml(v.getEmail(),
+            dispatcher.enfileirar(Mail.withHtml(v.getEmail(),
                     "Bem-vindo(a) à EBD — ICE Samambaia! 🙌",
                     htmlBoasVindasVisitante(v, turma)).setText(texto));
             LOG.infof("Boas-vindas enviadas ao visitante %s.", v.getEmail());
@@ -415,7 +414,7 @@ public class NotificacaoService {
                 continue;
             }
             try {
-                mailer.send(Mail.withHtml(em, assunto, html).setText(texto));
+                dispatcher.enfileirar(Mail.withHtml(em, assunto, html).setText(texto));
                 enviados++;
             } catch (Exception e) {
                 LOG.warnf("Falha ao avisar professor %s sobre visitante: %s", em, e.getMessage());
@@ -491,7 +490,7 @@ public class NotificacaoService {
                     + "e encha o seu novo ano de vida de bênçãos.\n"
                     + "\"O Senhor te abençoe e te guarde.\" (Números 6.24)\n\n"
                     + "Com carinho, sua família da EBD — ICE Samambaia";
-            mailer.send(Mail.withHtml(a.getEmail(),
+            dispatcher.enfileirar(Mail.withHtml(a.getEmail(),
                     "Feliz aniversário! 🎉 — EBD ICE Samambaia", shell("Aniversário", corpo)).setText(texto));
             a.setAniversarioNotificadoEm(hoje); // dedup: não reenvia no mesmo dia
             LOG.infof("Parabéns de aniversário enviado a %s.", a.getEmail());
@@ -537,7 +536,7 @@ public class NotificacaoService {
                     + "Sua prova \"" + prova.getTitulo() + "\" foi corrigida.\n"
                     + "Nota: " + notaFmt + " / " + maxFmt + " (" + pct + "%)\n\n"
                     + elogio + "\nEscola Bíblica Dominical — ICE Samambaia";
-            mailer.send(Mail.withHtml(a.getEmail(),
+            dispatcher.enfileirar(Mail.withHtml(a.getEmail(),
                     "EBD — resultado da prova: " + prova.getTitulo(), shell("Provas", corpo)).setText(texto));
             return true;
         } catch (Exception e) {

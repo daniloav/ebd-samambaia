@@ -10,8 +10,10 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
@@ -37,7 +39,10 @@ class NotificacaoServiceTest {
                 "Título", "Mensagem", List.of(comEmail, semEmail), "Turma Camp", List.of());
 
         assertEquals(1, enviados);
-        assertEquals(1, mailbox.getTotalMessagesSent());
-        assertEquals(1, mailbox.getMessagesSentTo("com@teste.local").size());
+        // O envio agora é assíncrono (EventBus): espera a entrega no mailbox.
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            assertEquals(1, mailbox.getTotalMessagesSent());
+            assertEquals(1, mailbox.getMessagesSentTo("com@teste.local").size());
+        });
     }
 }
