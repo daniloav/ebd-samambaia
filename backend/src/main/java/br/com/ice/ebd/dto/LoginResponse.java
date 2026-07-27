@@ -5,5 +5,7 @@ public record LoginResponse(
         String username,
         String role,
         long expiresInSeconds,
-        boolean precisaTrocarSenha) {
+        boolean precisaTrocarSenha,
+        boolean ehTesoureiro,
+        boolean ehLider) {
 }
