@@ -50,6 +50,18 @@ public class RequisicaoTesouraria {
     private LocalDate dataNecessidade;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "forma_repasse", nullable = false, length = 10)
+    private FormaRepasse formaRepasse = FormaRepasse.DINHEIRO;
+
+    /** Tipo da chave PIX (só quando forma = PIX). Nunca ALEATORIA. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pix_tipo", length = 12)
+    private TipoChavePix pixTipo;
+
+    @Column(name = "pix_chave", length = 140)
+    private String pixChave;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 12)
     private StatusRequisicao status = StatusRequisicao.ABERTA;
 
@@ -100,6 +112,15 @@ public class RequisicaoTesouraria {
     public void setValorSolicitado(BigDecimal valorSolicitado) { this.valorSolicitado = valorSolicitado; }
     public LocalDate getDataNecessidade() { return dataNecessidade; }
     public void setDataNecessidade(LocalDate dataNecessidade) { this.dataNecessidade = dataNecessidade; }
+
+    public FormaRepasse getFormaRepasse() { return formaRepasse; }
+    public void setFormaRepasse(FormaRepasse formaRepasse) { this.formaRepasse = formaRepasse; }
+
+    public TipoChavePix getPixTipo() { return pixTipo; }
+    public void setPixTipo(TipoChavePix pixTipo) { this.pixTipo = pixTipo; }
+
+    public String getPixChave() { return pixChave; }
+    public void setPixChave(String pixChave) { this.pixChave = pixChave; }
     public StatusRequisicao getStatus() { return status; }
     public void setStatus(StatusRequisicao status) { this.status = status; }
     public BigDecimal getValorAprovado() { return valorAprovado; }

@@ -3,8 +3,11 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.dto.AvaliarRequest;
 import br.com.ice.ebd.dto.RequisicaoRequest;
 import br.com.ice.ebd.dto.RequisicaoResponse;
+import br.com.ice.ebd.model.CategoriaAnexo;
+import br.com.ice.ebd.model.FormaRepasse;
 import br.com.ice.ebd.model.RequisicaoAnexo;
 import br.com.ice.ebd.model.RequisicaoTesouraria;
+import br.com.ice.ebd.model.TipoChavePix;
 import br.com.ice.ebd.model.StatusRequisicao;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.RequisicaoAnexoRepository;
@@ -36,7 +39,7 @@ public class RequisicaoService {
     @Inject NotificacaoService notificacao;
 
     /** Dados de um anexo recebido no upload (montado no resource). */
-    public record AnexoData(String nome, String tipo, byte[] conteudo) {}
+    public record AnexoData(String nome, String tipo, byte[] conteudo, CategoriaAnexo categoria) {}
 
     @Transactional
     public RequisicaoResponse criar(RequisicaoRequest req) {
@@ -50,6 +53,7 @@ public class RequisicaoService {
         r.setMotivo(req.motivo().trim());
         r.setValorSolicitado(req.valorSolicitado());
         r.setDataNecessidade(req.dataNecessidade());
+        aplicarRepasse(r, req, solicitante);
         r.setStatus(StatusRequisicao.ABERTA);
         r.setCriadoEm(LocalDateTime.now());
         repository.persist(r);
@@ -76,18 +80,21 @@ public class RequisicaoService {
     }
 
     @Transactional
-    public RequisicaoResponse aprovar(Long id, AvaliarRequest req) {
+    public RequisicaoResponse aprovar(Long id, BigDecimal valorAprovado, String parecer, AnexoData comprovante) {
         RequisicaoTesouraria r = obter(id);
         exigirStatus(r, StatusRequisicao.ABERTA, "Só é possível aprovar uma requisição em aberto.");
-        BigDecimal valor = req != null && req.valorAprovado() != null ? req.valorAprovado() : r.getValorSolicitado();
+        BigDecimal valor = valorAprovado != null ? valorAprovado : r.getValorSolicitado();
         if (valor.signum() <= 0) {
             throw bad("O valor aprovado deve ser maior que zero.");
         }
         r.setValorAprovado(valor);
-        r.setParecerTesoureiro(req != null ? trunc(req.parecer()) : null);
+        r.setParecerTesoureiro(trunc(parecer));
         r.setAvaliadoPor(usuarioAtual());
         r.setAvaliadoEm(LocalDateTime.now());
         r.setStatus(StatusRequisicao.APROVADA);
+        if (comprovante != null) {
+            persistAnexo(r, comprovante);
+        }
         notificacao.avisarRequisicaoAvaliada(r);
         return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(id));
     }
@@ -113,12 +120,7 @@ public class RequisicaoService {
             throw bad("Anexe ao menos a nota fiscal para finalizar.");
         }
         for (AnexoData ad : anexos) {
-            RequisicaoAnexo a = new RequisicaoAnexo();
-            a.setRequisicao(r);
-            a.setNome(ad.nome());
-            a.setTipo(ad.tipo() != null ? ad.tipo() : "application/octet-stream");
-            a.setConteudo(ad.conteudo());
-            anexoRepository.persist(a);
+            persistAnexo(r, ad);
         }
         r.setValorGasto(valorGasto);
         r.setObservacaoFinal(trunc(observacao));
@@ -149,6 +151,93 @@ public class RequisicaoService {
     }
 
     // ---------- helpers ----------
+
+    private void persistAnexo(RequisicaoTesouraria r, AnexoData ad) {
+        RequisicaoAnexo a = new RequisicaoAnexo();
+        a.setRequisicao(r);
+        a.setNome(ad.nome());
+        a.setTipo(ad.tipo() != null ? ad.tipo() : "application/octet-stream");
+        a.setConteudo(ad.conteudo());
+        a.setCategoria(ad.categoria() != null ? ad.categoria() : CategoriaAnexo.NOTA_FISCAL);
+        anexoRepository.persist(a);
+    }
+
+    /** Forma de repasse + validação da chave PIX (tipo válido e titularidade do próprio solicitante). */
+    private void aplicarRepasse(RequisicaoTesouraria r, RequisicaoRequest req, Usuario dono) {
+        FormaRepasse forma = FormaRepasse.DINHEIRO;
+        if (req.formaRepasse() != null && !req.formaRepasse().isBlank()) {
+            try {
+                forma = FormaRepasse.valueOf(req.formaRepasse().trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw bad("Forma de repasse inválida.");
+            }
+        }
+        r.setFormaRepasse(forma);
+        if (forma != FormaRepasse.PIX) {
+            r.setPixTipo(null);
+            r.setPixChave(null);
+            return;
+        }
+        TipoChavePix tipo = parseTipoPix(req.pixTipo());
+        String chave = req.pixChave() != null ? req.pixChave().trim() : "";
+        if (chave.isBlank()) {
+            throw bad("Informe a chave PIX.");
+        }
+        validarChaveDoDono(tipo, chave, dono);
+        r.setPixTipo(tipo);
+        r.setPixChave(chave);
+    }
+
+    private TipoChavePix parseTipoPix(String s) {
+        if (s == null || s.isBlank()) {
+            throw bad("Informe o tipo da chave PIX.");
+        }
+        String v = java.text.Normalizer.normalize(s.trim().toUpperCase(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        if (v.equals("ALEATORIA")) {
+            throw bad("Chave aleatória não é aceita — use CPF, e-mail ou telefone.");
+        }
+        try {
+            return TipoChavePix.valueOf(v);
+        } catch (IllegalArgumentException e) {
+            throw bad("Tipo de chave PIX inválido — use CPF, e-mail ou telefone.");
+        }
+    }
+
+    /** A chave PIX precisa ser do próprio solicitante (nada de terceiros). */
+    private void validarChaveDoDono(TipoChavePix tipo, String chave, Usuario dono) {
+        switch (tipo) {
+            case EMAIL -> {
+                String email = dono.getEmail();
+                if (email == null || email.isBlank()) {
+                    throw bad("Seu cadastro não tem e-mail; cadastre-o ou use outra chave sua.");
+                }
+                if (!email.trim().equalsIgnoreCase(chave)) {
+                    throw bad("A chave de e-mail deve ser o seu próprio e-mail cadastrado.");
+                }
+            }
+            case TELEFONE -> {
+                String tel = dono.getAluno() != null ? dono.getAluno().getTelefone() : null;
+                if (tel == null || tel.isBlank()) {
+                    throw bad("Não há um telefone seu cadastrado; use outra chave sua.");
+                }
+                if (!digitos(tel).equals(digitos(chave))) {
+                    throw bad("A chave de telefone deve ser o seu próprio telefone cadastrado.");
+                }
+            }
+            case CPF -> {
+                // Não guardamos CPF, então não há como cross-validar a titularidade aqui;
+                // exige-se ao menos um CPF bem formado e o tesoureiro confere no comprovante.
+                if (digitos(chave).length() != 11) {
+                    throw bad("CPF inválido — informe os 11 dígitos.");
+                }
+            }
+        }
+    }
+
+    private static String digitos(String s) {
+        return s == null ? "" : s.replaceAll("\\D", "");
+    }
 
     private String gerarNumero() {
         String prefixo = "REQ-" + Year.now().getValue() + "-";

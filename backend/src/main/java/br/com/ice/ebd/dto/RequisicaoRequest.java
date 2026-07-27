@@ -17,5 +17,10 @@ public record RequisicaoRequest(
         @NotBlank(message = "Informe o motivo") String motivo,
         @NotNull(message = "Informe o valor solicitado")
         @Positive(message = "O valor deve ser maior que zero") BigDecimal valorSolicitado,
-        LocalDate dataNecessidade) {
+        LocalDate dataNecessidade,
+        /** DINHEIRO | PIX (default DINHEIRO). */
+        String formaRepasse,
+        /** CPF | EMAIL | TELEFONE (só quando PIX; nunca aleatória). */
+        String pixTipo,
+        String pixChave) {
 }
