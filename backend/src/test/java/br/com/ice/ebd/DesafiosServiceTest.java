@@ -38,7 +38,7 @@ class DesafiosServiceTest {
                 new SalvarChamadaRequest.Item(presente.getId(), true, true, false, false),
                 new SalvarChamadaRequest.Item(faltoso.getId(), false, false, false, false))));
 
-        DesafiosResponse d = desafiosService.gerar(c.getId());
+        DesafiosResponse d = desafiosService.gerar(c.getId(), null, null);
 
         assertEquals(1, d.totalAulas());
         // quem esteve presente lidera o "menos faltou"
@@ -64,10 +64,35 @@ class DesafiosServiceTest {
         chamadaService.salvarChamada(futura.getId(), new SalvarChamadaRequest(List.of(
                 new SalvarChamadaRequest.Item(a.getId(), true, false, false, false))));
 
-        DesafiosResponse d = desafiosService.gerar(c.getId());
+        DesafiosResponse d = desafiosService.gerar(c.getId(), null, null);
 
         // Só a aula passada conta: 1 aula e 1 presença (a futura é ignorada).
         assertEquals(1, d.totalAulas());
         assertEquals(1.0, d.menosFaltou().get(0).valor());
+    }
+    @Test
+    @TestSecurity(user = "admin", roles = "ADMIN")
+    @TestTransaction
+    void rankingFiltraPorTrimestre() {
+        Classe c = fx.classe("Turma Trimestre");
+        Aluno a = fx.aluno("Aluno Tri", c, null, false);
+        // Uma aula no 1º trimestre e outra no 2º (ambas no passado, contam).
+        Aula q1 = fx.aula(c, LocalDate.of(2026, 2, 10));
+        Aula q2 = fx.aula(c, LocalDate.of(2026, 5, 10));
+        chamadaService.salvarChamada(q1.getId(), new SalvarChamadaRequest(List.of(
+                new SalvarChamadaRequest.Item(a.getId(), true, false, false, false))));
+        chamadaService.salvarChamada(q2.getId(), new SalvarChamadaRequest(List.of(
+                new SalvarChamadaRequest.Item(a.getId(), true, false, false, false))));
+
+        // Sem filtro: as duas aulas contam.
+        assertEquals(2, desafiosService.gerar(c.getId(), null, null).totalAulas());
+        // 1º trimestre de 2026: só a aula de fevereiro.
+        DesafiosResponse t1 = desafiosService.gerar(c.getId(), 2026, 1);
+        assertEquals(1, t1.totalAulas());
+        assertEquals(1.0, t1.menosFaltou().get(0).valor());
+        // 2º trimestre de 2026: só a aula de maio.
+        assertEquals(1, desafiosService.gerar(c.getId(), 2026, 2).totalAulas());
+        // 4º trimestre de 2026 (sem aulas): nenhuma.
+        assertEquals(0, desafiosService.gerar(c.getId(), 2026, 4).totalAulas());
     }
 }
