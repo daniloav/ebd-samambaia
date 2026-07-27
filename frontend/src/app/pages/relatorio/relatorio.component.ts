@@ -29,8 +29,22 @@ import { exportarExcel, exportarPdf } from '../../core/export.util';
 
     <div class="card">
       <div class="filtros">
-        <div class="form-group"><label>Início</label><input type="date" [(ngModel)]="inicio" /></div>
-        <div class="form-group"><label>Fim</label><input type="date" [(ngModel)]="fim" /></div>
+        <div class="form-group"><label>Trimestre</label>
+          <select [(ngModel)]="trimestre" (ngModelChange)="aplicarTrimestre()">
+            <option [ngValue]="null">Personalizado</option>
+            <option [ngValue]="1">1º (Jan-Mar)</option>
+            <option [ngValue]="2">2º (Abr-Jun)</option>
+            <option [ngValue]="3">3º (Jul-Set)</option>
+            <option [ngValue]="4">4º (Out-Dez)</option>
+          </select>
+        </div>
+        @if (trimestre !== null) {
+          <div class="form-group"><label>Ano</label>
+            <input type="number" min="2000" max="2100" [(ngModel)]="ano" (ngModelChange)="aplicarTrimestre()" style="width:90px" />
+          </div>
+        }
+        <div class="form-group"><label>Início</label><input type="date" [(ngModel)]="inicio" (ngModelChange)="trimestre = null" /></div>
+        <div class="form-group"><label>Fim</label><input type="date" [(ngModel)]="fim" (ngModelChange)="trimestre = null" /></div>
         <button class="btn" (click)="gerar()">Gerar relatório</button>
         <button class="btn btn-outline" (click)="limpar()">Limpar filtro</button>
         @if (dados()?.itens?.length) {
@@ -92,6 +106,8 @@ export class RelatorioComponent {
 
   inicio = '';
   fim = '';
+  trimestre: number | null = null;
+  ano = new Date().getFullYear();
   dados = signal<RelatorioPresencaResponse | null>(null);
   carregando = signal(false);
 
@@ -108,8 +124,23 @@ export class RelatorioComponent {
   }
 
   limpar(): void {
-    this.inicio = ''; this.fim = '';
+    this.inicio = ''; this.fim = ''; this.trimestre = null;
     this.gerar();
+  }
+
+  /** Atalho de trimestre: preenche início/fim e gera. 1=Jan-Mar ... 4=Out-Dez. */
+  aplicarTrimestre(): void {
+    if (this.trimestre == null) { return; }
+    const mesIni = (this.trimestre - 1) * 3;
+    this.inicio = this.iso(new Date(this.ano, mesIni, 1));
+    this.fim = this.iso(new Date(this.ano, mesIni + 3, 0)); // último dia do 3º mês
+    this.gerar();
+  }
+
+  private iso(d: Date): string {
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${dia}`;
   }
 
   private cols(): string[] {
