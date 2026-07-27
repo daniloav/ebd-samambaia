@@ -48,11 +48,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           NEW="$(bash scripts/bump-version.sh)"
           echo "::notice title=Versão::Publicando v$NEW"
-          if [ -n "$(git status --porcelain frontend/src/app/version.ts)" ]; then
-            git add frontend/src/app/version.ts
-            git commit -m "chore(release): v$NEW [skip ci]"
-            git push origin HEAD:main
-          fi
+          # version.ts é gravado localmente pelo bump e entra no build da imagem. NÃO commitamos na
+          # main (protegida por ruleset — PR obrigatório): a versão é derivada das TAGS, então basta a tag.
           if ! git rev-parse -q --verify "refs/tags/v$NEW" >/dev/null; then
             git tag "v$NEW"; git push origin "v$NEW"
           fi
