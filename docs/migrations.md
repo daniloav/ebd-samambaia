@@ -20,6 +20,8 @@ O schema do banco é **versionado e gerenciado pelo Flyway**. As migrations fica
 | **V9** | `V9__campanha_imagem.sql` | Tabela `campanha_imagem` (arte/imagens embutidas inline no e-mail da campanha; `bytea`). |
 | **V16** | `V16__requisicao_tesouraria.sql` | Módulo de tesouraria: tabelas `requisicao_tesouraria` e `requisicao_anexo` (nota fiscal em `bytea`); amplia `ck_usuario_role` p/ `TESOUREIRO`/`LIDER`. |
 | **V17** | `V17__view_requisicoes_integracao.sql` | View somente-leitura `vw_requisicoes_integracao` p/ integração externa da tesouraria (sem senha nem binário). Ver [`integracao-tesouraria.md`](integracao-tesouraria.md). |
+| **V18** | `V18__papel_tesouraria_lider_como_flags.sql` | Tesoureiro/líder viram flags `eh_tesoureiro`/`eh_lider`; CHECK de role volta a ADMIN/PROFESSOR/ALUNO. |
+| **V19** | `V19__papeis_como_flags.sql` | Achata os papéis: flags `eh_admin`/`eh_professor`/`eh_aluno` (backfill 1:1) e **remove a coluna `role`**. Ver [`unificacao-papeis.md`](unificacao-papeis.md). |
 
 ## Regras de ouro
 
