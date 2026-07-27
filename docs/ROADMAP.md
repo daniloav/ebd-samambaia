@@ -157,6 +157,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       em chat durante a config — apagar no painel: SMTP & API → API Keys).
 - [ ] (Opcional) **Purga de histórico do Git** para remover a chave JWT antiga, se o repo virar público.
 - [ ] **Budget/alerta de custo** na OCI (garantia extra contra cobrança).
+- [ ] **Runner self-hosted p/ o CI/CD** (repo privado gasta minutos do GitHub Actions; o build já é pesado). Runner Docker numa VM OCI dedicada — script `scripts/setup-runner-oci.sh` + runbook [`self-hosted-runner.md`](self-hosted-runner.md). Pré-requisitos: VM com RAM p/ buildar (A1 arm64 no free) e decidir arm64 x x86 do app. Alternativa mais robusta (autoscaling): ARC no OKE.
 - [ ] **Proteção de branch na `main`** (bloquear push direto, exigir PR + CI verde).
       Requer **GitHub Pro** (repo privado) ou tornar o repo **público**. Hoje o fluxo
       develop→PR→main é seguido por convenção. Aplicar via `gh api PUT .../branches/main/protection`.
