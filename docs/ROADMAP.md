@@ -155,12 +155,11 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
          e `EBD_SMTP_PASS` no `.env` da VM + secret `OCI_ENV_FILE` + backup `.secrets-local/`.
 - [ ] **Excluir a chave SMTP da Brevo** (não usamos mais o Brevo; a chave foi compartilhada
       em chat durante a config — apagar no painel: SMTP & API → API Keys).
-- [ ] (Opcional) **Purga de histórico do Git** para remover a chave JWT antiga, se o repo virar público.
+- [ ] **⚠️ Pré-requisito para tornar o repo PÚBLICO** — a chave JWT privada (`privateKey.pem`) está no **histórico** (commit `e2c35e9`, removida em `7a5285a`, mas o blob permanece). Antes de abrir: (a) **purgar o histórico** (git filter-repo/BFG removendo os `*.pem`) **ou** confirmar que a chave foi **rotacionada em prod** (o CLAUDE.md diz que sim → exposição de baixo impacto, mas o ideal é purgar); (b) rodar **gitleaks no histórico inteiro** (`gitleaks detect`, sem `--no-git`) para pegar qualquer outro segredo (ex.: verificar a chave SMTP da Brevo); (c) ativar **secret scanning + push protection** ao abrir. Os secrets do repo (OCI_*, EBD_JWT_*, EBD_GHCR_*) **não** estão no código/histórico (são secrets criptografados) — abrir o repo não os expõe.
 - [ ] **Budget/alerta de custo** na OCI (garantia extra contra cobrança).
-- [ ] **Runner self-hosted p/ o CI/CD** (repo privado gasta minutos do GitHub Actions; o build já é pesado). Runner Docker numa VM OCI dedicada — script `scripts/setup-runner-oci.sh` + runbook [`self-hosted-runner.md`](self-hosted-runner.md). Pré-requisitos: VM com RAM p/ buildar (A1 arm64 no free) e decidir arm64 x x86 do app. Alternativa mais robusta (autoscaling): ARC no OKE.
-- [ ] **Proteção de branch na `main`** (bloquear push direto, exigir PR + CI verde).
-      Requer **GitHub Pro** (repo privado) ou tornar o repo **público**. Hoje o fluxo
-      develop→PR→main é seguido por convenção. Aplicar via `gh api PUT .../branches/main/protection`.
+- [ ] **(adiado — custo) Runner self-hosted p/ o CI/CD** (repo privado gasta minutos do GitHub Actions; o build já é pesado). Runner Docker numa VM OCI dedicada — script `scripts/setup-runner-oci.sh` + runbook [`self-hosted-runner.md`](self-hosted-runner.md). Pré-requisitos: VM com RAM p/ buildar (A1 arm64 no free) e decidir arm64 x x86 do app. Alternativa mais robusta (autoscaling): ARC no OKE.
+- [ ] **Tornar o repo PÚBLICO** (decisão 2026-07) — resolve o billing do Actions (repo público tem minutos **grátis/ilimitados**) e **destrava a proteção de branch de graça** (hoje exigiria GitHub Pro). **Só depois** do pré-requisito de segurança acima (segredos no histórico). Ao abrir, o runner self-hosted **não** pode ser usado (RCE via PR de fork) — por isso ele fica adiado mesmo.
+- [ ] **Proteção de branch na `main`** (bloquear push direto, exigir PR + CI verde) — **fica grátis** assim que o repo virar público. Aplicar via `gh api PUT .../branches/main/protection`.
 - [ ] **Avaliar upgrade para "Pay As You Go"** para destravar capacidade do **A1** (ARM, 6 GB).
       Contas Free Trial têm baixa prioridade na fila do A1 ("Out of capacity"); o upgrade
       costuma liberar, e os recursos **Always Free continuam US$ 0**. Precisa cadastrar cartão
