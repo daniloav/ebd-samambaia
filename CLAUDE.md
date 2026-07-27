@@ -81,7 +81,8 @@ claude-trabalho/
     ├── producao.md                ← produção: URL/IP, SSH, operação
     ├── senhas-e-secrets.md        ← onde ficam senhas/secrets e como consultar
     ├── pos-vm.md                  ← runbook: deploy quando a VM subir (bootstrap + secrets)
-    └── deploy-oracle.md           ← passo a passo de deploy na VM
+    ├── deploy-oracle.md           ← passo a passo de deploy na VM
+    └── integracao-tesouraria.md   ← runbook: acesso read-only externo à tesouraria (view V17 + túnel SSH)
 ```
 
 ## 4. Como rodar (dev)
@@ -200,7 +201,7 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   ponto (`LoginService`): normaliza (trim+minúsculas), valida formato (`[a-z0-9]` + `. - _`, 3–60, sem
   espaço/acento) e unicidade. `AcessoAlunoService.definirLogin` renomeia o login do aluno (idempotente).
   Branch `feature/editar-login-usuario`. Testes em `AcessoAlunoServiceTest` (23 no total).
-- 💰 **Módulo de Requisições da Tesouraria** — dois papéis novos (**LIDER** abre pedidos, **TESOUREIRO** avalia; ADMIN supervisiona; PROFESSOR/ALUNO **sem acesso**). Líder solicita recurso (ministério, evento, destinação, motivo, valor, data) → nº único `REQ-<ano>-<seq4>`; tesoureiro **aprova** (define valor aprovado + parecer) ou **nega**; aprovada fica pendente de **prestação de contas** até anexar a(s) **nota(s) fiscal(is)** (PDF/imagens, multipart em `bytea`) + valor gasto → FINALIZADA. **Cobrança diária por e-mail** (`CobrancaNotaService`, `@Scheduled` BRT, dedup por dia). Mensageria: nova→tesoureiros, avaliação→solicitante, finalização→tesoureiros (toggle `ebd.notificacoes.enabled`). Migration **V16** (+ ajuste do `ck_usuario_role` p/ os 2 papéis). Front: página `/requisicoes` adaptada ao papel (badges/filtro/modais + download de anexo), `tesourariaGuard`, grupo **Tesouraria** no menu, perfis Tesoureiro/Líder em Usuários. Validado: `mvn package`, `ng build`, suite (34 testes, `RequisicaoFluxoTest`) e fluxo por API. Branch `feature/tesouraria-requisicoes` (pushed, aguardando PR).
+- 💰 **Módulo de Requisições da Tesouraria** — dois papéis novos (**LIDER** abre pedidos, **TESOUREIRO** avalia; ADMIN supervisiona; PROFESSOR/ALUNO **sem acesso**). Líder solicita recurso (ministério, evento, destinação, motivo, valor, data) → nº único `REQ-<ano>-<seq4>`; tesoureiro **aprova** (define valor aprovado + parecer) ou **nega**; aprovada fica pendente de **prestação de contas** até anexar a(s) **nota(s) fiscal(is)** (PDF/imagens, multipart em `bytea`) + valor gasto → FINALIZADA. **Cobrança diária por e-mail** (`CobrancaNotaService`, `@Scheduled` BRT, dedup por dia). Mensageria: nova→tesoureiros, avaliação→solicitante, finalização→tesoureiros (toggle `ebd.notificacoes.enabled`). Migration **V16** (+ ajuste do `ck_usuario_role` p/ os 2 papéis). Front: página `/requisicoes` adaptada ao papel (badges/filtro/modais + download de anexo), `tesourariaGuard`, grupo **Tesouraria** no menu, perfis Tesoureiro/Líder em Usuários. Validado: `mvn package`, `ng build`, suite (34 testes, `RequisicaoFluxoTest`) e fluxo por API. Branch `feature/tesouraria-requisicoes` (pushed, aguardando PR). **Integração externa** (mesma branch): view read-only `vw_requisicoes_integracao` (migration **V17**) para o sistema do tesoureiro consumir por SELECT — runbook completo em [`docs/integracao-tesouraria.md`](docs/integracao-tesouraria.md) (usuário `tesouraria_ro` least-privilege, senha gerada pelo operador, acesso via **túnel SSH** recomendado ou bind público + allowlist de IP) e script `scripts/setup-integracao-tesouraria.sh` que faz banco + túnel de uma vez.
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
 
 ## 10. Como pedir evoluções (dica para o Danilo)
