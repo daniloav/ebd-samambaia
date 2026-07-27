@@ -14,6 +14,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -51,7 +52,11 @@ public class CampanhaResource {
 
         Long cid = null;
         if (classeId != null && !classeId.isBlank() && !"null".equalsIgnoreCase(classeId)) {
-            cid = Long.valueOf(classeId.trim());
+            try {
+                cid = Long.valueOf(classeId.trim());
+            } catch (NumberFormatException e) {
+                throw new WebApplicationException("classeId inválido.", Response.Status.BAD_REQUEST);
+            }
         }
         CampanhaRequest req = new CampanhaRequest(titulo, mensagem, cid);
 
