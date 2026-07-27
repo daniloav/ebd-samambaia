@@ -83,7 +83,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 - [x] **Dashboard com gráficos** — painel com presença média + gráfico de barras de **frequência por aula** (com meta 75%) e barra de **distribuição por faixa** (Excelente/Boa/Atenção). SVG customizado (sem dependência, dark-mode). Endpoint `GET /api/dashboard`.
 - [ ] **Exportar relatório** de presenças para PDF/Excel.
-- [ ] **Filtro por trimestre/período letivo** em relatórios e rankings (hoje já filtra por turma, falta o recorte de período).
+- [x] **Filtro por trimestre/período letivo** em relatórios e rankings — rankings ganharam recorte por trimestre (`GET /api/desafios/rankings?ano=&trimestre=`, seletor na tela); o relatório de presenças (que já aceitava início/fim) ganhou um **atalho de trimestre** que preenche as datas. Lógica de datas centralizada em `PeriodoLetivo`.
 - [ ] **Histórico da chamada** por aluno (linha do tempo de presença/itens).
 - [x] **Batch de aniversário** — rotina agendada (`quarkus-scheduler`) que às **12:00 BRT** envia
       "feliz aniversário" a todos os alunos ativos com e-mail (ignora opt-in). Endpoint de teste
@@ -203,7 +203,7 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
 ## Limitações conhecidas (estado atual)
 
 - Exclusão de aluno/aula/prova é **destrutiva** (cascata).
-- Rankings/relatórios já recortam por **turma**, mas ainda **não por trimestre/período**.
+- ~~Rankings/relatórios não recortavam por trimestre/período~~ — **resolvido**: recorte por trimestre em ambos (ver Evoluções funcionais).
 - ~~E-mail de chamada é síncrono na transação~~ — **resolvido**: envio assíncrono via EventBus (ver Qualidade).
 - Textos dos e-mails (presente/ausente) são **fixos no código** — ainda não configuráveis pela UI.
 - Sem testes automatizados; validação por build (`mvn package` / `ng build`) e smoke manual.

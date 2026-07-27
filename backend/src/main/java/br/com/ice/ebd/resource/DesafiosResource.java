@@ -19,7 +19,9 @@ public class DesafiosResource {
     @GET
     @Path("/rankings")
     @RolesAllowed({"ADMIN", "PROFESSOR"})
-    public DesafiosResponse rankings(@jakarta.ws.rs.QueryParam("classeId") Long classeId) {
-        return service.gerar(classeId);
+    public DesafiosResponse rankings(@jakarta.ws.rs.QueryParam("classeId") Long classeId,
+                                     @jakarta.ws.rs.QueryParam("ano") Integer ano,
+                                     @jakarta.ws.rs.QueryParam("trimestre") Integer trimestre) {
+        return service.gerar(classeId, ano, trimestre);
     }
 }

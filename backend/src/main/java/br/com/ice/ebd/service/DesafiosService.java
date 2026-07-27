@@ -32,9 +32,10 @@ public class DesafiosService {
 
     private static final MetricasPresenca ZERO = new MetricasPresenca(0, 0, 0, 0, 0);
 
-    public DesafiosResponse gerar(Long classeId) {
+    public DesafiosResponse gerar(Long classeId, Integer ano, Integer trimestre) {
         escopo.assertClasse(classeId);
-        return montar(classeId);
+        PeriodoLetivo p = PeriodoLetivo.deOuTudo(ano, trimestre);
+        return montar(classeId, p.inicio(), p.fim());
     }
 
     /** Ranking resumido do aluno logado (pódio + posição dele) — para o /api/me/ranking. */
@@ -48,7 +49,9 @@ public class DesafiosService {
         if (aluno == null || aluno.getClasse() == null) {
             throw new NotFoundException("Aluno não encontrado.");
         }
-        List<RankingItem> geral = montar(aluno.getClasse().getId()).classificacaoGeral();
+        PeriodoLetivo tudo = PeriodoLetivo.deOuTudo(null, null);
+        List<RankingItem> geral = montar(aluno.getClasse().getId(), tudo.inicio(), tudo.fim())
+                .classificacaoGeral();
         List<MeuRankingResponse.Item> podio = geral.stream().limit(3)
                 .map(r -> itemResumo(r, alunoId)).toList();
         MeuRankingResponse.Item minha = geral.stream().filter(r -> alunoId.equals(r.alunoId()))
@@ -61,7 +64,7 @@ public class DesafiosService {
                 r.detalhe(), meuId.equals(r.alunoId()));
     }
 
-    private DesafiosResponse montar(Long classeId) {
+    private DesafiosResponse montar(Long classeId, LocalDate ini, LocalDate fim) {
         long cid = classeId != null ? classeId : -1L;
         Map<Long, String> nomes = new LinkedHashMap<>();
         var alunos = classeId != null ? alunoRepository.listarAtivosPorClasse(classeId)
@@ -71,11 +74,11 @@ public class DesafiosService {
         }
 
         LocalDate hoje = LocalDate.now();
-        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where (:cid = -1 or a.classe.id = :cid) and a.data <= :hoje").setParameter("cid", cid).setParameter("hoje", hoje).getSingleResult()).longValue();
-        long totalProvas = ((Number) em.createQuery("select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid)").setParameter("cid", cid).getSingleResult()).longValue();
+        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where (:cid = -1 or a.classe.id = :cid) and a.data <= :hoje and a.data between :ini and :fim").setParameter("cid", cid).setParameter("hoje", hoje).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
+        long totalProvas = ((Number) em.createQuery("select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid) and p.data between :ini and :fim").setParameter("cid", cid).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
 
-        Map<Long, MetricasPresenca> presenca = carregarPresencas(cid);
-        Map<Long, Double> medias = carregarMediasNotas(cid);
+        Map<Long, MetricasPresenca> presenca = carregarPresencas(cid, ini, fim);
+        Map<Long, Double> medias = carregarMediasNotas(cid, ini, fim);
 
         List<RankingItem> menosFaltou = ranking(nomes, presenca,
                 m -> (double) m.presencas(),
@@ -104,7 +107,7 @@ public class DesafiosService {
 
         List<RankingItem> melhoresNotas = rankingNotas(nomes, medias, presenca);
 
-        Map<Long, Double> notasPontos = carregarNotasPontos(cid);
+        Map<Long, Double> notasPontos = carregarNotasPontos(cid, ini, fim);
         List<RankingItem> classificacaoGeral = classificacaoGeral(nomes, presenca, notasPontos);
 
         return new DesafiosResponse(totalAulas, totalProvas,
@@ -125,7 +128,7 @@ public class DesafiosService {
         return Long.compare(b.revista(), a.revista());
     }
 
-    private Map<Long, MetricasPresenca> carregarPresencas(long cid) {
+    private Map<Long, MetricasPresenca> carregarPresencas(long cid, LocalDate ini, LocalDate fim) {
         Map<Long, MetricasPresenca> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
                         "select p.aluno.id, " +
@@ -136,12 +139,14 @@ public class DesafiosService {
                         "from Presenca p join p.aula aula "
                         + "left join aula.professor prof left join prof.aluno profAluno "
                         + "where (:cid = -1 or aula.classe.id = :cid) and aula.data <= :hoje "
+                        + "and aula.data between :ini and :fim "
                         + "and (profAluno is null or profAluno.id <> p.aluno.id) "
                         + "group by p.aluno.id", Object[].class)
                 .setParameter("cid", cid)
                 .setParameter("hoje", LocalDate.now())
+                .setParameter("ini", ini).setParameter("fim", fim)
                 .getResultList();
-        Map<Long, Long> visitantes = carregarVisitantesPorAluno(cid);
+        Map<Long, Long> visitantes = carregarVisitantesPorAluno(cid, ini, fim);
         for (Object[] l : linhas) {
             Long alunoId = (Long) l[0];
             mapa.put(alunoId, new MetricasPresenca(
@@ -152,17 +157,18 @@ public class DesafiosService {
     }
 
     /** Visitantes trazidos por aluno — fonte única: cadastro de visitantes. */
-    private Map<Long, Long> carregarVisitantesPorAluno(long cid) {
+    private Map<Long, Long> carregarVisitantesPorAluno(long cid, LocalDate ini, LocalDate fim) {
         Map<Long, Long> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
                         "select v.trazidoPor.id, count(v) from Visitante v join v.aula aula "
                         + "left join aula.professor prof left join prof.aluno profAluno "
                         + "where v.trazidoPor is not null and (:cid = -1 or aula.classe.id = :cid) "
-                        + "and aula.data <= :hoje "
+                        + "and aula.data <= :hoje and aula.data between :ini and :fim "
                         + "and (profAluno is null or profAluno.id <> v.trazidoPor.id) "
                         + "group by v.trazidoPor.id", Object[].class)
                 .setParameter("cid", cid)
                 .setParameter("hoje", LocalDate.now())
+                .setParameter("ini", ini).setParameter("fim", fim)
                 .getResultList();
         for (Object[] l : linhas) {
             mapa.put((Long) l[0], toLong(l[1]));
@@ -170,11 +176,12 @@ public class DesafiosService {
         return mapa;
     }
 
-    private Map<Long, Double> carregarMediasNotas(long cid) {
+    private Map<Long, Double> carregarMediasNotas(long cid, LocalDate ini, LocalDate fim) {
         Map<Long, Double> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
-                        "select n.aluno.id, avg(n.nota) from NotaProva n where (:cid = -1 or n.prova.classe.id = :cid) group by n.aluno.id", Object[].class)
+                        "select n.aluno.id, avg(n.nota) from NotaProva n where (:cid = -1 or n.prova.classe.id = :cid) and n.prova.data between :ini and :fim group by n.aluno.id", Object[].class)
                 .setParameter("cid", cid)
+                .setParameter("ini", ini).setParameter("fim", fim)
                 .getResultList();
         for (Object[] l : linhas) {
             double media = Math.round(((Number) l[1]).doubleValue() * 100.0) / 100.0;
@@ -251,12 +258,13 @@ public class DesafiosService {
     }
 
     /** Pontos de notas por aluno: soma de (nota/notaMaxima) * 5 sobre as provas. */
-    private Map<Long, Double> carregarNotasPontos(long cid) {
+    private Map<Long, Double> carregarNotasPontos(long cid, LocalDate ini, LocalDate fim) {
         Map<Long, Double> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
-                        "select n.aluno.id, sum(n.nota / n.prova.notaMaxima) from NotaProva n where (:cid = -1 or n.prova.classe.id = :cid) group by n.aluno.id",
+                        "select n.aluno.id, sum(n.nota / n.prova.notaMaxima) from NotaProva n where (:cid = -1 or n.prova.classe.id = :cid) and n.prova.data between :ini and :fim group by n.aluno.id",
                         Object[].class)
                 .setParameter("cid", cid)
+                .setParameter("ini", ini).setParameter("fim", fim)
                 .getResultList();
         for (Object[] l : linhas) {
             mapa.put((Long) l[0], ((Number) l[1]).doubleValue() * 5.0);
