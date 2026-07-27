@@ -91,3 +91,10 @@ cat backup.sql | docker exec -i ebd-postgres psql -U ebd -d ebd
 - Cada rebuild da imagem gera novas chaves (os usuários só precisam logar de novo).
   Se quiser chaves fixas, gere uma vez e monte via volume apontando para
   `privateKey.pem`/`publicKey.pem`.
+
+## Integração externa da tesouraria (opcional)
+
+Para dar a um sistema de terceiros acesso **somente-leitura** às requisições (view `V17` +
+usuário read-only + túnel SSH), siga o runbook dedicado:
+[`integracao-tesouraria.md`](integracao-tesouraria.md). Há um script que faz banco + túnel de
+uma vez: `scripts/setup-integracao-tesouraria.sh` (roda na `ebd-db`, com sudo).
