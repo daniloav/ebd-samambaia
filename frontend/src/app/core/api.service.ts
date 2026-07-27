@@ -93,9 +93,12 @@ export class ApiService {
   }
 
   // ---------- Desafios ----------
-  rankings(classeId?: number | null): Observable<DesafiosResponse> {
+  rankings(classeId?: number | null, ano?: number | null, trimestre?: number | null): Observable<DesafiosResponse> {
     let params = new HttpParams();
-    if (classeId) params = params.set('classeId', classeId);
+    if (classeId != null) { params = params.set('classeId', classeId); }
+    if (ano != null && trimestre != null) {
+      params = params.set('ano', ano).set('trimestre', trimestre);
+    }
     return this.http.get<DesafiosResponse>(`${this.api}/desafios/rankings`, { params });
   }
 

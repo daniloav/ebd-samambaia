@@ -83,7 +83,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 
 - [x] **Dashboard com gráficos** — painel com presença média + gráfico de barras de **frequência por aula** (com meta 75%) e barra de **distribuição por faixa** (Excelente/Boa/Atenção). SVG customizado (sem dependência, dark-mode). Endpoint `GET /api/dashboard`.
 - [ ] **Exportar relatório** de presenças para PDF/Excel.
-- [ ] **Filtro por trimestre/período letivo** em relatórios e rankings (hoje já filtra por turma, falta o recorte de período).
+- [x] **Filtro por trimestre/período letivo** em relatórios e rankings — rankings ganharam recorte por trimestre (`GET /api/desafios/rankings?ano=&trimestre=`, seletor na tela); o relatório de presenças (que já aceitava início/fim) ganhou um **atalho de trimestre** que preenche as datas. Lógica de datas centralizada em `PeriodoLetivo`.
 - [ ] **Histórico da chamada** por aluno (linha do tempo de presença/itens).
 - [x] **Batch de aniversário** — rotina agendada (`quarkus-scheduler`) que às **12:00 BRT** envia
       "feliz aniversário" a todos os alunos ativos com e-mail (ignora opt-in). Endpoint de teste
@@ -119,7 +119,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [x] **Correção — aulas futuras não contam** — ranking e boletim passaram a considerar só aulas com
       **data ≤ hoje** (total de aulas, presenças e visitantes); antes inflavam as faltas do trimestre corrente.
 - [ ] **Testes de front** (ao menos smoke dos serviços/guards).
-- [ ] **Envio de e-mail assíncrono** — hoje o `NotificacaoService` envia **de forma síncrona** dentro da transação da chamada; migrar para assíncrono (evento/`@Blocking`/fila) para não segurar o salvamento em turmas grandes.
+- [x] **Envio de e-mail assíncrono** — `EmailDispatcher` publica o `Mail` no **Vert.x EventBus** e um consumidor `@ConsumeEvent @Blocking` envia em segundo plano (worker thread). A resposta da chamada não espera mais o SMTP e os e-mails saem fora da transação; dedup/contagem seguem síncronas. Testes de mailbox com Awaitility.
 - [ ] **Soft-delete de aluno** (preservar histórico usando `ativo`, sem cascata destrutiva).
 - [ ] **Paginação** nas listas quando crescer o volume.
 
@@ -173,7 +173,7 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
 ### ✅ 2. Alertas por mensagem (presença/falta na chamada) — CONCLUÍDO (canal e-mail)
 - Feito: opt-in por aluno (migration V4), `NotificacaoService` disparado ao salvar a chamada,
   e-mail **HTML** com conteúdo distinto para **presente** e **ausente**, em produção via Brevo.
-- **Ainda em aberto:** envio **assíncrono** (ver Qualidade) e **outros canais** (Telegram grátis / WhatsApp).
+- **Ainda em aberto:** **outros canais** (Telegram grátis / WhatsApp). _(Envio assíncrono: concluído — ver Qualidade.)_
   Tabela de canais avaliados:
   | Canal | Custo | Facilidade | Observação |
   |---|---|---|---|
@@ -203,8 +203,8 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
 ## Limitações conhecidas (estado atual)
 
 - Exclusão de aluno/aula/prova é **destrutiva** (cascata).
-- Rankings/relatórios já recortam por **turma**, mas ainda **não por trimestre/período**.
-- E-mail de chamada é **síncrono** na transação (ok para turmas pequenas; ver Qualidade).
+- ~~Rankings/relatórios não recortavam por trimestre/período~~ — **resolvido**: recorte por trimestre em ambos (ver Evoluções funcionais).
+- ~~E-mail de chamada é síncrono na transação~~ — **resolvido**: envio assíncrono via EventBus (ver Qualidade).
 - Textos dos e-mails (presente/ausente) são **fixos no código** — ainda não configuráveis pela UI.
 - Sem testes automatizados; validação por build (`mvn package` / `ng build`) e smoke manual.
 - Uma única VM (1 GB) roda tudo (db + api + front + caddy) — suficiente para o MVP, não para alta disponibilidade.
