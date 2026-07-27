@@ -101,7 +101,11 @@ public class DesafiosService {
                         "sum(case when p.trouxeBiblia = true then 1 else 0 end), " +
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
                         "sum(case when p.estudouLicao = true then 1 else 0 end) " +
-                        "from Presenca p where (:cid = -1 or p.aula.classe.id = :cid) and p.aula.data <= :hoje group by p.aluno.id", Object[].class)
+                        "from Presenca p join p.aula aula "
+                        + "left join aula.professor prof left join prof.aluno profAluno "
+                        + "where (:cid = -1 or aula.classe.id = :cid) and aula.data <= :hoje "
+                        + "and (profAluno is null or profAluno.id <> p.aluno.id) "
+                        + "group by p.aluno.id", Object[].class)
                 .setParameter("cid", cid)
                 .setParameter("hoje", LocalDate.now())
                 .getResultList();
@@ -119,9 +123,12 @@ public class DesafiosService {
     private Map<Long, Long> carregarVisitantesPorAluno(long cid) {
         Map<Long, Long> mapa = new LinkedHashMap<>();
         List<Object[]> linhas = em.createQuery(
-                        "select v.trazidoPor.id, count(v) from Visitante v "
-                        + "where v.trazidoPor is not null and (:cid = -1 or v.aula.classe.id = :cid) "
-                        + "and v.aula.data <= :hoje group by v.trazidoPor.id", Object[].class)
+                        "select v.trazidoPor.id, count(v) from Visitante v join v.aula aula "
+                        + "left join aula.professor prof left join prof.aluno profAluno "
+                        + "where v.trazidoPor is not null and (:cid = -1 or aula.classe.id = :cid) "
+                        + "and aula.data <= :hoje "
+                        + "and (profAluno is null or profAluno.id <> v.trazidoPor.id) "
+                        + "group by v.trazidoPor.id", Object[].class)
                 .setParameter("cid", cid)
                 .setParameter("hoje", LocalDate.now())
                 .getResultList();

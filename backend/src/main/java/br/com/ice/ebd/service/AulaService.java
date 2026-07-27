@@ -3,6 +3,9 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
 import br.com.ice.ebd.model.Aula;
+import br.com.ice.ebd.model.Role;
+import br.com.ice.ebd.model.Usuario;
+import br.com.ice.ebd.repository.UsuarioRepository;
 import br.com.ice.ebd.model.AcaoAuditoria;
 import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.repository.AulaRepository;
@@ -27,12 +30,17 @@ public class AulaService {
     @Inject
     ClasseService classeService;
 
+    @Inject
+    UsuarioRepository usuarioRepository;
+
+    @Transactional
     public List<AulaResponse> listar(Long classeId) {
         escopo.assertClasse(classeId);
         var aulas = classeId != null ? repository.listarPorClasse(classeId) : repository.listarOrdenadoPorData();
         return aulas.stream().map(AulaResponse::de).toList();
     }
 
+    @Transactional
     public AulaResponse buscar(Long id) {
         Aula a = obter(id);
         escopo.assertClasse(a.getClasse().getId());
@@ -48,6 +56,7 @@ public class AulaService {
         a.setClasse(classe);
         a.setData(req.data());
         a.setTema(req.tema());
+        a.setProfessor(resolverProfessor(req.professorId()));
         repository.persist(a);
         auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         return AulaResponse.de(a);
@@ -62,6 +71,7 @@ public class AulaService {
         a.setClasse(classe);
         a.setData(req.data());
         a.setTema(req.tema());
+        a.setProfessor(resolverProfessor(req.professorId()));
         auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         return AulaResponse.de(a);
     }
@@ -71,6 +81,18 @@ public class AulaService {
         Aula a = obter(id);
         auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         repository.delete(a); // presenças são removidas em cascata (FK ON DELETE CASCADE)
+    }
+
+    /** Resolve o professor (usuário PROFESSOR) do id, ou null. Valida o perfil. */
+    private Usuario resolverProfessor(Long professorId) {
+        if (professorId == null) {
+            return null;
+        }
+        Usuario u = usuarioRepository.findById(professorId);
+        if (u == null || u.getRole() != Role.PROFESSOR) {
+            throw new WebApplicationException("Professor inválido para a aula.", Response.Status.BAD_REQUEST);
+        }
+        return u;
     }
 
     public Aula obter(Long id) {

@@ -20,6 +20,7 @@ public class ClasseService {
     @Inject ClasseRepository repository;
     @Inject EntityManager em;
     @Inject EscopoService escopo;
+    @Inject br.com.ice.ebd.repository.UsuarioRepository usuarioRepository;
 
     /** Lista as classes que o usuário pode ver: ADMIN todas; PROFESSOR só as vinculadas. */
     public List<ClasseResponse> listar(boolean apenasAtivas) {
@@ -80,5 +81,12 @@ public class ClasseService {
         c.setNome(req.nome().trim());
         c.setDescricao(req.descricao());
         c.setAtivo(req.ativo() == null ? true : req.ativo());
+    }
+
+    /** Professores da classe (para o seletor "Professor da aula"). Respeita o escopo do usuário. */
+    public java.util.List<br.com.ice.ebd.dto.ProfessorResumo> listarProfessores(Long classeId) {
+        escopo.assertClasse(classeId);
+        return usuarioRepository.professoresDaClasse(classeId).stream()
+                .map(br.com.ice.ebd.dto.ProfessorResumo::de).toList();
     }
 }

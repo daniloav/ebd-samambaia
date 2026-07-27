@@ -10,5 +10,7 @@ public record AulaRequest(
         @NotNull(message = "A data da aula é obrigatória")
         LocalDate data,
         @Size(max = 200, message = "O tema deve ter no máximo 200 caracteres")
-        String tema) {
+        String tema,
+        /** Professor (usuário) que deu a aula (opcional). */
+        Long professorId) {
 }

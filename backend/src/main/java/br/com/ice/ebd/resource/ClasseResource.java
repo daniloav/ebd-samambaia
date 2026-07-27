@@ -41,6 +41,13 @@ public class ClasseResource {
         return service.buscar(id);
     }
 
+    @GET
+    @Path("/{id}/professores")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public java.util.List<br.com.ice.ebd.dto.ProfessorResumo> professores(@PathParam("id") Long id) {
+        return service.listarProfessores(id);
+    }
+
     @POST
     @RolesAllowed("ADMIN")
     public Response criar(@Valid ClasseRequest request) {

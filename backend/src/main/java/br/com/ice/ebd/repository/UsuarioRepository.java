@@ -63,6 +63,16 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
                 .getResultStream().findFirst().orElse(null);
     }
 
+    /** Professores (role PROFESSOR) ativos de uma classe, com o aluno vinculado carregado. */
+    public java.util.List<Usuario> professoresDaClasse(Long classeId) {
+        return getEntityManager().createQuery(
+                "select distinct u from Usuario u left join fetch u.aluno join u.classes c "
+                        + "where u.role = br.com.ice.ebd.model.Role.PROFESSOR and u.ativo = true "
+                        + "and c.id = :cid order by u.username", Usuario.class)
+                .setParameter("cid", classeId)
+                .getResultList();
+    }
+
     /** E-mails dos professores ativos (para avisos de novos visitantes). */
     public java.util.List<String> emailsDeProfessoresAtivos() {
         return getEntityManager().createQuery(
