@@ -196,8 +196,12 @@ export class ApiService {
   criarRequisicao(r: RequisicaoRequest): Observable<Requisicao> {
     return this.http.post<Requisicao>(`${this.api}/requisicoes`, r);
   }
-  aprovarRequisicao(id: number, valorAprovado: number | null, parecer: string | null): Observable<Requisicao> {
-    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/aprovar`, { valorAprovado, parecer });
+  aprovarRequisicao(id: number, valorAprovado: number | null, parecer: string | null, comprovante?: File | null): Observable<Requisicao> {
+    const fd = new FormData();
+    if (valorAprovado != null) { fd.append('valorAprovado', String(valorAprovado)); }
+    if (parecer) { fd.append('parecer', parecer); }
+    if (comprovante) { fd.append('comprovante', comprovante); }
+    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/aprovar`, fd);
   }
   negarRequisicao(id: number, parecer: string | null): Observable<Requisicao> {
     return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/negar`, { parecer });
