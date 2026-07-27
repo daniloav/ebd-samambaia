@@ -416,3 +416,19 @@ export interface Auditoria {
   entidadeId: number | null;
   descricao: string | null;
 }
+
+// ---- Ranking resumido do aluno ----
+export interface RankingResumoItem {
+  posicao: number;
+  alunoId: number;
+  nome: string;
+  valor: number;
+  detalhe: string;
+  eu: boolean;
+}
+export interface MeuRanking {
+  turmaNome: string;
+  totalParticipantes: number;
+  podio: RankingResumoItem[];
+  minhaPosicao: RankingResumoItem | null;
+}

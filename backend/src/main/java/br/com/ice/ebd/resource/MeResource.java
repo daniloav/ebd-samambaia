@@ -7,6 +7,8 @@ import br.com.ice.ebd.dto.TrocarSenhaRequest;
 import br.com.ice.ebd.service.BoletimService;
 import br.com.ice.ebd.service.MinhaFrequenciaService;
 import br.com.ice.ebd.service.QuizAlunoService;
+import br.com.ice.ebd.service.DesafiosService;
+import br.com.ice.ebd.dto.MeuRankingResponse;
 import br.com.ice.ebd.service.UsuarioService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
@@ -44,6 +46,9 @@ public class MeResource {
     @Inject
     QuizAlunoService quizAlunoService;
 
+    @Inject
+    DesafiosService desafiosService;
+
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
     public Map<String, Object> me() {
@@ -76,6 +81,14 @@ public class MeResource {
     @RolesAllowed("ALUNO")
     public BoletimResponse boletim(@QueryParam("ano") int ano, @QueryParam("trimestre") int trimestre) {
         return boletimService.gerarMeu(ano, trimestre);
+    }
+
+    /** Ranking resumido da turma do próprio aluno (pódio + posição dele). */
+    @GET
+    @Path("/ranking")
+    @RolesAllowed("ALUNO")
+    public MeuRankingResponse ranking() {
+        return desafiosService.resumoDoAluno();
     }
 
     /** Provas online da turma do aluno, com status (disponível/respondida/fechada/futura). */
