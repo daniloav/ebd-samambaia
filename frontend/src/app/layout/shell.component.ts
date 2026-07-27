@@ -1,3 +1,4 @@
+import { Perfil } from '../core/models';
 import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -106,7 +107,16 @@ import { TemaService } from '../core/tema.service';
           <button class="btn-sair topo-mobile" style="width:auto;padding:.3rem .6rem"
                   (click)="menuAberto.set(false)" aria-label="Fechar menu">✕</button>
         </div>
-        @if ((auth.isProfessor() || auth.isAdmin()) && classeCtx.classes().length) {
+        @if (auth.perfisDisponiveis().length > 1) {
+          <div class="seletor-classe">
+            <label>Atuando como</label>
+            <select [ngModel]="auth.perfilAtivo()" (ngModelChange)="trocarPerfil($event)">
+              <option value="GESTAO">{{ auth.isAdmin() ? 'Administração' : 'Professor' }}</option>
+              <option value="ALUNO">Aluno</option>
+            </select>
+          </div>
+        }
+        @if (auth.perfilAtivo() === 'GESTAO' && (auth.isProfessor() || auth.isAdmin()) && classeCtx.classes().length) {
           <div class="seletor-classe">
             <label>Turma</label>
             <select [ngModel]="classeCtx.selecionadaId()" (ngModelChange)="classeCtx.selecionar($event)">
@@ -117,13 +127,13 @@ import { TemaService } from '../core/tema.service';
           </div>
         }
         <nav (click)="fecharNoMobile()">
-          @if (auth.isAluno()) {
+          @if (auth.perfilAtivo() === 'ALUNO' && auth.isAluno()) {
             <a routerLink="/minha-frequencia" routerLinkActive="ativo"><span class="ico">📊</span> Minha frequência</a>
             <a routerLink="/minhas-provas" routerLinkActive="ativo"><span class="ico">🧠</span> Minhas provas</a>
             <a routerLink="/meu-ranking" routerLinkActive="ativo"><span class="ico">🏆</span> Ranking da turma</a>
             <a routerLink="/meu-boletim" routerLinkActive="ativo"><span class="ico">📄</span> Meu boletim</a>
           }
-          @if (auth.isProfessor() || auth.isAdmin()) {
+          @if (auth.perfilAtivo() === 'GESTAO' && (auth.isProfessor() || auth.isAdmin())) {
             <a routerLink="/painel" routerLinkActive="ativo"><span class="ico">🏠</span> Painel</a>
             <div class="grupo">Chamada</div>
             <a routerLink="/chamada" routerLinkActive="ativo"><span class="ico">✅</span> Fazer chamada</a>
@@ -190,8 +200,14 @@ export class ShellComponent implements OnInit {
   }
 
   perfilLabel(): string {
-    return this.auth.role() === 'ADMIN' ? 'Administrador'
-      : this.auth.role() === 'PROFESSOR' ? 'Professor' : 'Aluno';
+    if (this.auth.perfilAtivo() === 'ALUNO') { return 'Aluno'; }
+    return this.auth.isAdmin() ? 'Administrador' : 'Professor';
+  }
+
+  trocarPerfil(p: Perfil): void {
+    this.auth.trocarPerfil(p);
+    this.router.navigate([p === 'ALUNO' ? '/minha-frequencia' : '/painel']);
+    this.fecharNoMobile();
   }
 
   fecharNoMobile(): void {

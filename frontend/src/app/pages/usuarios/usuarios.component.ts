@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { ConfirmService } from '../../core/confirm.service';
-import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models';
+import { Aluno, Classe, Usuario, UsuarioRequest } from '../../core/models';
 
 @Component({
   selector: 'app-usuarios',
@@ -30,7 +30,7 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
               @for (u of usuarios(); track u.id) {
                 <tr>
                   <td>{{ u.username }}</td>
-                  <td><span class="badge badge-dourado">{{ rotulo(u.role) }}</span>@if (u.ehTesoureiro) { <span class="badge badge-azul" title="Tesoureiro">💰 Tes.</span> }@if (u.ehLider) { <span class="badge badge-azul" title="Líder">Líder</span> }</td>
+                  <td>@if (u.ehAdmin) { <span class="badge badge-dourado">Admin</span> }@if (u.ehProfessor) { <span class="badge badge-dourado">Professor</span> }@if (u.ehAluno) { <span class="badge badge-dourado">Aluno</span> }@if (u.ehTesoureiro) { <span class="badge badge-azul" title="Tesoureiro">💰 Tes.</span> }@if (u.ehLider) { <span class="badge badge-azul" title="Líder">Líder</span> }@if (!u.ehAdmin && !u.ehProfessor && !u.ehAluno && !u.ehTesoureiro && !u.ehLider) { <span class="badge badge-cinza">sem papel</span> }</td>
                   <td>{{ vinculo(u) }}</td>
                   <td>
                     @if (u.ativo) { <span class="badge badge-verde">Ativo</span> }
@@ -60,24 +60,19 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
               <label>Senha {{ editando() ? '(deixe em branco para manter)' : '*' }}</label>
               <input type="password" [(ngModel)]="form.senha" autocomplete="new-password" />
             </div>
-            <div class="form-group"><label>E-mail {{ form.role === 'PROFESSOR' ? '(recebe avisos de visitantes)' : '' }}</label>
+            <div class="form-group"><label>E-mail {{ form.ehProfessor ? '(recebe avisos de visitantes)' : '' }}</label>
               <input type="email" [(ngModel)]="form.email" maxlength="150" autocomplete="off" /></div>
-            <div class="form-group"><label>Perfil *</label>
-              <select [(ngModel)]="form.role">
-                <option value="ADMIN">Administrador</option>
-                <option value="PROFESSOR">Professor</option>
-                <option value="ALUNO">Aluno</option>
-              </select>
-            </div>
-
             <div class="form-group">
-              <label>Papéis da tesouraria (somam-se ao perfil)</label>
-              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehTesoureiro" /> Pode atuar como tesoureiro</label>
-              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehLider" /> Pode atuar como líder de ministério</label>
-              @if (form.role === 'ADMIN') { <small class="muted">O administrador já enxerga e faz tudo na tesouraria.</small> }
+              <label>Papéis * (um usuário pode acumular vários)</label>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehAdmin" /> Administrador</label>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehProfessor" /> Professor</label>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehAluno" /> Aluno</label>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehTesoureiro" /> Tesoureiro</label>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehLider" /> Líder de ministério</label>
+              @if (form.ehAdmin) { <small class="muted">O administrador enxerga e faz tudo (inclusive tesouraria).</small> }
             </div>
 
-            @if (form.role === 'PROFESSOR') {
+            @if (form.ehProfessor) {
               <div class="form-group">
                 <label>Turmas do professor</label>
                 @if (classes().length) {
@@ -96,18 +91,9 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
                   <span class="muted">Nenhuma turma cadastrada.</span>
                 }
               </div>
-              <div class="form-group"><label>Aluno vinculado (participante)</label>
-                <select [(ngModel)]="form.alunoId">
-                  <option [ngValue]="null">— nenhum —</option>
-                  @for (a of alunos(); track a.id) {
-                    <option [ngValue]="a.id">{{ a.nome }}{{ a.classeNome ? ' (' + a.classeNome + ')' : '' }}</option>
-                  }
-                </select>
-                <span class="muted" style="font-size:.8rem">Quando este professor der uma aula, o aluno vinculado fica desabilitado na chamada e no ranking daquela aula.</span>
-              </div>
             }
 
-            @if (form.role === 'ALUNO') {
+            @if (form.ehAluno || form.ehProfessor) {
               <div class="form-group"><label>Aluno vinculado</label>
                 <select [(ngModel)]="form.alunoId">
                   <option [ngValue]="null">— nenhum —</option>
@@ -115,7 +101,7 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
                     <option [ngValue]="a.id">{{ a.nome }}{{ a.classeNome ? ' (' + a.classeNome + ')' : '' }}</option>
                   }
                 </select>
-                <span class="muted" style="font-size:.8rem">O aluno logado vê apenas a própria frequência.</span>
+                <span class="muted" style="font-size:.8rem">Liga o login ao registro de aluno: dá a visão própria (frequência/provas) e, para professor, é o correlato que não conta na aula que ele dá.</span>
               </div>
             }
 
@@ -156,21 +142,18 @@ export class UsuariosComponent {
   }
 
   private vazio(): UsuarioRequest {
-    return { username: '', senha: '', role: 'PROFESSOR', alunoId: null, classeIds: [], email: '', ativo: true, ehTesoureiro: false, ehLider: false };
-  }
-
-  rotulo(r: Role): string {
-    return r === 'ADMIN' ? 'Administrador' : r === 'PROFESSOR' ? 'Professor' : 'Aluno';
+    return { username: '', senha: '', ehAdmin: false, ehProfessor: true, ehAluno: false, alunoId: null, classeIds: [], email: '', ativo: true, ehTesoureiro: false, ehLider: false };
   }
 
   vinculo(u: Usuario): string {
-    if (u.role === 'PROFESSOR') {
-      return u.classes?.length ? u.classes.map((c) => c.nome).join(', ') : '— (sem turma)';
+    const partes: string[] = [];
+    if (u.ehProfessor) {
+      partes.push(u.classes?.length ? u.classes.map((c) => c.nome).join(', ') : 'sem turma');
     }
-    if (u.role === 'ALUNO') {
-      return u.alunoNome || '— (sem aluno)';
+    if (u.ehAluno || (u.ehProfessor && u.alunoNome)) {
+      partes.push(u.alunoNome || 'sem aluno');
     }
-    return '—';
+    return partes.length ? partes.join(' · ') : '—';
   }
 
   temClasse(id: number): boolean {
@@ -194,7 +177,8 @@ export class UsuariosComponent {
   editar(u: Usuario): void {
     this.editando.set(u);
     this.form = {
-      username: u.username, senha: '', role: u.role,
+      username: u.username, senha: '',
+      ehAdmin: u.ehAdmin, ehProfessor: u.ehProfessor, ehAluno: u.ehAluno,
       alunoId: u.alunoId ?? null,
       classeIds: (u.classes ?? []).map((c) => c.id),
       email: u.email ?? '',
@@ -209,13 +193,18 @@ export class UsuariosComponent {
   salvar(): void {
     if (!this.form.username?.trim()) { this.toast.erro('Informe o usuário.'); return; }
     if (!this.editando() && !this.form.senha?.trim()) { this.toast.erro('Informe a senha.'); return; }
+    if (!this.form.ehAdmin && !this.form.ehProfessor && !this.form.ehAluno && !this.form.ehTesoureiro && !this.form.ehLider) {
+      this.toast.erro('Selecione ao menos um papel.'); return;
+    }
     this.salvando.set(true);
     const payload: UsuarioRequest = {
       username: this.form.username.trim(),
       senha: this.form.senha || null,
-      role: this.form.role,
-      alunoId: (this.form.role === 'ALUNO' || this.form.role === 'PROFESSOR') ? (this.form.alunoId ?? null) : null,
-      classeIds: this.form.role === 'PROFESSOR' ? (this.form.classeIds ?? []) : null,
+      ehAdmin: !!this.form.ehAdmin,
+      ehProfessor: !!this.form.ehProfessor,
+      ehAluno: !!this.form.ehAluno,
+      alunoId: (this.form.ehAluno || this.form.ehProfessor) ? (this.form.alunoId ?? null) : null,
+      classeIds: this.form.ehProfessor ? (this.form.classeIds ?? []) : null,
       email: this.form.email || null,
       ativo: this.form.ativo,
       ehTesoureiro: !!this.form.ehTesoureiro,
