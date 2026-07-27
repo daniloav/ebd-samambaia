@@ -69,7 +69,11 @@ public class RequisicaoService {
         List<RequisicaoTesouraria> reqs = podeVerTodas(u)
                 ? repository.listar(status)
                 : repository.listarDoSolicitante(u.getId(), status);
-        return reqs.stream().map(r -> RequisicaoResponse.de(r, List.of())).toList();
+        java.util.Set<Long> comComprovante = new java.util.HashSet<>(
+                anexoRepository.idsComComprovante(reqs.stream().map(RequisicaoTesouraria::getId).toList()));
+        return reqs.stream()
+                .map(r -> RequisicaoResponse.de(r, List.of(), comComprovante.contains(r.getId())))
+                .toList();
     }
 
     @Transactional

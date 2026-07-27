@@ -1,5 +1,6 @@
 package br.com.ice.ebd.dto;
 
+import br.com.ice.ebd.model.CategoriaAnexo;
 import br.com.ice.ebd.model.RequisicaoAnexo;
 import br.com.ice.ebd.model.RequisicaoTesouraria;
 import br.com.ice.ebd.model.Usuario;
@@ -31,6 +32,7 @@ public record RequisicaoResponse(
         String formaRepasse,
         String pixTipo,
         String pixChave,
+        boolean possuiComprovante,
         List<AnexoResumo> anexos) {
 
     public record AnexoResumo(Long id, String nome, String tipo, String categoria) {}
@@ -44,6 +46,13 @@ public record RequisicaoResponse(
     }
 
     public static RequisicaoResponse de(RequisicaoTesouraria r, List<RequisicaoAnexo> anexos) {
+        boolean temComp = anexos != null && anexos.stream()
+                .anyMatch(a -> a.getCategoria() == CategoriaAnexo.COMPROVANTE);
+        return de(r, anexos, temComp);
+    }
+
+    /** Variante para a listagem: possuiComprovante vem de uma query leve (sem carregar binário). */
+    public static RequisicaoResponse de(RequisicaoTesouraria r, List<RequisicaoAnexo> anexos, boolean possuiComprovante) {
         List<AnexoResumo> as = anexos == null ? List.of()
                 : anexos.stream().map(a -> new AnexoResumo(a.getId(), a.getNome(), a.getTipo(),
                         a.getCategoria().name())).toList();
@@ -58,6 +67,7 @@ public record RequisicaoResponse(
                 r.getFormaRepasse().name(),
                 r.getPixTipo() != null ? r.getPixTipo().name() : null,
                 r.getPixChave(),
+                possuiComprovante,
                 as);
     }
 }

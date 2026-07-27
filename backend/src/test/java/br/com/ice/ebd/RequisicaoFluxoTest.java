@@ -103,5 +103,10 @@ class RequisicaoFluxoTest {
         assertEquals("APROVADA", ap.status());
         assertEquals(1, ap.anexos().size());
         assertEquals("COMPROVANTE", ap.anexos().get(0).categoria());
+        assertTrue(ap.possuiComprovante(), "detalhe deve marcar possuiComprovante");
+        // e a listagem também deve sinalizar (para o líder ver que há comprovante)
+        RequisicaoResponse naLista = service.listar(null).stream()
+                .filter(x -> x.id().equals(aberta.id())).findFirst().orElseThrow();
+        assertTrue(naLista.possuiComprovante(), "a lista deve marcar possuiComprovante");
     }
 }
