@@ -4,5 +4,7 @@ package br.com.ice.ebd.model;
 public enum Role {
     ADMIN,
     PROFESSOR,
-    ALUNO
+    ALUNO,
+    TESOUREIRO,
+    LIDER
 }

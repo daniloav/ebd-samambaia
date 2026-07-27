@@ -73,6 +73,14 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
                 .getResultList();
     }
 
+    /** E-mails dos tesoureiros ativos (para alertas de requisições). */
+    public java.util.List<String> emailsDeTesoureirosAtivos() {
+        return getEntityManager().createQuery(
+                "select u.email from Usuario u where u.role = br.com.ice.ebd.model.Role.TESOUREIRO "
+                        + "and u.ativo = true and u.email is not null and u.email <> ''", String.class)
+                .getResultList();
+    }
+
     /** E-mails dos professores ativos (para avisos de novos visitantes). */
     public java.util.List<String> emailsDeProfessoresAtivos() {
         return getEntityManager().createQuery(

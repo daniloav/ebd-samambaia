@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'PROFESSOR' | 'ALUNO';
+export type Role = 'ADMIN' | 'PROFESSOR' | 'ALUNO' | 'TESOUREIRO' | 'LIDER';
 
 export interface LoginResponse {
   token: string;
@@ -431,4 +431,38 @@ export interface MeuRanking {
   totalParticipantes: number;
   podio: RankingResumoItem[];
   minhaPosicao: RankingResumoItem | null;
+}
+
+// ---- Tesouraria: requisições ----
+export type StatusRequisicao = 'ABERTA' | 'APROVADA' | 'NEGADA' | 'FINALIZADA' | 'CANCELADA';
+export interface RequisicaoAnexoResumo { id: number; nome?: string | null; tipo: string; }
+export interface Requisicao {
+  id: number;
+  numero: string;
+  status: StatusRequisicao;
+  solicitanteId: number;
+  solicitanteNome: string;
+  ministerio: string;
+  nomeEvento?: string | null;
+  destinacao: string;
+  motivo: string;
+  valorSolicitado: number;
+  dataNecessidade?: string | null;
+  valorAprovado?: number | null;
+  parecerTesoureiro?: string | null;
+  avaliadoPorNome?: string | null;
+  avaliadoEm?: string | null;
+  valorGasto?: number | null;
+  observacaoFinal?: string | null;
+  finalizadoEm?: string | null;
+  criadoEm: string;
+  anexos: RequisicaoAnexoResumo[];
+}
+export interface RequisicaoRequest {
+  ministerio: string;
+  nomeEvento?: string | null;
+  destinacao: string;
+  motivo: string;
+  valorSolicitado: number;
+  dataNecessidade?: string | null;
 }

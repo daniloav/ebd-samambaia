@@ -28,10 +28,10 @@ export const adminGuard: CanActivateFn = () => {
 export const naoAlunoGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (!auth.isAluno()) {
+  if (auth.isProfessor() || auth.isAdmin()) {
     return true;
   }
-  router.navigate(['/minha-frequencia']);
+  router.navigate([auth.isAluno() ? '/minha-frequencia' : '/requisicoes']);
   return false;
 };
 
@@ -58,4 +58,15 @@ export const senhaGuard: CanActivateChildFn = (_route, state: RouterStateSnapsho
     return false;
   }
   return true;
+};
+
+/** Acesso ao módulo de tesouraria: ADMIN, TESOUREIRO ou LIDER. */
+export const tesourariaGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.isAdmin() || auth.isTesoureiro() || auth.isLider()) {
+    return true;
+  }
+  router.navigate(['/']);
+  return false;
 };
