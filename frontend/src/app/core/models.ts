@@ -1,11 +1,14 @@
 export type Role = 'ADMIN' | 'PROFESSOR' | 'ALUNO';
+export type Perfil = 'GESTAO' | 'ALUNO';
 
 export interface LoginResponse {
   token: string;
   username: string;
-  role: Role;
   expiresInSeconds: number;
   precisaTrocarSenha: boolean;
+  ehAdmin: boolean;
+  ehProfessor: boolean;
+  ehAluno: boolean;
   ehTesoureiro: boolean;
   ehLider: boolean;
 }
@@ -241,7 +244,9 @@ export interface ClasseRequest {
 export interface Usuario {
   id: number;
   username: string;
-  role: Role;
+  ehAdmin: boolean;
+  ehProfessor: boolean;
+  ehAluno: boolean;
   ativo: boolean;
   alunoId?: number | null;
   alunoNome?: string | null;
@@ -254,7 +259,9 @@ export interface Usuario {
 export interface UsuarioRequest {
   username: string;
   senha?: string | null;
-  role: Role;
+  ehAdmin?: boolean;
+  ehProfessor?: boolean;
+  ehAluno?: boolean;
   alunoId?: number | null;
   classeIds?: number[] | null;
   email?: string | null;

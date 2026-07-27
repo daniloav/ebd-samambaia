@@ -1,7 +1,6 @@
 package br.com.ice.ebd.service;
 
 import br.com.ice.ebd.model.Aluno;
-import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
@@ -16,7 +15,7 @@ import org.jboss.logging.Logger;
 /**
  * Garante o acesso automático de todo aluno cadastrado ao sistema.
  *
- * <p>Regra: ao cadastrar um aluno, cria-se um usuário {@link Role#ALUNO} vinculado a ele,
+ * <p>Regra: ao cadastrar um aluno, cria-se um usuário ALUNO vinculado a ele,
  * com <b>senha padrão</b> e obrigado a trocá-la no 1º acesso ({@code precisaTrocarSenha}).
  * O login é derivado do nome (<i>nome.sobrenome</i>, sem acento, com sufixo numérico em colisão).
  * O usuário espelha o estado do aluno (ativo/e-mail); a senha nunca é redefinida aqui.</p>
@@ -44,7 +43,7 @@ public class AcessoAlunoService {
             u = new Usuario();
             u.setUsername(gerarUsername(a.getNome()));
             u.setSenhaHash(BcryptUtil.bcryptHash(SENHA_PADRAO));
-            u.setRole(Role.ALUNO);
+            u.setEhAluno(true);
             u.setAluno(a);
             u.setPrecisaTrocarSenha(true);
             usuarioRepository.persist(u);

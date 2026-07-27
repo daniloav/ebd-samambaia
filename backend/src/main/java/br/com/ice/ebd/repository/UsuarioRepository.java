@@ -67,7 +67,7 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
     public java.util.List<Usuario> professoresDaClasse(Long classeId) {
         return getEntityManager().createQuery(
                 "select distinct u from Usuario u left join fetch u.aluno join u.classes c "
-                        + "where u.role = br.com.ice.ebd.model.Role.PROFESSOR and u.ativo = true "
+                        + "where u.ehProfessor = true and u.ativo = true "
                         + "and c.id = :cid order by u.username", Usuario.class)
                 .setParameter("cid", classeId)
                 .getResultList();
@@ -84,7 +84,7 @@ public class UsuarioRepository implements PanacheRepository<Usuario> {
     /** E-mails dos professores ativos (para avisos de novos visitantes). */
     public java.util.List<String> emailsDeProfessoresAtivos() {
         return getEntityManager().createQuery(
-                "select u.email from Usuario u where u.role = br.com.ice.ebd.model.Role.PROFESSOR "
+                "select u.email from Usuario u where u.ehProfessor = true "
                         + "and u.ativo = true and u.email is not null and u.email <> ''", String.class)
                 .getResultList();
     }
