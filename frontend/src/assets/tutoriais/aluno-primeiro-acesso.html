@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EBD ICES — Aluno: primeiro acesso</title>
+<link rel="stylesheet" href="player.css">
+<style>
+  .login{ max-width:230px; margin:6px auto; background:var(--ap-surface); border:1px solid var(--ap-border);
+    border-radius:14px; padding:16px 16px 18px; text-align:center; box-shadow:0 8px 22px rgba(30,40,60,.10); }
+  .login .bk{ font-size:26px; } .login h5{ margin:2px 0 1px; font-size:13px; color:var(--ap-navy); }
+  .login .sm{ font-size:8.5px; color:var(--ap-muted); margin-bottom:10px; }
+  .inp{ text-align:left; margin-bottom:8px; }
+  .inp label{ display:block; font-size:8.5px; color:var(--ap-muted); margin-bottom:2px; }
+  .inp .box{ border:1px solid var(--ap-border); background:var(--ap-bg); border-radius:8px; padding:7px 9px; font-size:11px; color:var(--ap-ink); }
+  .inp .box.foc{ border-color:var(--ap-gold); box-shadow:0 0 0 2px rgba(201,162,75,.18); }
+  .warn{ background:#fef3c7; color:#92400e; border-radius:9px; padding:8px 10px; font-size:10px; margin-bottom:10px; }
+  .side a .tg{ margin-left:auto; font-size:8px; background:#e7f0e9; color:#3a6b4e; padding:1px 6px; border-radius:99px; }
+</style>
+</head>
+<body data-titulo="Aluno · primeiro acesso">
+<div class="wrap">
+  <div class="head">
+    <div class="brand"><span class="bk">👋</span> EBD ICES <small>· Guia do aluno</small></div>
+    <div class="step"><span id="stepNow">1</span> / <span id="stepTot">5</span> · Primeiro acesso</div>
+  </div>
+  <div class="player">
+    <div class="stage" id="stage">
+
+      <section class="scene on">
+        <div class="cover">
+          <div class="bk">👋</div>
+          <h1 class="serif">Primeiro acesso</h1>
+          <div class="rule"></div>
+          <p>Como entrar no app da Escola Bíblica pela primeira vez e deixar tudo pronto.</p>
+          <div class="tag">Para o aluno</div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="justify-content:center">
+          <div class="main" style="flex:1">
+            <div class="login">
+              <div class="bk">📖</div>
+              <h5>EBD ICES</h5>
+              <div class="sm">Igreja Cristã Evangélica · Samambaia</div>
+              <div class="inp"><label>Usuário</label><div class="box foc">ana.souza</div></div>
+              <div class="inp"><label>Senha</label><div class="box">••••••••</div></div>
+              <div class="btnp glow" style="display:block; margin-top:4px">Entrar</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="justify-content:center">
+          <div class="main" style="flex:1">
+            <div class="login">
+              <h5>Bem-vinda, Ana!</h5>
+              <div class="warn">🔒 Primeiro acesso: crie a sua senha para continuar.</div>
+              <div class="inp"><label>Nova senha</label><div class="box foc">••••••••</div></div>
+              <div class="inp"><label>Repita a nova senha</label><div class="box">••••••••</div></div>
+              <div class="btnp glow" style="display:block; margin-top:4px">Salvar senha</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="app" style="align-items:stretch">
+          <nav class="side">
+            <div class="mk"><b>EBD ICES</b><span>Ana Beatriz · Aluno</span></div>
+            <a class="act"><span class="ic">📊</span> Minha frequência</a>
+            <a><span class="ic">🧠</span> Minhas provas</a>
+            <a><span class="ic">🏆</span> Ranking da turma</a>
+            <a><span class="ic">📄</span> Meu boletim</a>
+          </nav>
+          <div class="main" style="flex:1">
+            <h4>Seu menu</h4>
+            <div class="sub">Tudo o que é seu fica aqui do lado</div>
+            <div class="cardui" style="font-size:10.5px; color:var(--ap-ink); line-height:1.7">
+              📊 <b>Minha frequência</b> — suas presenças<br>
+              🧠 <b>Minhas provas</b> — provas online para responder<br>
+              🏆 <b>Ranking da turma</b> — sua posição<br>
+              📄 <b>Meu boletim</b> — notas e situação
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene">
+        <div class="cover">
+          <div class="bk">🎓</div>
+          <h1 class="serif">Pronto!</h1>
+          <div class="rule"></div>
+          <p>Guarde a sua senha nova. Da próxima vez é só entrar com o seu usuário e ela. Bons estudos!</p>
+        </div>
+      </section>
+
+      <div class="replay" id="replay"><button id="replayBtn">↻ Assistir de novo</button></div>
+    </div>
+    <div class="cap"><p id="caption"></p></div>
+    <div class="ctrl">
+      <button class="btn" id="prev" aria-label="Anterior">⏮</button>
+      <button class="btn play" id="play" aria-label="Pausar">⏸</button>
+      <button class="btn" id="next" aria-label="Próximo">⏭</button>
+      <div class="segs" id="segs"></div>
+    </div>
+  </div>
+  <div class="foot">Guia do aluno · EBD ICES · avança sozinho — ⏸ pausa, ⏭ / ⏮ navegam.</div>
+</div>
+<script>
+  window.CAPTIONS = [
+    ['Primeiro acesso: ', 'vamos entrar no app da Escola Bíblica pela primeira vez.'],
+    ['Seu usuário ', 'é o seu nome.sobrenome (ex.: ana.souza). Na estreia, a senha é 12345678.'],
+    ['Por segurança, ', 'o app pede para você criar a sua própria senha. Escolha uma e confirme.'],
+    ['Pronto — esse é o seu menu: ', 'Minha frequência, Minhas provas, Ranking da turma e Meu boletim.'],
+    ['É só isso! ', 'Guarde a senha nova; nas próximas vezes é entrar direto. Bons estudos!']
+  ];
+  window.DURS = [6000, 8500, 8500, 9000, 7000];
+</script>
+<script src="player.js"></script>
+</body>
+</html>
