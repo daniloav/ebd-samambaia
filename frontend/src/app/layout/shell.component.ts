@@ -106,7 +106,7 @@ import { TemaService } from '../core/tema.service';
           <button class="btn-sair topo-mobile" style="width:auto;padding:.3rem .6rem"
                   (click)="menuAberto.set(false)" aria-label="Fechar menu">✕</button>
         </div>
-        @if (!auth.isAluno() && classeCtx.classes().length) {
+        @if ((auth.isProfessor() || auth.isAdmin()) && classeCtx.classes().length) {
           <div class="seletor-classe">
             <label>Turma</label>
             <select [ngModel]="classeCtx.selecionadaId()" (ngModelChange)="classeCtx.selecionar($event)">
@@ -122,7 +122,8 @@ import { TemaService } from '../core/tema.service';
             <a routerLink="/minhas-provas" routerLinkActive="ativo"><span class="ico">🧠</span> Minhas provas</a>
             <a routerLink="/meu-ranking" routerLinkActive="ativo"><span class="ico">🏆</span> Ranking da turma</a>
             <a routerLink="/meu-boletim" routerLinkActive="ativo"><span class="ico">📄</span> Meu boletim</a>
-          } @else {
+          }
+          @if (auth.isProfessor() || auth.isAdmin()) {
             <a routerLink="/painel" routerLinkActive="ativo"><span class="ico">🏠</span> Painel</a>
             <div class="grupo">Chamada</div>
             <a routerLink="/chamada" routerLinkActive="ativo"><span class="ico">✅</span> Fazer chamada</a>
@@ -142,6 +143,10 @@ import { TemaService } from '../core/tema.service';
             <a routerLink="/relatorio-geral" routerLinkActive="ativo"><span class="ico">📋</span> Relatório geral</a>
             <a routerLink="/auditoria" routerLinkActive="ativo"><span class="ico">📜</span> Auditoria</a>
             }
+          }
+          @if (auth.isAdmin() || auth.isTesoureiro() || auth.isLider()) {
+            <div class="grupo">Tesouraria</div>
+            <a routerLink="/requisicoes" routerLinkActive="ativo"><span class="ico">💰</span> Requisições</a>
           }
         </nav>
         <div class="rodape">
@@ -179,7 +184,7 @@ export class ShellComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (!this.auth.isAluno()) {
+    if (this.auth.isProfessor() || this.auth.isAdmin()) {
       this.classeCtx.carregar();
     }
   }

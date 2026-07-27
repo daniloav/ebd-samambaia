@@ -67,6 +67,8 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
                 <option value="ADMIN">Administrador</option>
                 <option value="PROFESSOR">Professor</option>
                 <option value="ALUNO">Aluno</option>
+                <option value="TESOUREIRO">Tesoureiro</option>
+                <option value="LIDER">Líder de ministério</option>
               </select>
             </div>
 

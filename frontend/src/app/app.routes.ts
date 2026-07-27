@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, naoAlunoGuard, alunoGuard, senhaGuard } from './core/guards';
+import { authGuard, adminGuard, naoAlunoGuard, alunoGuard, senhaGuard, tesourariaGuard } from './core/guards';
 
 export const routes: Routes = [
   {
@@ -33,6 +33,11 @@ export const routes: Routes = [
         path: 'meu-ranking',
         canActivate: [alunoGuard],
         loadComponent: () => import('./pages/meu-ranking/meu-ranking.component').then((m) => m.MeuRankingComponent),
+      },
+      {
+        path: 'requisicoes',
+        canActivate: [tesourariaGuard],
+        loadComponent: () => import('./pages/requisicoes/requisicoes.component').then((m) => m.RequisicoesComponent),
       },
       {
         path: 'minhas-provas',

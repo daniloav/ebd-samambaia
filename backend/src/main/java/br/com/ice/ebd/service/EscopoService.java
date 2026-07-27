@@ -54,4 +54,9 @@ public class EscopoService {
     public Long alunoIdLogado() {
         return usuarioRepository.alunoIdDoUsuario(username());
     }
+
+    /** Usuário autenticado (entidade), ou {@code null}. */
+    public br.com.ice.ebd.model.Usuario usuarioLogado() {
+        return usuarioRepository.findByUsername(username()).orElse(null);
+    }
 }
