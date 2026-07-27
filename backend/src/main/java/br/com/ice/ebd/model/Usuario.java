@@ -45,6 +45,14 @@ public class Usuario {
     @Column(name = "precisa_trocar_senha", nullable = false)
     private boolean precisaTrocarSenha = false;
 
+    /** Capacidade funcional: pode atuar como tesoureiro (independe da role base). */
+    @Column(name = "eh_tesoureiro", nullable = false)
+    private boolean ehTesoureiro = false;
+
+    /** Capacidade funcional: pode atuar como líder de ministério (independe da role base). */
+    @Column(name = "eh_lider", nullable = false)
+    private boolean ehLider = false;
+
     @Column(name = "data_cadastro", nullable = false)
     private LocalDateTime dataCadastro = LocalDateTime.now();
 
@@ -80,6 +88,12 @@ public class Usuario {
 
     public boolean isPrecisaTrocarSenha() { return precisaTrocarSenha; }
     public void setPrecisaTrocarSenha(boolean precisaTrocarSenha) { this.precisaTrocarSenha = precisaTrocarSenha; }
+
+    public boolean isEhTesoureiro() { return ehTesoureiro; }
+    public void setEhTesoureiro(boolean ehTesoureiro) { this.ehTesoureiro = ehTesoureiro; }
+
+    public boolean isEhLider() { return ehLider; }
+    public void setEhLider(boolean ehLider) { this.ehLider = ehLider; }
 
     public LocalDateTime getDataCadastro() { return dataCadastro; }
     public void setDataCadastro(LocalDateTime dataCadastro) { this.dataCadastro = dataCadastro; }

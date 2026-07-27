@@ -4,6 +4,7 @@ import br.com.ice.ebd.model.Usuario;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.Set;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -21,10 +22,28 @@ public class TokenService {
         return Jwt.issuer(issuer)
                 .upn(usuario.getUsername())
                 .subject(String.valueOf(usuario.getId()))
-                .groups(Set.of(usuario.getRole().name()))
+                .groups(gruposDe(usuario))
                 .claim("nome", usuario.getUsername())
                 .expiresIn(Duration.ofSeconds(durationSeconds))
                 .sign();
+    }
+
+    /**
+     * Grupos do JWT = role base + capacidades funcionais. ADMIN recebe todas as
+     * capacidades por padrão (acesso a tudo). Assim os @RolesAllowed("TESOUREIRO"/
+     * "LIDER") continuam valendo sem depender da role base.
+     */
+    private Set<String> gruposDe(Usuario u) {
+        Set<String> grupos = new HashSet<>();
+        grupos.add(u.getRole().name());
+        boolean admin = u.getRole() == br.com.ice.ebd.model.Role.ADMIN;
+        if (admin || u.isEhTesoureiro()) {
+            grupos.add("TESOUREIRO");
+        }
+        if (admin || u.isEhLider()) {
+            grupos.add("LIDER");
+        }
+        return grupos;
     }
 
     public long getDurationSeconds() {
