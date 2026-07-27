@@ -33,7 +33,7 @@ class RequisicaoFluxoTest {
     @TestTransaction
     void fluxoAbrirAprovarFinalizar() {
         fx.usuario("lider.teste", Role.ADMIN, "lider@ebd.test");
-        fx.usuario("tes.teste", Role.TESOUREIRO, "tes@ebd.test");
+        fx.tesoureiro("tes.teste", "tes@ebd.test");
 
         RequisicaoResponse aberta = service.criar(new RequisicaoRequest(
                 "Louvor", "Culto de Natal", "Compra de cordas", "Instrumento quebrou",

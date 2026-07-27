@@ -30,7 +30,7 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
               @for (u of usuarios(); track u.id) {
                 <tr>
                   <td>{{ u.username }}</td>
-                  <td><span class="badge badge-dourado">{{ rotulo(u.role) }}</span></td>
+                  <td><span class="badge badge-dourado">{{ rotulo(u.role) }}</span>@if (u.ehTesoureiro) { <span class="badge badge-azul" title="Tesoureiro">💰 Tes.</span> }@if (u.ehLider) { <span class="badge badge-azul" title="Líder">Líder</span> }</td>
                   <td>{{ vinculo(u) }}</td>
                   <td>
                     @if (u.ativo) { <span class="badge badge-verde">Ativo</span> }
@@ -67,9 +67,14 @@ import { Aluno, Classe, Role, Usuario, UsuarioRequest } from '../../core/models'
                 <option value="ADMIN">Administrador</option>
                 <option value="PROFESSOR">Professor</option>
                 <option value="ALUNO">Aluno</option>
-                <option value="TESOUREIRO">Tesoureiro</option>
-                <option value="LIDER">Líder de ministério</option>
               </select>
+            </div>
+
+            <div class="form-group">
+              <label>Papéis da tesouraria (somam-se ao perfil)</label>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehTesoureiro" /> Pode atuar como tesoureiro</label>
+              <label class="check-inline"><input type="checkbox" [(ngModel)]="form.ehLider" /> Pode atuar como líder de ministério</label>
+              @if (form.role === 'ADMIN') { <small class="muted">O administrador já enxerga e faz tudo na tesouraria.</small> }
             </div>
 
             @if (form.role === 'PROFESSOR') {
@@ -151,7 +156,7 @@ export class UsuariosComponent {
   }
 
   private vazio(): UsuarioRequest {
-    return { username: '', senha: '', role: 'PROFESSOR', alunoId: null, classeIds: [], email: '', ativo: true };
+    return { username: '', senha: '', role: 'PROFESSOR', alunoId: null, classeIds: [], email: '', ativo: true, ehTesoureiro: false, ehLider: false };
   }
 
   rotulo(r: Role): string {
@@ -194,6 +199,8 @@ export class UsuariosComponent {
       classeIds: (u.classes ?? []).map((c) => c.id),
       email: u.email ?? '',
       ativo: u.ativo,
+      ehTesoureiro: !!u.ehTesoureiro,
+      ehLider: !!u.ehLider,
     };
     this.modalAberto.set(true);
   }
@@ -211,6 +218,8 @@ export class UsuariosComponent {
       classeIds: this.form.role === 'PROFESSOR' ? (this.form.classeIds ?? []) : null,
       email: this.form.email || null,
       ativo: this.form.ativo,
+      ehTesoureiro: !!this.form.ehTesoureiro,
+      ehLider: !!this.form.ehLider,
     };
     const alvo = this.editando();
     const req$ = alvo ? this.api.atualizarUsuario(alvo.id, payload) : this.api.criarUsuario(payload);

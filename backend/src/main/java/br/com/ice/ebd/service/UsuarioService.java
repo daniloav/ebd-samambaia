@@ -88,6 +88,8 @@ public class UsuarioService {
         u.setRole(req.role());
         u.setAtivo(req.ativo() == null ? true : req.ativo());
         u.setEmail(req.email() != null && !req.email().isBlank() ? req.email().trim() : null);
+        u.setEhTesoureiro(Boolean.TRUE.equals(req.ehTesoureiro()));
+        u.setEhLider(Boolean.TRUE.equals(req.ehLider()));
 
         // Vínculo com aluno: para ALUNO (visão própria) e para PROFESSOR (aluno correlato que
         // fica desabilitado nas aulas que ele dá).

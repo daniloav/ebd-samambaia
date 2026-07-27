@@ -18,5 +18,8 @@ public record UsuarioRequest(
         /** Turmas vinculadas ao professor (RBAC). Ignorado para ADMIN/ALUNO. */
         List<Long> classeIds,
         String email,
-        Boolean ativo) {
+        Boolean ativo,
+        /** Capacidades funcionais (somam-se à role base; ADMIN já tem tudo). */
+        Boolean ehTesoureiro,
+        Boolean ehLider) {
 }
