@@ -92,4 +92,16 @@ public class Fixtures {
         usuarioRepo.persist(u);
         return u;
     }
+
+    /** Usuário genérico com papel e e-mail (para testes de tesouraria/roles). */
+    public Usuario usuario(String username, Role role, String email) {
+        Usuario u = new Usuario();
+        u.setUsername(username);
+        u.setSenhaHash("x");
+        u.setRole(role);
+        u.setAtivo(true);
+        u.setEmail(email);
+        usuarioRepo.persist(u);
+        return u;
+    }
 }

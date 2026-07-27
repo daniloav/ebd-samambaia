@@ -7,7 +7,7 @@ import {
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Professor, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
-  BoletimResponse, Auditoria, MeuRanking, Usuario, UsuarioRequest,
+  BoletimResponse, Auditoria, MeuRanking, Requisicao, RequisicaoRequest, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
 
@@ -179,6 +179,38 @@ export class ApiService {
   }
   meuRanking(): Observable<MeuRanking> {
     return this.http.get<MeuRanking>(`${this.api}/me/ranking`);
+  }
+
+  // ---------- Tesouraria: requisições ----------
+  listarRequisicoes(status?: string | null): Observable<Requisicao[]> {
+    let params = new HttpParams();
+    if (status) { params = params.set('status', status); }
+    return this.http.get<Requisicao[]>(`${this.api}/requisicoes`, { params });
+  }
+  buscarRequisicao(id: number): Observable<Requisicao> {
+    return this.http.get<Requisicao>(`${this.api}/requisicoes/${id}`);
+  }
+  criarRequisicao(r: RequisicaoRequest): Observable<Requisicao> {
+    return this.http.post<Requisicao>(`${this.api}/requisicoes`, r);
+  }
+  aprovarRequisicao(id: number, valorAprovado: number | null, parecer: string | null): Observable<Requisicao> {
+    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/aprovar`, { valorAprovado, parecer });
+  }
+  negarRequisicao(id: number, parecer: string | null): Observable<Requisicao> {
+    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/negar`, { parecer });
+  }
+  cancelarRequisicao(id: number): Observable<Requisicao> {
+    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/cancelar`, {});
+  }
+  finalizarRequisicao(id: number, valorGasto: number | null, observacao: string | null, arquivos: File[]): Observable<Requisicao> {
+    const fd = new FormData();
+    if (valorGasto != null) { fd.append('valorGasto', String(valorGasto)); }
+    if (observacao) { fd.append('observacao', observacao); }
+    arquivos.forEach((f) => fd.append('anexos', f));
+    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/finalizar`, fd);
+  }
+  baixarAnexo(id: number): Observable<Blob> {
+    return this.http.get(`${this.api}/requisicoes/anexos/${id}`, { responseType: 'blob' });
   }
   meuBoletim(ano: number, trimestre: number): Observable<BoletimResponse> {
     const params = new HttpParams().set('ano', ano).set('trimestre', trimestre);

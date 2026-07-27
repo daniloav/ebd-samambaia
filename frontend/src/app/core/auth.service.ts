@@ -23,6 +23,8 @@ export class AuthService {
   readonly isAdmin = computed(() => this.role() === 'ADMIN');
   readonly isProfessor = computed(() => this.role() === 'PROFESSOR');
   readonly isAluno = computed(() => this.role() === 'ALUNO');
+  readonly isTesoureiro = computed(() => this.role() === 'TESOUREIRO');
+  readonly isLider = computed(() => this.role() === 'LIDER');
 
   constructor(private http: HttpClient) {}
 
