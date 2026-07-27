@@ -126,6 +126,15 @@ RESET ROLE;
 
 ## 5. Caminho A — Túnel SSH (recomendado, não abre 5432)
 
+> **Atalho:** o script [`scripts/setup-integracao-tesouraria.sh`](../scripts/setup-integracao-tesouraria.sh)
+> faz as seções **4 e 5 de uma vez** — cria a view, o usuário `tesouraria_ro` (senha gerada e
+> exibida uma vez) e o usuário SSH só-túnel com chave restrita. Rode **na VM `ebd-db`, com sudo**:
+> ```bash
+> sudo ./scripts/setup-integracao-tesouraria.sh --pubkey-file ./tesoureiro.pub
+> ```
+> Ainda falta o passo manual da porta 22 (Security List da OCI, abaixo). Os passos abaixo são o
+> equivalente feito à mão.
+
 O sistema do tesoureiro conecta em `localhost` na máquina dele, e um túnel SSH encaminha
 o tráfego (criptografado) até o Postgres privado. **Nada é aberto na internet.**
 
