@@ -98,6 +98,24 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
             <div class="ff"><label>Motivo *</label><textarea rows="3" [(ngModel)]="form.motivo" placeholder="Justificativa do pedido"></textarea></div>
             <div class="ff"><label>Valor solicitado (R$) *</label><input type="number" min="0.01" step="0.01" [(ngModel)]="form.valorSolicitado" /></div>
             <div class="ff"><label>Data necessária</label><input type="date" [(ngModel)]="form.dataNecessidade" /></div>
+            <div class="ff"><label>Forma de repasse *</label>
+              <select [(ngModel)]="form.formaRepasse">
+                <option value="DINHEIRO">Dinheiro</option>
+                <option value="PIX">PIX</option>
+              </select>
+            </div>
+            @if (form.formaRepasse === 'PIX') {
+              <div class="ff"><label>Tipo da chave PIX *</label>
+                <select [(ngModel)]="form.pixTipo">
+                  <option [ngValue]="null">— selecione —</option>
+                  <option value="CPF">CPF</option>
+                  <option value="EMAIL">E-mail</option>
+                  <option value="TELEFONE">Telefone</option>
+                </select>
+                <small class="muted">A chave deve ser sua (do solicitante). Chave aleatória não é aceita.</small>
+              </div>
+              <div class="ff"><label>Chave PIX *</label><input type="text" [(ngModel)]="form.pixChave" maxlength="140" placeholder="Seu CPF, e-mail ou telefone" /></div>
+            }
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="modalNova.set(false)">Cancelar</button>
@@ -116,6 +134,13 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
             <p class="muted" style="margin-top:0">{{ r.ministerio }} · solicitado {{ brl(r.valorSolicitado) }}<br>{{ r.motivo }}</p>
             <div class="ff"><label>Valor aprovado (R$)</label><input type="number" min="0.01" step="0.01" [(ngModel)]="valorAprovado" /></div>
             <div class="ff"><label>Parecer / observação</label><textarea rows="2" [(ngModel)]="parecer" placeholder="Opcional"></textarea></div>
+            @if (r.formaRepasse === 'PIX') {
+              <div class="ff muted" style="font-size:.85rem">PIX ({{ rotuloPix(r.pixTipo) }}): <b>{{ r.pixChave }}</b></div>
+            }
+            <div class="ff"><label>Comprovante de transferência (opcional) — PDF ou imagem</label>
+              <input type="file" accept=".pdf,image/*" (change)="onComprovante($event)" />
+              @if (comprovante) { <small class="muted">{{ comprovante.name }}</small> }
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-perigo" (click)="negar(r)" [disabled]="avaliando()">Negar</button>
@@ -161,6 +186,8 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               <dt>Valor solicitado</dt><dd>{{ brl(r.valorSolicitado) }}</dd>
               @if (r.dataNecessidade) { <dt>Data necessária</dt><dd>{{ r.dataNecessidade | date:'dd/MM/yyyy' }}</dd> }
               <dt>Solicitante</dt><dd>{{ r.solicitanteNome }} · {{ r.criadoEm | date:'dd/MM/yyyy HH:mm' }}</dd>
+              <dt>Forma de repasse</dt>
+              <dd>{{ r.formaRepasse === 'PIX' ? 'PIX' : 'Dinheiro' }}@if (r.formaRepasse === 'PIX') { — {{ rotuloPix(r.pixTipo) }}: <b>{{ r.pixChave }}</b> }</dd>
               @if (r.avaliadoPorNome) {
                 <dt>Avaliação</dt>
                 <dd>{{ r.status === 'NEGADA' ? 'Negada' : 'Aprovada' }} por {{ r.avaliadoPorNome }}
@@ -174,8 +201,8 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
                   @if (r.observacaoFinal) { <br>{{ r.observacaoFinal }} }</dd>
               }
               @if (r.anexos.length) {
-                <dt>Notas anexadas</dt>
-                <dd>@for (a of r.anexos; track a.id) { <button class="anexo" (click)="abrirAnexo(a.id)">📎 {{ a.nome || 'anexo' }}</button> }</dd>
+                <dt>Anexos</dt>
+                <dd>@for (a of r.anexos; track a.id) { <button class="anexo" (click)="abrirAnexo(a.id)">{{ a.categoria === 'COMPROVANTE' ? '🧾' : '📎' }} {{ a.categoria === 'COMPROVANTE' ? 'Comprovante' : 'Nota fiscal' }}: {{ a.nome || 'anexo' }}</button> }</dd>
               }
             </dl>
           </div>
@@ -202,6 +229,7 @@ export class RequisicoesComponent {
   avaliar = signal<Requisicao | null>(null);
   valorAprovado: number | null = null;
   parecer = '';
+  comprovante: File | null = null;
   avaliando = signal(false);
 
   finalizar = signal<Requisicao | null>(null);
@@ -220,7 +248,7 @@ export class RequisicoesComponent {
   souDono(_r: Requisicao): boolean { return this.auth.isLider() || this.auth.isAdmin(); }
 
   private vazio(): RequisicaoRequest {
-    return { ministerio: '', nomeEvento: '', destinacao: '', motivo: '', valorSolicitado: 0, dataNecessidade: null };
+    return { ministerio: '', nomeEvento: '', destinacao: '', motivo: '', valorSolicitado: 0, dataNecessidade: null, formaRepasse: 'DINHEIRO', pixTipo: null, pixChave: null };
   }
 
   carregar(): void {
@@ -237,6 +265,9 @@ export class RequisicoesComponent {
       this.toast.erro('Preencha ministério, destinação e motivo.'); return;
     }
     if (!this.form.valorSolicitado || this.form.valorSolicitado <= 0) { this.toast.erro('Informe um valor válido.'); return; }
+    if (this.form.formaRepasse === 'PIX' && (!this.form.pixTipo || !this.form.pixChave?.trim())) {
+      this.toast.erro('Para PIX, informe o tipo e a chave.'); return;
+    }
     this.salvando.set(true);
     this.api.criarRequisicao({ ...this.form, dataNecessidade: this.form.dataNecessidade || null }).subscribe({
       next: () => { this.toast.sucesso('Requisição enviada! A tesouraria foi avisada.'); this.salvando.set(false); this.modalNova.set(false); this.carregar(); },
@@ -244,10 +275,12 @@ export class RequisicoesComponent {
     });
   }
 
-  abrirAvaliar(r: Requisicao): void { this.valorAprovado = r.valorSolicitado; this.parecer = ''; this.avaliar.set(r); }
+  abrirAvaliar(r: Requisicao): void { this.valorAprovado = r.valorSolicitado; this.parecer = ''; this.comprovante = null; this.avaliar.set(r); }
+  onComprovante(e: Event): void { this.comprovante = (e.target as HTMLInputElement).files?.[0] ?? null; }
+  rotuloPix(t?: string | null): string { return t === 'CPF' ? 'CPF' : t === 'EMAIL' ? 'e-mail' : t === 'TELEFONE' ? 'telefone' : '—'; }
   aprovar(r: Requisicao): void {
     this.avaliando.set(true);
-    this.api.aprovarRequisicao(r.id, this.valorAprovado, this.parecer || null).subscribe({
+    this.api.aprovarRequisicao(r.id, this.valorAprovado, this.parecer || null, this.comprovante).subscribe({
       next: () => { this.toast.sucesso('Requisição aprovada.'); this.avaliando.set(false); this.avaliar.set(null); this.carregar(); },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao aprovar.'); this.avaliando.set(false); },
     });

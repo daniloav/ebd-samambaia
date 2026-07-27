@@ -2,6 +2,8 @@ package br.com.ice.ebd.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,6 +34,10 @@ public class RequisicaoAnexo {
     @Column(nullable = false)
     private byte[] conteudo;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 12)
+    private CategoriaAnexo categoria = CategoriaAnexo.NOTA_FISCAL;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public RequisicaoTesouraria getRequisicao() { return requisicao; }
@@ -42,4 +48,6 @@ public class RequisicaoAnexo {
     public void setTipo(String tipo) { this.tipo = tipo; }
     public byte[] getConteudo() { return conteudo; }
     public void setConteudo(byte[] conteudo) { this.conteudo = conteudo; }
+    public CategoriaAnexo getCategoria() { return categoria; }
+    public void setCategoria(CategoriaAnexo categoria) { this.categoria = categoria; }
 }

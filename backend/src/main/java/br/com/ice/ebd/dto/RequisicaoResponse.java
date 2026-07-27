@@ -28,9 +28,12 @@ public record RequisicaoResponse(
         String observacaoFinal,
         LocalDateTime finalizadoEm,
         LocalDateTime criadoEm,
+        String formaRepasse,
+        String pixTipo,
+        String pixChave,
         List<AnexoResumo> anexos) {
 
-    public record AnexoResumo(Long id, String nome, String tipo) {}
+    public record AnexoResumo(Long id, String nome, String tipo, String categoria) {}
 
     /** Nome de exibição de um usuário: o nome do aluno vinculado, ou o login. */
     public static String nomeDe(Usuario u) {
@@ -42,7 +45,8 @@ public record RequisicaoResponse(
 
     public static RequisicaoResponse de(RequisicaoTesouraria r, List<RequisicaoAnexo> anexos) {
         List<AnexoResumo> as = anexos == null ? List.of()
-                : anexos.stream().map(a -> new AnexoResumo(a.getId(), a.getNome(), a.getTipo())).toList();
+                : anexos.stream().map(a -> new AnexoResumo(a.getId(), a.getNome(), a.getTipo(),
+                        a.getCategoria().name())).toList();
         return new RequisicaoResponse(
                 r.getId(), r.getNumero(), r.getStatus().name(),
                 r.getSolicitante().getId(), nomeDe(r.getSolicitante()),
@@ -50,6 +54,10 @@ public record RequisicaoResponse(
                 r.getValorSolicitado(), r.getDataNecessidade(),
                 r.getValorAprovado(), r.getParecerTesoureiro(), nomeDe(r.getAvaliadoPor()), r.getAvaliadoEm(),
                 r.getValorGasto(), r.getObservacaoFinal(), r.getFinalizadoEm(),
-                r.getCriadoEm(), as);
+                r.getCriadoEm(),
+                r.getFormaRepasse().name(),
+                r.getPixTipo() != null ? r.getPixTipo().name() : null,
+                r.getPixChave(),
+                as);
     }
 }

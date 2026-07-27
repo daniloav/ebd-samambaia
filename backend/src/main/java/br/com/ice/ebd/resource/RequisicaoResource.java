@@ -1,6 +1,7 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.AvaliarRequest;
+import br.com.ice.ebd.model.CategoriaAnexo;
 import br.com.ice.ebd.dto.RequisicaoRequest;
 import br.com.ice.ebd.dto.RequisicaoResponse;
 import br.com.ice.ebd.model.RequisicaoAnexo;
@@ -57,10 +58,21 @@ public class RequisicaoResource {
 
     @POST
     @Path("/{id}/aprovar")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @RolesAllowed({"TESOUREIRO", "ADMIN"})
-    public RequisicaoResponse aprovar(@PathParam("id") Long id, AvaliarRequest req) {
-        return service.aprovar(id, req);
+    public RequisicaoResponse aprovar(
+            @PathParam("id") Long id,
+            @RestForm String valorAprovado,
+            @RestForm String parecer,
+            @RestForm("comprovante") FileUpload comprovante) throws IOException {
+        BigDecimal valor = valorAprovado != null && !valorAprovado.isBlank() && !"null".equalsIgnoreCase(valorAprovado)
+                ? new BigDecimal(valorAprovado.trim().replace(",", ".")) : null;
+        RequisicaoService.AnexoData anexo = null;
+        if (comprovante != null && comprovante.fileName() != null) {
+            anexo = new RequisicaoService.AnexoData(comprovante.fileName(), comprovante.contentType(),
+                    Files.readAllBytes(comprovante.uploadedFile()), CategoriaAnexo.COMPROVANTE);
+        }
+        return service.aprovar(id, valor, parecer, anexo);
     }
 
     @POST
@@ -89,7 +101,8 @@ public class RequisicaoResource {
                     continue;
                 }
                 arquivos.add(new RequisicaoService.AnexoData(
-                        fu.fileName(), fu.contentType(), Files.readAllBytes(fu.uploadedFile())));
+                        fu.fileName(), fu.contentType(), Files.readAllBytes(fu.uploadedFile()),
+                        CategoriaAnexo.NOTA_FISCAL));
             }
         }
         return service.finalizar(id, gasto, observacao, arquivos);

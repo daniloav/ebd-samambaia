@@ -448,7 +448,10 @@ export interface MeuRanking {
 
 // ---- Tesouraria: requisições ----
 export type StatusRequisicao = 'ABERTA' | 'APROVADA' | 'NEGADA' | 'FINALIZADA' | 'CANCELADA';
-export interface RequisicaoAnexoResumo { id: number; nome?: string | null; tipo: string; }
+export type FormaRepasse = 'DINHEIRO' | 'PIX';
+export type TipoChavePix = 'CPF' | 'EMAIL' | 'TELEFONE';
+export type CategoriaAnexo = 'NOTA_FISCAL' | 'COMPROVANTE';
+export interface RequisicaoAnexoResumo { id: number; nome?: string | null; tipo: string; categoria: CategoriaAnexo; }
 export interface Requisicao {
   id: number;
   numero: string;
@@ -469,6 +472,9 @@ export interface Requisicao {
   observacaoFinal?: string | null;
   finalizadoEm?: string | null;
   criadoEm: string;
+  formaRepasse: FormaRepasse;
+  pixTipo?: TipoChavePix | null;
+  pixChave?: string | null;
   anexos: RequisicaoAnexoResumo[];
 }
 export interface RequisicaoRequest {
@@ -478,4 +484,7 @@ export interface RequisicaoRequest {
   motivo: string;
   valorSolicitado: number;
   dataNecessidade?: string | null;
+  formaRepasse?: FormaRepasse;
+  pixTipo?: TipoChavePix | null;
+  pixChave?: string | null;
 }
