@@ -119,7 +119,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [x] **Correção — aulas futuras não contam** — ranking e boletim passaram a considerar só aulas com
       **data ≤ hoje** (total de aulas, presenças e visitantes); antes inflavam as faltas do trimestre corrente.
 - [ ] **Testes de front** (ao menos smoke dos serviços/guards).
-- [ ] **Envio de e-mail assíncrono** — hoje o `NotificacaoService` envia **de forma síncrona** dentro da transação da chamada; migrar para assíncrono (evento/`@Blocking`/fila) para não segurar o salvamento em turmas grandes.
+- [x] **Envio de e-mail assíncrono** — `EmailDispatcher` publica o `Mail` no **Vert.x EventBus** e um consumidor `@ConsumeEvent @Blocking` envia em segundo plano (worker thread). A resposta da chamada não espera mais o SMTP e os e-mails saem fora da transação; dedup/contagem seguem síncronas. Testes de mailbox com Awaitility.
 - [ ] **Soft-delete de aluno** (preservar histórico usando `ativo`, sem cascata destrutiva).
 - [ ] **Paginação** nas listas quando crescer o volume.
 
@@ -173,7 +173,7 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
 ### ✅ 2. Alertas por mensagem (presença/falta na chamada) — CONCLUÍDO (canal e-mail)
 - Feito: opt-in por aluno (migration V4), `NotificacaoService` disparado ao salvar a chamada,
   e-mail **HTML** com conteúdo distinto para **presente** e **ausente**, em produção via Brevo.
-- **Ainda em aberto:** envio **assíncrono** (ver Qualidade) e **outros canais** (Telegram grátis / WhatsApp).
+- **Ainda em aberto:** **outros canais** (Telegram grátis / WhatsApp). _(Envio assíncrono: concluído — ver Qualidade.)_
   Tabela de canais avaliados:
   | Canal | Custo | Facilidade | Observação |
   |---|---|---|---|
@@ -204,7 +204,7 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
 
 - Exclusão de aluno/aula/prova é **destrutiva** (cascata).
 - Rankings/relatórios já recortam por **turma**, mas ainda **não por trimestre/período**.
-- E-mail de chamada é **síncrono** na transação (ok para turmas pequenas; ver Qualidade).
+- ~~E-mail de chamada é síncrono na transação~~ — **resolvido**: envio assíncrono via EventBus (ver Qualidade).
 - Textos dos e-mails (presente/ausente) são **fixos no código** — ainda não configuráveis pela UI.
 - Sem testes automatizados; validação por build (`mvn package` / `ng build`) e smoke manual.
 - Uma única VM (1 GB) roda tudo (db + api + front + caddy) — suficiente para o MVP, não para alta disponibilidade.
