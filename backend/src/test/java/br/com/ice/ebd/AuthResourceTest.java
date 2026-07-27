@@ -17,7 +17,7 @@ class AuthResourceTest {
                 .when().post("/api/auth/login")
                 .then().statusCode(200)
                 .body("token", notNullValue())
-                .body("role", is("ADMIN"));
+                .body("ehAdmin", is(true));
     }
 
     @Test

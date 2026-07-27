@@ -35,14 +35,12 @@ public class TokenService {
      */
     private Set<String> gruposDe(Usuario u) {
         Set<String> grupos = new HashSet<>();
-        grupos.add(u.getRole().name());
-        boolean admin = u.getRole() == br.com.ice.ebd.model.Role.ADMIN;
-        if (admin || u.isEhTesoureiro()) {
-            grupos.add("TESOUREIRO");
-        }
-        if (admin || u.isEhLider()) {
-            grupos.add("LIDER");
-        }
+        if (u.isEhAdmin())     grupos.add("ADMIN");
+        if (u.isEhProfessor()) grupos.add("PROFESSOR");
+        if (u.isEhAluno())     grupos.add("ALUNO");
+        boolean admin = u.isEhAdmin();
+        if (admin || u.isEhTesoureiro()) grupos.add("TESOUREIRO");
+        if (admin || u.isEhLider())      grupos.add("LIDER");
         return grupos;
     }
 

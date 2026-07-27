@@ -3,7 +3,6 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
 import br.com.ice.ebd.model.Aula;
-import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import br.com.ice.ebd.model.AcaoAuditoria;
@@ -89,7 +88,7 @@ public class AulaService {
             return null;
         }
         Usuario u = usuarioRepository.findById(professorId);
-        if (u == null || u.getRole() != Role.PROFESSOR) {
+        if (u == null || !u.isEhProfessor()) {
             throw new WebApplicationException("Professor inválido para a aula.", Response.Status.BAD_REQUEST);
         }
         return u;

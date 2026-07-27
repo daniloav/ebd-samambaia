@@ -1,7 +1,6 @@
 package br.com.ice.ebd.bootstrap;
 
 import br.com.ice.ebd.model.Aluno;
-import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.repository.AlunoRepository;
@@ -44,17 +43,18 @@ public class DataInitializer {
         if (usuarioRepository.count() > 0) {
             return;
         }
-        criarUsuario(adminUser, adminPass, Role.ADMIN);
-        criarUsuario(profUser, profPass, Role.PROFESSOR);
+        criarUsuario(adminUser, adminPass, true, false);
+        criarUsuario(profUser, profPass, false, true);
         LOG.infof("Usuários padrão criados: admin='%s', professor='%s' (troque as senhas!)",
                 adminUser, profUser);
     }
 
-    private void criarUsuario(String username, String senha, Role role) {
+    private void criarUsuario(String username, String senha, boolean admin, boolean professor) {
         Usuario u = new Usuario();
         u.setUsername(username);
         u.setSenhaHash(BcryptUtil.bcryptHash(senha));
-        u.setRole(role);
+        u.setEhAdmin(admin);
+        u.setEhProfessor(professor);
         u.setAtivo(true);
         usuarioRepository.persist(u);
     }
