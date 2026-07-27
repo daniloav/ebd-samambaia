@@ -10,6 +10,21 @@ com um **usuário/senha dedicado** e o **IP dele liberado** no firewall.
 > - **O Claude** entrega a *view* (migration `V17`) e este manual. Ele **não gera senha**,
 >   **não abre porta/firewall** e **não recebe a credencial** — isso é sempre com você.
 
+## 0. Checklist de implantação (ponta a ponta)
+
+Ordem recomendada (Caminho A, o túnel SSH):
+
+- [ ] **View no banco (V17)** — entra sozinha no próximo deploy, ou aplique à mão (seção 3).
+- [ ] **Tesoureiro gera o par de chaves** e te envia **só a pública** `tesoureiro.pub` (seção 10.1).
+- [ ] **Rodar o script** na `ebd-db` com sudo — cria view + usuário `tesouraria_ro` + usuário SSH
+      só-túnel e **mostra a senha uma vez** (seção 5). _(Alternativa manual: seções 4 e 5.)_
+- [ ] **Guardar a senha** no gerenciador e **entregá-la** ao tesoureiro por canal seguro (seção 8).
+- [ ] **Abrir a porta 22** da `ebd-db` para o **IP fixo** do tesoureiro na Security List da OCI (seção 5).
+- [ ] **Tesoureiro abre o túnel e testa** a conexão (seção 10).
+
+> Se preferir a exposição direta em vez do túnel, troque os passos de SSH pela **seção 6**
+> (Caminho B) — abre a 5432 só para o IP dele.
+
 ---
 
 ## 1. O que é exposto (e o que NÃO é)
@@ -264,3 +279,50 @@ SELECT numero, status, valor_aprovado, solicitante FROM vw_requisicoes_integraca
 
 > Se ampliar o que a integração enxerga no futuro, **edite a view** numa **nova migration**
 > (`V18__...`) — não altere a `V17` já aplicada (regra de ouro do Flyway).
+
+---
+
+## 10. Guia rápido para o tesoureiro (repassar a ele)
+
+Tudo abaixo roda **na máquina do tesoureiro**. Ele não recebe senha de SSH — a autenticação
+do túnel é **por chave**; a senha é só a do banco (que você entrega).
+
+### 10.1. Gerar o par de chaves (uma vez só)
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/ebd_tunel -C "tesouraria-ebd"
+```
+
+Isso cria dois arquivos: `~/.ssh/ebd_tunel` (**privada — fica só com ele**) e
+`~/.ssh/ebd_tunel.pub` (**pública**). Ele envia **apenas o `.pub`** para o Danilo.
+No Windows, o mesmo comando funciona no PowerShell (OpenSSH embutido).
+
+### 10.2. Abrir o túnel (sempre que for usar)
+
+```bash
+ssh -N -i ~/.ssh/ebd_tunel -L 5433:10.0.1.54:5432 tunel_tesouraria@136.248.80.0
+```
+
+Deixe essa janela aberta enquanto usa o sistema. (Depois dá para deixar fixo com
+`autossh` ou um serviço, para reconectar sozinho.)
+
+### 10.3. Apontar o sistema dele
+
+Com o túnel aberto, os dados de conexão são:
+
+| Campo | Valor |
+|---|---|
+| Host | `localhost` |
+| Porta | `5433` |
+| Banco | `ebd` |
+| Usuário | `tesouraria_ro` |
+| Senha | *(a que o Danilo entregou)* |
+
+Consulta disponível (somente leitura):
+
+```sql
+SELECT numero, status, valor_solicitado, valor_aprovado, valor_gasto,
+       solicitante, possui_nota_fiscal, criado_em
+FROM vw_requisicoes_integracao
+ORDER BY criado_em DESC;
+```
