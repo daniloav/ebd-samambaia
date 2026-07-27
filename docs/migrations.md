@@ -18,6 +18,8 @@ O schema do banco é **versionado e gerenciado pelo Flyway**. As migrations fica
 | **V7** | `V7__visitante_e_usuario_email.sql` | Cadastro de visitante e `email` em `usuario`. |
 | **V8** | `V8__remove_trouxe_visitante.sql` | Remove `trouxe_visitante` da chamada (visitante vem do cadastro). |
 | **V9** | `V9__campanha_imagem.sql` | Tabela `campanha_imagem` (arte/imagens embutidas inline no e-mail da campanha; `bytea`). |
+| **V16** | `V16__requisicao_tesouraria.sql` | Módulo de tesouraria: tabelas `requisicao_tesouraria` e `requisicao_anexo` (nota fiscal em `bytea`); amplia `ck_usuario_role` p/ `TESOUREIRO`/`LIDER`. |
+| **V17** | `V17__view_requisicoes_integracao.sql` | View somente-leitura `vw_requisicoes_integracao` p/ integração externa da tesouraria (sem senha nem binário). Ver [`integracao-tesouraria.md`](integracao-tesouraria.md). |
 
 ## Regras de ouro
 
