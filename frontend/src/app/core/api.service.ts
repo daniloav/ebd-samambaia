@@ -7,7 +7,7 @@ import {
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Professor, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
-  BoletimResponse, Auditoria, Usuario, UsuarioRequest,
+  BoletimResponse, Auditoria, MeuRanking, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
 
@@ -176,6 +176,9 @@ export class ApiService {
   boletim(alunoId: number, ano: number, trimestre: number): Observable<BoletimResponse> {
     const params = new HttpParams().set('alunoId', alunoId).set('ano', ano).set('trimestre', trimestre);
     return this.http.get<BoletimResponse>(`${this.api}/boletim`, { params });
+  }
+  meuRanking(): Observable<MeuRanking> {
+    return this.http.get<MeuRanking>(`${this.api}/me/ranking`);
   }
   meuBoletim(ano: number, trimestre: number): Observable<BoletimResponse> {
     const params = new HttpParams().set('ano', ano).set('trimestre', trimestre);

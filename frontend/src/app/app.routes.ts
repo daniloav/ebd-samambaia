@@ -30,6 +30,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/meu-boletim/meu-boletim.component').then((m) => m.MeuBoletimComponent),
       },
       {
+        path: 'meu-ranking',
+        canActivate: [alunoGuard],
+        loadComponent: () => import('./pages/meu-ranking/meu-ranking.component').then((m) => m.MeuRankingComponent),
+      },
+      {
         path: 'minhas-provas',
         canActivate: [alunoGuard],
         loadComponent: () => import('./pages/minhas-provas/minhas-provas.component').then((m) => m.MinhasProvasComponent),
