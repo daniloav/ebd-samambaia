@@ -472,6 +472,7 @@ export interface Requisicao {
   observacaoFinal?: string | null;
   finalizadoEm?: string | null;
   criadoEm: string;
+  possuiComprovante?: boolean;
   formaRepasse: FormaRepasse;
   pixTipo?: TipoChavePix | null;
   pixChave?: string | null;
