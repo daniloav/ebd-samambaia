@@ -37,7 +37,9 @@ public class AuthService {
         }
         protecao.registrarSucesso(req.username());
         String token = tokenService.gerarToken(usuario);
+        boolean admin = usuario.getRole() == br.com.ice.ebd.model.Role.ADMIN;
         return new LoginResponse(token, usuario.getUsername(), usuario.getRole().name(),
-                tokenService.getDurationSeconds(), usuario.isPrecisaTrocarSenha());
+                tokenService.getDurationSeconds(), usuario.isPrecisaTrocarSenha(),
+                admin || usuario.isEhTesoureiro(), admin || usuario.isEhLider());
     }
 }

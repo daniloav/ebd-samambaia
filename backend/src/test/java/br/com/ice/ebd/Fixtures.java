@@ -104,4 +104,12 @@ public class Fixtures {
         usuarioRepo.persist(u);
         return u;
     }
+
+    /** Usuário com a CAPACIDADE de tesoureiro (role base PROFESSOR + flag). */
+    public Usuario tesoureiro(String username, String email) {
+        Usuario u = usuario(username, Role.PROFESSOR, email);
+        u.setEhTesoureiro(true);
+        usuarioRepo.persist(u);
+        return u;
+    }
 }

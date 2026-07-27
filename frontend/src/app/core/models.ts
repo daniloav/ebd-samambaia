@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'PROFESSOR' | 'ALUNO' | 'TESOUREIRO' | 'LIDER';
+export type Role = 'ADMIN' | 'PROFESSOR' | 'ALUNO';
 
 export interface LoginResponse {
   token: string;
@@ -6,6 +6,8 @@ export interface LoginResponse {
   role: Role;
   expiresInSeconds: number;
   precisaTrocarSenha: boolean;
+  ehTesoureiro: boolean;
+  ehLider: boolean;
 }
 
 export interface Aluno {
@@ -244,6 +246,8 @@ export interface Usuario {
   alunoId?: number | null;
   alunoNome?: string | null;
   email?: string | null;
+  ehTesoureiro?: boolean;
+  ehLider?: boolean;
   classes?: { id: number; nome: string }[];
 }
 
@@ -255,6 +259,8 @@ export interface UsuarioRequest {
   classeIds?: number[] | null;
   email?: string | null;
   ativo?: boolean;
+  ehTesoureiro?: boolean;
+  ehLider?: boolean;
 }
 
 export interface CampanhaImagemMeta {
