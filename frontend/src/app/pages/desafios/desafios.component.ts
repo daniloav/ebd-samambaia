@@ -1,4 +1,5 @@
 import { Component, effect, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { ClasseContextService } from '../../core/classe-context.service';
@@ -13,8 +14,11 @@ interface Categoria {
 @Component({
   selector: 'app-desafios',
   standalone: true,
+  imports: [FormsModule],
   styles: [`
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; }
+    .filtro-periodo { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: 0 0 1rem; }
+    .filtro-periodo label { font-weight: 600; color: var(--cinza-texto); }
     .cat { background: #fff; border-radius: var(--raio); box-shadow: var(--sombra);
            padding: 1.25rem; border-top: 3px solid var(--dourado); }
     .cat h3 { display: flex; align-items: center; gap: .5rem; font-size: 1.05rem; }
@@ -45,6 +49,21 @@ interface Categoria {
   template: `
     <h2>🏆 Desafios da classe</h2>
     <p class="subtitulo">Destaques calculados a partir da chamada e das notas das provas.</p>
+
+    <div class="filtro-periodo">
+      <label>Período:</label>
+      <select [(ngModel)]="periodoTri" (ngModelChange)="carregar()">
+        <option [ngValue]="null">Todo o período</option>
+        <option [ngValue]="1">1º trimestre (Jan-Mar)</option>
+        <option [ngValue]="2">2º trimestre (Abr-Jun)</option>
+        <option [ngValue]="3">3º trimestre (Jul-Set)</option>
+        <option [ngValue]="4">4º trimestre (Out-Dez)</option>
+      </select>
+      @if (periodoTri !== null) {
+        <input type="number" min="2000" max="2100" [(ngModel)]="ano" (ngModelChange)="carregar()"
+               style="width:90px" aria-label="Ano" />
+      }
+    </div>
 
     @if (dados(); as d) {
       <div class="topo">
@@ -103,6 +122,8 @@ export class DesafiosComponent {
   categorias = signal<Categoria[]>([]);
   geral = signal<RankingItem[]>([]);
   carregando = signal(true);
+  periodoTri: number | null = null;
+  ano = new Date().getFullYear();
 
   constructor() {
     effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true });
@@ -110,7 +131,7 @@ export class DesafiosComponent {
 
   carregar(): void {
     this.carregando.set(true);
-    this.api.rankings(this.classeCtx.selecionadaId()).subscribe({
+    this.api.rankings(this.classeCtx.selecionadaId(), this.periodoTri != null ? this.ano : null, this.periodoTri).subscribe({
       next: (d) => {
         this.dados.set(d);
         this.geral.set(d.classificacaoGeral);

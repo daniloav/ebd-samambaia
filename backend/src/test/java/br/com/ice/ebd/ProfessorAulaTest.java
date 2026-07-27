@@ -62,7 +62,7 @@ class ProfessorAulaTest {
                 .findFirst().orElseThrow().professorDaAula();
         assertTrue(flag, "o aluno-professor deve vir marcado como professorDaAula");
 
-        DesafiosResponse d = desafiosService.gerar(c.getId());
+        DesafiosResponse d = desafiosService.gerar(c.getId(), null, null);
         // membro comum: 2 presenças; professor: só 1 (a aula que ele deu não conta)
         assertEquals(2.0, valorMenosFaltou(d, membro.getId()));
         assertEquals(1.0, valorMenosFaltou(d, profAluno.getId()));
