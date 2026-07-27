@@ -74,7 +74,7 @@ public class Fixtures {
         Usuario u = new Usuario();
         u.setUsername(username);
         u.setSenhaHash("x");
-        u.setRole(Role.ALUNO);
+        u.setEhAluno(true);
         u.setAtivo(true);
         u.setAluno(aluno);
         usuarioRepo.persist(u);
@@ -86,7 +86,7 @@ public class Fixtures {
         Usuario u = new Usuario();
         u.setUsername(username);
         u.setSenhaHash("x");
-        u.setRole(Role.PROFESSOR);
+        u.setEhProfessor(true);
         u.setAtivo(true);
         u.setAluno(aluno);
         usuarioRepo.persist(u);
@@ -98,7 +98,11 @@ public class Fixtures {
         Usuario u = new Usuario();
         u.setUsername(username);
         u.setSenhaHash("x");
-        u.setRole(role);
+        switch (role) {
+            case ADMIN -> u.setEhAdmin(true);
+            case PROFESSOR -> u.setEhProfessor(true);
+            case ALUNO -> u.setEhAluno(true);
+        }
         u.setAtivo(true);
         u.setEmail(email);
         usuarioRepo.persist(u);

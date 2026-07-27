@@ -5,7 +5,6 @@ import br.com.ice.ebd.dto.UsuarioRequest;
 import br.com.ice.ebd.dto.UsuarioResponse;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Classe;
-import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.model.AcaoAuditoria;
 import br.com.ice.ebd.model.EntidadeAuditoria;
@@ -76,7 +75,7 @@ public class UsuarioService {
     @Transactional
     public void deletar(Long id) {
         Usuario u = obter(id);
-        if (u.getRole() == Role.ADMIN && contarAdmins() <= 1) {
+        if (u.isEhAdmin() && contarAdmins() <= 1) {
             throw new WebApplicationException("Não é possível excluir o último administrador.",
                     Response.Status.CONFLICT);
         }
@@ -85,7 +84,9 @@ public class UsuarioService {
     }
 
     private void aplicarComuns(Usuario u, UsuarioRequest req) {
-        u.setRole(req.role());
+        u.setEhAdmin(Boolean.TRUE.equals(req.ehAdmin()));
+        u.setEhProfessor(Boolean.TRUE.equals(req.ehProfessor()));
+        u.setEhAluno(Boolean.TRUE.equals(req.ehAluno()));
         u.setAtivo(req.ativo() == null ? true : req.ativo());
         u.setEmail(req.email() != null && !req.email().isBlank() ? req.email().trim() : null);
         u.setEhTesoureiro(Boolean.TRUE.equals(req.ehTesoureiro()));
@@ -93,7 +94,7 @@ public class UsuarioService {
 
         // Vínculo com aluno: para ALUNO (visão própria) e para PROFESSOR (aluno correlato que
         // fica desabilitado nas aulas que ele dá).
-        if ((req.role() == Role.ALUNO || req.role() == Role.PROFESSOR) && req.alunoId() != null) {
+        if ((Boolean.TRUE.equals(req.ehAluno()) || Boolean.TRUE.equals(req.ehProfessor())) && req.alunoId() != null) {
             Aluno aluno = alunoRepository.findById(req.alunoId());
             if (aluno == null) {
                 throw new NotFoundException("Aluno não encontrado: " + req.alunoId());
@@ -105,7 +106,7 @@ public class UsuarioService {
 
         // Turmas vinculadas: só para PROFESSOR.
         u.getClasses().clear();
-        if (req.role() == Role.PROFESSOR && req.classeIds() != null) {
+        if (Boolean.TRUE.equals(req.ehProfessor()) && req.classeIds() != null) {
             for (Long cid : req.classeIds()) {
                 Classe c = classeRepository.findById(cid);
                 if (c == null) {
@@ -155,6 +156,6 @@ public class UsuarioService {
     }
 
     private long contarAdmins() {
-        return repository.count("role", Role.ADMIN);
+        return repository.count("ehAdmin", true);
     }
 }
