@@ -89,8 +89,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Pré-baixar a imagem do Trivy (com retry)
+        run: for i in 1 2 3; do docker pull aquasec/trivy:latest && break || sleep 10; done
       - name: Relatório HIGH/CRITICAL (não bloqueia)
         run: |
+          set -o pipefail
           docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs \
             --scanners vuln,secret,misconfig --offline-scan \
             --severity HIGH,CRITICAL --no-progress \
@@ -112,6 +115,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Pré-baixar a imagem do gitleaks (com retry)
+        run: for i in 1 2 3; do docker pull zricethezav/gitleaks:latest && break || sleep 10; done
       - name: Procurar segredos no código atual
         run: |
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest \
