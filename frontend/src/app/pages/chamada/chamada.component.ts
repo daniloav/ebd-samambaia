@@ -5,7 +5,7 @@ import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
-import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/models';
+import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../../core/models';
 
 @Component({
   selector: 'app-chamada',
@@ -55,7 +55,13 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
         <div class="nova-aula" style="margin-bottom:1rem">
           <div class="form-group"><label>Data *</label><input type="date" [(ngModel)]="novaData" /></div>
           <div class="form-group" style="flex:1;min-width:200px">
-            <label>Tema (opcional)</label><input type="text" [(ngModel)]="novoTema" maxlength="200" />
+            <label>Tema (opcional)</label><input type="text" [(ngModel)]="novoTema" maxlength="200" /></div>
+          <div class="form-group" style="min-width:190px">
+            <label>Professor da aula</label>
+            <select [(ngModel)]="novoProfessorId">
+              <option [ngValue]="null">— sem professor —</option>
+              @for (pr of professores(); track pr.id) { <option [ngValue]="pr.id">{{ pr.nome }}</option> }
+            </select>
           </div>
           <button class="btn btn-verde" (click)="criarAula()" [disabled]="salvandoAula()">Criar aula</button>
         </div>
@@ -81,16 +87,20 @@ import { Aula, PresencaItem, Visitante, VisitanteRequest } from '../../core/mode
             </thead>
             <tbody>
               @for (i of itens(); track i.alunoId) {
-                <tr>
-                  <td class="nome-col">{{ i.alunoNome }}</td>
-                  <td class="chk" data-label="Presente" (click)="i.presente = !i.presente">
-                    <input type="checkbox" [(ngModel)]="i.presente" (click)="$event.stopPropagation()" /></td>
-                  <td class="chk" data-label="Trouxe a Bíblia" (click)="i.trouxeBiblia = !i.trouxeBiblia">
-                    <input type="checkbox" [(ngModel)]="i.trouxeBiblia" (click)="$event.stopPropagation()" /></td>
-                  <td class="chk" data-label="Trouxe a revista" (click)="i.trouxeRevista = !i.trouxeRevista">
-                    <input type="checkbox" [(ngModel)]="i.trouxeRevista" (click)="$event.stopPropagation()" /></td>
-                  <td class="chk" data-label="Estudou a lição" (click)="i.estudouLicao = !i.estudouLicao">
-                    <input type="checkbox" [(ngModel)]="i.estudouLicao" (click)="$event.stopPropagation()" /></td>
+                <tr [style.opacity]="i.professorDaAula ? .55 : 1">
+                  <td class="nome-col">{{ i.alunoNome }}
+                    @if (i.professorDaAula) {
+                      <span style="display:inline-block;margin-left:.4rem;font-size:.72rem;font-weight:700;padding:.1rem .5rem;border-radius:999px;background:#e7eefb;color:#1e40af">👩‍🏫 Professor da aula</span>
+                    }
+                  </td>
+                  <td class="chk" data-label="Presente" (click)="!i.professorDaAula && (i.presente = !i.presente)">
+                    <input type="checkbox" [(ngModel)]="i.presente" [disabled]="!!i.professorDaAula" (click)="$event.stopPropagation()" /></td>
+                  <td class="chk" data-label="Trouxe a Bíblia" (click)="!i.professorDaAula && (i.trouxeBiblia = !i.trouxeBiblia)">
+                    <input type="checkbox" [(ngModel)]="i.trouxeBiblia" [disabled]="!!i.professorDaAula" (click)="$event.stopPropagation()" /></td>
+                  <td class="chk" data-label="Trouxe a revista" (click)="!i.professorDaAula && (i.trouxeRevista = !i.trouxeRevista)">
+                    <input type="checkbox" [(ngModel)]="i.trouxeRevista" [disabled]="!!i.professorDaAula" (click)="$event.stopPropagation()" /></td>
+                  <td class="chk" data-label="Estudou a lição" (click)="!i.professorDaAula && (i.estudouLicao = !i.estudouLicao)">
+                    <input type="checkbox" [(ngModel)]="i.estudouLicao" [disabled]="!!i.professorDaAula" (click)="$event.stopPropagation()" /></td>
                 </tr>
               }
             </tbody>
@@ -175,8 +185,10 @@ export class ChamadaComponent {
   salvando = signal(false);
 
   mostrarNovaAula = signal(false);
+  professores = signal<Professor[]>([]);
   novaData = '';
   novoTema = '';
+  novoProfessorId: number | null = null;
   salvandoAula = signal(false);
 
   visitantes = signal<Visitante[]>([]);
@@ -190,7 +202,14 @@ export class ChamadaComponent {
       this.itens.set([]);
       this.visitantes.set([]);
       this.carregarAulas();
+      this.carregarProfessores();
     }, { allowSignalWrites: true });
+  }
+
+  private carregarProfessores(): void {
+    const cid = this.classeCtx.selecionadaId();
+    if (!cid) { this.professores.set([]); return; }
+    this.api.listarProfessores(cid).subscribe({ next: (l) => this.professores.set(l), error: () => this.professores.set([]) });
   }
 
   private visitanteVazio(): VisitanteRequest {
@@ -231,12 +250,12 @@ export class ChamadaComponent {
   criarAula(): void {
     if (!this.novaData) { this.toast.erro('Informe a data da aula.'); return; }
     this.salvandoAula.set(true);
-    this.api.criarAula({ classeId: this.classeCtx.selecionadaId() ?? undefined, data: this.novaData, tema: this.novoTema || null }).subscribe({
+    this.api.criarAula({ classeId: this.classeCtx.selecionadaId() ?? undefined, data: this.novaData, tema: this.novoTema || null, professorId: this.novoProfessorId }).subscribe({
       next: (a) => {
         this.toast.sucesso('Aula criada!');
         this.salvandoAula.set(false);
         this.mostrarNovaAula.set(false);
-        this.novaData = ''; this.novoTema = '';
+        this.novaData = ''; this.novoTema = ''; this.novoProfessorId = null;
         this.carregarAulas(a.id);
       },
       error: (e) => {
@@ -247,7 +266,7 @@ export class ChamadaComponent {
   }
 
   marcarTodosPresentes(): void {
-    this.itens.update((lista) => lista.map((i) => ({ ...i, presente: true })));
+    this.itens.update((lista) => lista.map((i) => (i.professorDaAula ? i : { ...i, presente: true })));
   }
 
   contar(campo: keyof PresencaItem): number {

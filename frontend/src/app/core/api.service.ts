@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   Aluno, AlunoRequest, Aula, AulaRequest, Campanha, CampanhaRequest, ChamadaResponse,
-  Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Prova, ProvaRequest,
+  Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Professor, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
   BoletimResponse, Auditoria, Usuario, UsuarioRequest,
@@ -42,6 +42,9 @@ export class ApiService {
   }
   criarAula(a: AulaRequest): Observable<Aula> {
     return this.http.post<Aula>(`${this.api}/aulas`, a);
+  }
+  listarProfessores(classeId: number): Observable<Professor[]> {
+    return this.http.get<Professor[]>(`${this.api}/classes/${classeId}/professores`);
   }
   atualizarAula(id: number, a: AulaRequest): Observable<Aula> {
     return this.http.put<Aula>(`${this.api}/aulas/${id}`, a);

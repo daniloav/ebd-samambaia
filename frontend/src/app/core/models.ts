@@ -39,12 +39,22 @@ export interface Aula {
   tema?: string | null;
   classeId?: number;
   classeNome?: string;
+  professorId?: number | null;
+  professorNome?: string | null;
+  professorAlunoId?: number | null;
+}
+
+export interface Professor {
+  id: number;
+  nome: string;
+  alunoId?: number | null;
 }
 
 export interface AulaRequest {
   classeId?: number;
   data: string;
   tema?: string | null;
+  professorId?: number | null;
 }
 
 export interface PresencaItem {
@@ -54,6 +64,7 @@ export interface PresencaItem {
   trouxeBiblia: boolean;
   trouxeRevista: boolean;
   estudouLicao: boolean;
+  professorDaAula?: boolean;
 }
 
 export interface ChamadaResponse {

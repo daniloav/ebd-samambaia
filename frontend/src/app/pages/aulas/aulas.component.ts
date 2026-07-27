@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
-import { Aula, AulaRequest } from '../../core/models';
+import { Aula, AulaRequest, Professor } from '../../core/models';
 
 @Component({
   selector: 'app-aulas',
@@ -34,7 +34,9 @@ import { Aula, AulaRequest } from '../../core/models';
               @for (a of aulas(); track a.id) {
                 <tr>
                   <td>{{ a.data | date:'dd/MM/yyyy' }}</td>
-                  <td>{{ a.tema || '—' }}</td>
+                  <td>{{ a.tema || '—' }}
+                    @if (a.professorNome) { <br><small class="muted">👩‍🏫 Professor: {{ a.professorNome }}</small> }
+                  </td>
                   <td>
                     <a class="btn btn-dourado btn-sm" routerLink="/chamada">Fazer chamada</a>
                     <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
@@ -59,6 +61,12 @@ import { Aula, AulaRequest } from '../../core/models';
               <input type="date" [(ngModel)]="form.data" /></div>
             <div class="form-group"><label>Tema</label>
               <input type="text" [(ngModel)]="form.tema" maxlength="200" placeholder="Ex.: A graça de Deus" /></div>
+            <div class="form-group"><label>Professor da aula</label>
+              <select [(ngModel)]="form.professorId">
+                <option [ngValue]="null">— sem professor definido —</option>
+                @for (pr of professores(); track pr.id) { <option [ngValue]="pr.id">{{ pr.nome }}</option> }
+              </select>
+              <small class="muted">Quem deu a aula não é contabilizado na chamada nem no ranking desta aula.</small></div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="fechar()">Cancelar</button>
@@ -79,6 +87,7 @@ export class AulasComponent {
   private classeCtx = inject(ClasseContextService);
 
   aulas = signal<Aula[]>([]);
+  professores = signal<Professor[]>([]);
   carregando = signal(true);
   modalAberto = signal(false);
   salvando = signal(false);
@@ -86,10 +95,16 @@ export class AulasComponent {
   form: AulaRequest = this.vazio();
 
   constructor() {
-    effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true });
+    effect(() => { this.classeCtx.selecionadaId(); this.carregar(); this.carregarProfessores(); }, { allowSignalWrites: true });
   }
 
-  private vazio(): AulaRequest { return { data: '', tema: '' }; }
+  private vazio(): AulaRequest { return { data: '', tema: '', professorId: null }; }
+
+  private carregarProfessores(): void {
+    const cid = this.classeCtx.selecionadaId();
+    if (!cid) { this.professores.set([]); return; }
+    this.api.listarProfessores(cid).subscribe({ next: (l) => this.professores.set(l), error: () => this.professores.set([]) });
+  }
 
   carregar(): void {
     this.carregando.set(true);
@@ -102,7 +117,7 @@ export class AulasComponent {
   abrirNovo(): void { this.editando.set(null); this.form = this.vazio(); this.modalAberto.set(true); }
   editar(a: Aula): void {
     this.editando.set(a);
-    this.form = { data: a.data, tema: a.tema ?? '' };
+    this.form = { data: a.data, tema: a.tema ?? '', professorId: a.professorId ?? null };
     this.modalAberto.set(true);
   }
   fechar(): void { this.modalAberto.set(false); }
@@ -112,7 +127,7 @@ export class AulasComponent {
     const classeId = this.classeCtx.selecionadaId();
     if (!classeId) { this.toast.erro('Selecione uma turma no menu.'); return; }
     this.salvando.set(true);
-    const payload: AulaRequest = { classeId, data: this.form.data, tema: this.form.tema || null };
+    const payload: AulaRequest = { classeId, data: this.form.data, tema: this.form.tema || null, professorId: this.form.professorId ?? null };
     const alvo = this.editando();
     const req$ = alvo ? this.api.atualizarAula(alvo.id, payload) : this.api.criarAula(payload);
     req$.subscribe({

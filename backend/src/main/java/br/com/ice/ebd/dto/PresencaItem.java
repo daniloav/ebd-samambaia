@@ -7,5 +7,7 @@ public record PresencaItem(
         boolean presente,
         boolean trouxeBiblia,
         boolean trouxeRevista,
-        boolean estudouLicao) {
+        boolean estudouLicao,
+        /** true = este aluno é o professor desta aula (desabilitado; não conta). */
+        boolean professorDaAula) {
 }
