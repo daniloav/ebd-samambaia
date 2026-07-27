@@ -63,6 +63,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
             <div class="topo">
               <span class="num">{{ r.numero }}</span>
               <span class="badge" [class]="classe(r.status)">{{ rotulo(r.status) }}</span>
+              @if (r.possuiComprovante) { <span class="badge b-aprovada" title="Comprovante de transferência anexado — abra os Detalhes para ver">🧾 Comprovante</span> }
               <span class="val">{{ brl(r.valorSolicitado) }}</span>
             </div>
             <div class="meta">
@@ -314,7 +315,10 @@ export class RequisicoesComponent {
 
   abrirDetalhe(r: Requisicao): void {
     // carrega a versão com anexos
-    this.api.buscarRequisicao(r.id).subscribe({ next: (d) => this.detalhe.set(d), error: () => this.detalhe.set(r) });
+    this.api.buscarRequisicao(r.id).subscribe({
+      next: (d) => this.detalhe.set(d),
+      error: (e) => this.toast.erro(e?.error?.message || 'Não foi possível carregar os detalhes.'),
+    });
   }
   abrirAnexo(id: number): void {
     this.api.baixarAnexo(id).subscribe({
