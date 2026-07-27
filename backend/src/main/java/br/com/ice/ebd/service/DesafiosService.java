@@ -2,10 +2,14 @@ package br.com.ice.ebd.service;
 
 import br.com.ice.ebd.dto.DesafiosResponse;
 import br.com.ice.ebd.dto.RankingItem;
+import br.com.ice.ebd.dto.MeuRankingResponse;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.repository.AlunoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,6 +34,34 @@ public class DesafiosService {
 
     public DesafiosResponse gerar(Long classeId) {
         escopo.assertClasse(classeId);
+        return montar(classeId);
+    }
+
+    /** Ranking resumido do aluno logado (pódio + posição dele) — para o /api/me/ranking. */
+    @Transactional
+    public MeuRankingResponse resumoDoAluno() {
+        Long alunoId = escopo.alunoIdLogado();
+        if (alunoId == null) {
+            throw new ForbiddenException("Seu usuário não está vinculado a um aluno.");
+        }
+        Aluno aluno = alunoRepository.findById(alunoId);
+        if (aluno == null || aluno.getClasse() == null) {
+            throw new NotFoundException("Aluno não encontrado.");
+        }
+        List<RankingItem> geral = montar(aluno.getClasse().getId()).classificacaoGeral();
+        List<MeuRankingResponse.Item> podio = geral.stream().limit(3)
+                .map(r -> itemResumo(r, alunoId)).toList();
+        MeuRankingResponse.Item minha = geral.stream().filter(r -> alunoId.equals(r.alunoId()))
+                .findFirst().map(r -> itemResumo(r, alunoId)).orElse(null);
+        return new MeuRankingResponse(aluno.getClasse().getNome(), geral.size(), podio, minha);
+    }
+
+    private static MeuRankingResponse.Item itemResumo(RankingItem r, Long meuId) {
+        return new MeuRankingResponse.Item(r.posicao(), r.alunoId(), r.nome(), r.valor(),
+                r.detalhe(), meuId.equals(r.alunoId()));
+    }
+
+    private DesafiosResponse montar(Long classeId) {
         long cid = classeId != null ? classeId : -1L;
         Map<Long, String> nomes = new LinkedHashMap<>();
         var alunos = classeId != null ? alunoRepository.listarAtivosPorClasse(classeId)
