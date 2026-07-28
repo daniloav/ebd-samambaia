@@ -220,11 +220,12 @@ export class ApiService {
   cancelarRequisicao(id: number): Observable<Requisicao> {
     return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/cancelar`, {});
   }
-  finalizarRequisicao(id: number, valorGasto: number | null, observacao: string | null, arquivos: File[]): Observable<Requisicao> {
+  finalizarRequisicao(id: number, valorGasto: number | null, observacao: string | null, arquivos: File[], comprovanteTroco?: File | null): Observable<Requisicao> {
     const fd = new FormData();
     if (valorGasto != null) { fd.append('valorGasto', String(valorGasto)); }
     if (observacao) { fd.append('observacao', observacao); }
     arquivos.forEach((f) => fd.append('anexos', f));
+    if (comprovanteTroco) { fd.append('comprovanteTroco', comprovanteTroco); }
     return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/finalizar`, fd);
   }
   baixarAnexo(id: number): Observable<Blob> {

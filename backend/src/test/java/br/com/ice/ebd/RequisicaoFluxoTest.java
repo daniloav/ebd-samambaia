@@ -48,12 +48,12 @@ class RequisicaoFluxoTest {
 
         // finalizar sem anexo -> 400
         WebApplicationException ex = assertThrows(WebApplicationException.class,
-                () -> service.finalizar(aberta.id(), new BigDecimal("240.00"), "Comprei", List.of()));
+                () -> service.finalizar(aberta.id(), new BigDecimal("250.00"), "Comprei", List.of(), null));
         assertEquals(400, ex.getResponse().getStatus());
 
-        // finalizar com nota -> FINALIZADA
+        // finalizar com nota, gastando todo o aprovado (sem troco) -> FINALIZADA
         var anexo = new RequisicaoService.AnexoData("nota.pdf", "application/pdf", "conteudo".getBytes(), CategoriaAnexo.NOTA_FISCAL);
-        RequisicaoResponse fim = service.finalizar(aberta.id(), new BigDecimal("240.00"), "Comprei", List.of(anexo));
+        RequisicaoResponse fim = service.finalizar(aberta.id(), new BigDecimal("250.00"), "Comprei", List.of(anexo), null);
         assertEquals("FINALIZADA", fim.status());
         assertEquals(1, fim.anexos().size());
     }
@@ -108,5 +108,30 @@ class RequisicaoFluxoTest {
         RequisicaoResponse naLista = service.listar(null).stream()
                 .filter(x -> x.id().equals(aberta.id())).findFirst().orElseThrow();
         assertTrue(naLista.possuiComprovante(), "a lista deve marcar possuiComprovante");
+    }
+
+    @Test
+    @TestSecurity(user = "lider.troco", roles = "ADMIN")
+    @TestTransaction
+    void finalizarComTrocoExigeComprovanteDeDevolucao() {
+        fx.usuario("lider.troco", Role.ADMIN, "lider.troco@ebd.test");
+        RequisicaoResponse aberta = service.criar(new RequisicaoRequest(
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("300.00"), null, "DINHEIRO", null, null));
+        service.aprovar(aberta.id(), new BigDecimal("250.00"), "ok", null); // aprovado 250
+
+        var nota = new RequisicaoService.AnexoData("nota.pdf", "application/pdf", "n".getBytes(), CategoriaAnexo.NOTA_FISCAL);
+        // gastou 200 -> troco de 50, sem comprovante do troco -> 400
+        WebApplicationException ex = assertThrows(WebApplicationException.class,
+                () -> service.finalizar(aberta.id(), new BigDecimal("200.00"), "Comprei", List.of(nota), null));
+        assertEquals(400, ex.getResponse().getStatus());
+        assertTrue(ex.getMessage().contains("troco"), "erro deve mencionar o troco");
+
+        // agora com o comprovante da devolução do troco -> FINALIZADA (2 anexos)
+        var troco = new RequisicaoService.AnexoData("troco.pdf", "application/pdf", "t".getBytes(), CategoriaAnexo.TROCO);
+        RequisicaoResponse fim = service.finalizar(aberta.id(), new BigDecimal("200.00"), "Comprei", List.of(nota), troco);
+        assertEquals("FINALIZADA", fim.status());
+        assertEquals(2, fim.anexos().size());
+        assertTrue(fim.anexos().stream().anyMatch(a -> a.categoria().equals("TROCO")),
+                "deve guardar o comprovante do troco");
     }
 }

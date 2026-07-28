@@ -450,7 +450,7 @@ export interface MeuRanking {
 export type StatusRequisicao = 'ABERTA' | 'APROVADA' | 'NEGADA' | 'FINALIZADA' | 'CANCELADA';
 export type FormaRepasse = 'DINHEIRO' | 'PIX';
 export type TipoChavePix = 'CPF' | 'EMAIL' | 'TELEFONE';
-export type CategoriaAnexo = 'NOTA_FISCAL' | 'COMPROVANTE';
+export type CategoriaAnexo = 'NOTA_FISCAL' | 'COMPROVANTE' | 'TROCO';
 export interface RequisicaoAnexoResumo { id: number; nome?: string | null; tipo: string; categoria: CategoriaAnexo; }
 export interface Requisicao {
   id: number;
