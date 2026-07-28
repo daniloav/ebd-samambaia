@@ -1,7 +1,7 @@
 # Consolidar contas e excluir usuários com requisições (runbook — produção)
 
 Dois ajustes de **dados de produção** (o Claude não executa em prod — você roda). Rode no
-Postgres da `ebd-db` (ex.: `docker compose exec db psql -U ebd -d ebd`). **Faça um backup antes**
+Postgres da `ebd-db` (ex.: `docker exec -i ebd-postgres psql -U ebd -d ebd`). **Faça um backup antes**
 (o CD já faz backup no deploy; para rodar SQL avulso, gere um `pg_dump` antes).
 
 O SQL abaixo foi **validado no ambiente de dev** com um par de teste equivalente.
