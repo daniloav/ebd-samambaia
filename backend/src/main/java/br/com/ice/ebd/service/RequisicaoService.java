@@ -116,15 +116,26 @@ public class RequisicaoService {
     }
 
     @Transactional
-    public RequisicaoResponse finalizar(Long id, BigDecimal valorGasto, String observacao, List<AnexoData> anexos) {
+    public RequisicaoResponse finalizar(Long id, BigDecimal valorGasto, String observacao,
+            List<AnexoData> anexos, AnexoData comprovanteTroco) {
         RequisicaoTesouraria r = obter(id);
         assertDonoOuAdmin(r);
         exigirStatus(r, StatusRequisicao.APROVADA, "Só é possível finalizar uma requisição aprovada.");
         if (anexos == null || anexos.isEmpty()) {
             throw bad("Anexe ao menos a nota fiscal para finalizar.");
         }
+        // Gastou menos que o aprovado? O troco volta ao PIX da igreja e o comprovante
+        // dessa devolução é obrigatório para finalizar.
+        BigDecimal troco = trocoDevido(r, valorGasto);
+        if (troco.signum() > 0 && comprovanteTroco == null) {
+            throw bad("Há troco de R$ " + troco.toPlainString().replace('.', ',')
+                    + " a devolver — anexe o comprovante da transferência do troco ao PIX da igreja.");
+        }
         for (AnexoData ad : anexos) {
             persistAnexo(r, ad);
+        }
+        if (comprovanteTroco != null) {
+            persistAnexo(r, comprovanteTroco);
         }
         r.setValorGasto(valorGasto);
         r.setObservacaoFinal(trunc(observacao));
@@ -132,6 +143,16 @@ public class RequisicaoService {
         r.setFinalizadoEm(LocalDateTime.now());
         notificacao.avisarRequisicaoFinalizada(r, usuarioRepository.emailsDeTesoureirosAtivos());
         return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(id));
+    }
+
+    /** Troco a devolver: valor aprovado − valor gasto (0 se gastou tudo, mais, ou não informou). */
+    private BigDecimal trocoDevido(RequisicaoTesouraria r, BigDecimal valorGasto) {
+        if (valorGasto == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal referencia = r.getValorAprovado() != null ? r.getValorAprovado() : r.getValorSolicitado();
+        BigDecimal troco = referencia.subtract(valorGasto).setScale(2, java.math.RoundingMode.HALF_UP);
+        return troco.signum() > 0 ? troco : BigDecimal.ZERO;
     }
 
     @Transactional

@@ -91,7 +91,8 @@ public class RequisicaoResource {
             @PathParam("id") Long id,
             @RestForm String valorGasto,
             @RestForm String observacao,
-            @RestForm("anexos") List<FileUpload> anexos) throws IOException {
+            @RestForm("anexos") List<FileUpload> anexos,
+            @RestForm("comprovanteTroco") FileUpload comprovanteTroco) throws IOException {
         BigDecimal gasto = valorGasto != null && !valorGasto.isBlank() && !"null".equalsIgnoreCase(valorGasto)
                 ? new BigDecimal(valorGasto.trim().replace(",", ".")) : null;
         List<RequisicaoService.AnexoData> arquivos = new ArrayList<>();
@@ -105,7 +106,12 @@ public class RequisicaoResource {
                         CategoriaAnexo.NOTA_FISCAL));
             }
         }
-        return service.finalizar(id, gasto, observacao, arquivos);
+        RequisicaoService.AnexoData troco = null;
+        if (comprovanteTroco != null && comprovanteTroco.fileName() != null) {
+            troco = new RequisicaoService.AnexoData(comprovanteTroco.fileName(), comprovanteTroco.contentType(),
+                    Files.readAllBytes(comprovanteTroco.uploadedFile()), CategoriaAnexo.TROCO);
+        }
+        return service.finalizar(id, gasto, observacao, arquivos, troco);
     }
 
     @POST
