@@ -18,6 +18,17 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
+  // ---- Recuperação de senha (públicos, pré-login) ----
+  esqueciSenha(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.api}/auth/esqueci-senha`, { email });
+  }
+  validarTokenReset(token: string): Observable<{ username: string }> {
+    return this.http.get<{ username: string }>(`${this.api}/auth/redefinir/${encodeURIComponent(token)}`);
+  }
+  redefinirSenha(token: string, novaSenha: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/auth/redefinir`, { token, novaSenha });
+  }
+
   // ---------- Alunos ----------
   listarAlunos(apenasAtivos = false, classeId?: number | null): Observable<Aluno[]> {
     let params = new HttpParams().set('apenasAtivos', apenasAtivos);

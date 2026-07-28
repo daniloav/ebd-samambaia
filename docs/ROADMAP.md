@@ -57,8 +57,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       "Sua sessão expirou, entre novamente" (o interceptor já centraliza isso).
 - [x] **P2 · Substituir `confirm()` nativo** — `ConfirmService` + `ConfirmDialogComponent` (modal no padrão do app) substituem os 8 `confirm()` nativos.
 - [x] **P2 · Busca/filtro na lista de alunos** — campo de busca por nome (acento-insensível) na tela de alunos.
-- [ ] **P3 · "Esqueci minha senha"** — fluxo de reset por e-mail (o SMTP já existe). Enquanto não houver,
-      o caminho é pedir ao admin.
+- [x] **P3 · "Esqueci minha senha/usuário"** — link no login → informar o e-mail → recebe o **usuário** + um **link com token** (uso único, expira em 60 min) para criar nova senha. Resposta genérica (anti-enumeração). Migration **V21** (`reset_senha`), endpoints públicos em `/api/auth` e telas `/recuperar` e `/redefinir`.
 - [x] **P3 · Estados vazios orientados** — `VazioComponent` (ícone + título + ação) aplicado à lista de alunos; reutilizável nas demais.
 
 ### 🎨 Design
@@ -115,8 +114,7 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [x] **Login editável + validações** — o login pode ser trocado no cadastro do Aluno e na tela de
       Usuários, com regras num único ponto (`LoginService`): normaliza (minúsculas), formato
       `[a-z0-9]`+`. - _` (3–60, sem espaço/acento) e unicidade.
-- [ ] **"Esqueci minha senha" / reset do aluno** — reset por e-mail (SMTP já existe) ou botão do professor
-      para voltar o aluno à senha padrão (útil agora que todo aluno tem login).
+- [x] **"Esqueci minha senha" / reset do aluno** — feito via link+token (ver item P3 em Segurança). Serve para qualquer usuário com e-mail cadastrado, inclusive o aluno.
 - [ ] **Observações por aula/aluno** (campo de texto livre na chamada).
 
 ## 🟢 Qualidade e robustez
