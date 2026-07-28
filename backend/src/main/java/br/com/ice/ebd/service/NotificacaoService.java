@@ -295,6 +295,39 @@ public class NotificacaoService {
         } catch (Exception e) { LOG.warnf("Falha ao cobrar nota de %s: %s", u.getEmail(), e.getMessage()); return false; }
     }
 
+    /**
+     * E-mail de recuperação de acesso (transacional): usuário + link de redefinição.
+     * Enviado SEMPRE (não depende do toggle de notificações — é ação de segurança do usuário).
+     */
+    public void enviarRecuperacaoSenha(String email,
+                                       java.util.List<RecuperacaoSenhaService.RecuperacaoItem> itens,
+                                       long validadeMinutos) {
+        StringBuilder c = new StringBuilder();
+        c.append("<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Recuperar o seu acesso</h1>");
+        c.append("<p style=\"margin:0 0 14px;\">Recebemos um pedido para recuperar o seu acesso à Escola B\u00edblica. "
+                + "Se n\u00e3o foi voc\u00ea, pode ignorar este e-mail com seguran\u00e7a.</p>");
+        for (RecuperacaoSenhaService.RecuperacaoItem it : itens) {
+            String link = SITE + "/redefinir?token=" + it.token();
+            c.append("<div style=\"border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin:0 0 12px;\">");
+            c.append("<p style=\"margin:0 0 10px;\">Seu usu\u00e1rio: <b>").append(esc(it.username())).append("</b></p>");
+            c.append("<a href=\"").append(link).append("\" style=\"display:inline-block;background:#1b3a5b;color:#fff;"
+                    + "text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:bold;\">Redefinir a senha</a>");
+            c.append("</div>");
+        }
+        c.append("<p style=\"margin:0;font-size:12px;color:#8a94a6;\">O link expira em ")
+         .append(validadeMinutos).append(" minutos e s\u00f3 pode ser usado uma vez.</p>");
+
+        StringBuilder txt = new StringBuilder("Recuperar acesso \u00e0 EBD ICE Samambaia.\n\n");
+        for (RecuperacaoSenhaService.RecuperacaoItem it : itens) {
+            txt.append("Usu\u00e1rio: ").append(it.username())
+               .append("\nRedefinir: ").append(SITE).append("/redefinir?token=").append(it.token()).append("\n\n");
+        }
+        txt.append("O link expira em ").append(validadeMinutos).append(" minutos (uso \u00fanico).");
+
+        dispatcher.enfileirar(Mail.withHtml(email, "Recuperar acesso \u2014 EBD ICE Samambaia",
+                shell("Acesso", c.toString())).setText(txt.toString()));
+    }
+
     private String shell(String turmaLabel, String corpo) {
         return ""
                 + "<!doctype html><html lang=\"pt-br\"><head><meta charset=\"utf-8\">"
