@@ -170,6 +170,16 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               <input type="file" multiple accept=".pdf,image/*" (change)="onFiles($event)" />
               @if (arquivos.length) { <small class="muted">{{ arquivos.length }} arquivo(s) selecionado(s)</small> }
             </div>
+            @if (trocoFinalizar(r) > 0) {
+              <div class="ff" style="border-top:1px solid var(--cinza-borda);padding-top:.7rem">
+                <label style="color:var(--titulo);font-weight:700">💵 Troco de {{ brl(trocoFinalizar(r)) }} a devolver ao PIX da igreja</label>
+                <small class="muted">Você gastou menos que o aprovado ({{ brl(r.valorAprovado) }}). Transfira o troco ao PIX da igreja e anexe o comprovante da transferência.</small>
+                <div style="margin-top:.4rem"><label>Comprovante do troco * — PDF ou imagem</label>
+                  <input type="file" accept=".pdf,image/*" (change)="onComprovanteTroco($event)" />
+                  @if (comprovanteTroco) { <small class="muted">{{ comprovanteTroco.name }}</small> }
+                </div>
+              </div>
+            }
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="finalizar.set(null)">Cancelar</button>
@@ -209,7 +219,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               }
               @if (r.anexos.length) {
                 <dt>Anexos</dt>
-                <dd>@for (a of r.anexos; track a.id) { <button class="anexo" (click)="abrirAnexo(a.id, a.nome)">{{ a.categoria === 'COMPROVANTE' ? '🧾' : '📎' }} {{ a.categoria === 'COMPROVANTE' ? 'Comprovante' : 'Nota fiscal' }}: {{ a.nome || 'anexo' }}</button> }</dd>
+                <dd>@for (a of r.anexos; track a.id) { <button class="anexo" (click)="abrirAnexo(a.id, a.nome)">{{ iconeAnexo(a.categoria) }} {{ rotuloAnexo(a.categoria) }}: {{ a.nome || 'anexo' }}</button> }</dd>
               }
             </dl>
           </div>
@@ -243,6 +253,7 @@ export class RequisicoesComponent {
   valorGasto: number | null = null;
   obsFinal = '';
   arquivos: File[] = [];
+  comprovanteTroco: File | null = null;
   finalizando = signal(false);
 
   detalhe = signal<Requisicao | null>(null);
@@ -319,12 +330,22 @@ export class RequisicoesComponent {
     });
   }
 
-  abrirFinalizar(r: Requisicao): void { this.valorGasto = r.valorAprovado ?? r.valorSolicitado; this.obsFinal = ''; this.arquivos = []; this.finalizar.set(r); }
+  abrirFinalizar(r: Requisicao): void { this.valorGasto = r.valorAprovado ?? r.valorSolicitado; this.obsFinal = ''; this.arquivos = []; this.comprovanteTroco = null; this.finalizar.set(r); }
   onFiles(e: Event): void { this.arquivos = Array.from((e.target as HTMLInputElement).files ?? []); }
+  onComprovanteTroco(e: Event): void { this.comprovanteTroco = (e.target as HTMLInputElement).files?.[0] ?? null; }
+  /** Troco a devolver (valor aprovado − valor gasto), arredondado; 0 se gastou tudo ou mais. */
+  trocoFinalizar(r: Requisicao): number {
+    const ref = r.valorAprovado ?? r.valorSolicitado ?? 0;
+    const troco = Math.round((ref - (this.valorGasto ?? 0)) * 100) / 100;
+    return troco > 0 ? troco : 0;
+  }
   enviarFinalizacao(r: Requisicao): void {
     if (!this.arquivos.length) { this.toast.erro('Anexe ao menos a nota fiscal.'); return; }
+    if (this.trocoFinalizar(r) > 0 && !this.comprovanteTroco) {
+      this.toast.erro('Há troco a devolver — anexe o comprovante da transferência do troco ao PIX da igreja.'); return;
+    }
     this.finalizando.set(true);
-    this.api.finalizarRequisicao(r.id, this.valorGasto, this.obsFinal || null, this.arquivos).subscribe({
+    this.api.finalizarRequisicao(r.id, this.valorGasto, this.obsFinal || null, this.arquivos, this.comprovanteTroco).subscribe({
       next: () => { this.toast.sucesso('Prestação de contas concluída!'); this.finalizando.set(false); this.finalizar.set(null); this.carregar(); },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao finalizar.'); this.finalizando.set(false); },
     });
@@ -365,6 +386,8 @@ export class RequisicoesComponent {
     });
   }
 
+  iconeAnexo(c: string): string { return c === 'COMPROVANTE' ? '🧾' : c === 'TROCO' ? '💵' : '📎'; }
+  rotuloAnexo(c: string): string { return c === 'COMPROVANTE' ? 'Comprovante' : c === 'TROCO' ? 'Comprovante do troco' : 'Nota fiscal'; }
   brl(v: number | null | undefined): string {
     if (v == null) { return '—'; }
     return 'R$ ' + v.toFixed(2).replace('.', ',');
