@@ -6,6 +6,8 @@ Postgres da `ebd-db` (ex.: `docker compose exec db psql -U ebd -d ebd`). **Faça
 
 O SQL abaixo foi **validado no ambiente de dev** com um par de teste equivalente.
 
+> **Atalho:** em vez de colar o SQL à mão, você pode rodar o script [`scripts/consolidar-contas.sh`](../scripts/consolidar-contas.sh) — ele faz **dry-run por padrão** (mostra o estado atual e o SQL, sem alterar nada) e só aplica com `--executar`; a exclusão das requisições do `lid` (destrutiva) exige `--apagar-requisicoes-lid` + confirmação digitada.
+
 ---
 
 ## 1. Consolidar contas duplicadas (mover as infos de aluno `x.sobrenome` → `x`)
