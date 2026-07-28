@@ -43,20 +43,53 @@
   </div>
 
   <script>
-    // 1) Captura o primeiro erro de script (ajuda a diagnosticar navegador antigo).
     (function () {
       var primeiroErro = '';
+
+      // Auto-recuperação: se um asset com hash sumiu (um deploy trocou os nomes
+      // dos bundles) o app não sobe. Aqui limpamos cache + service worker e
+      // recarregamos UMA vez por sessão (guarda anti-loop), sem o usuário notar.
+      function autoRecuperar() {
+        try {
+          if (sessionStorage.getItem('ebd-recuperado')) { return; } // já tentou nesta sessão
+          sessionStorage.setItem('ebd-recuperado', '1');
+        } catch (e) { /* sessionStorage indisponível: segue mesmo assim */ }
+        var tarefas = [];
+        if (window.caches && caches.keys) {
+          tarefas.push(caches.keys().then(function (ks) {
+            return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+          }).catch(function () {}));
+        }
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+          tarefas.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+            return Promise.all(rs.map(function (r) { return r.unregister(); }));
+          }).catch(function () {}));
+        }
+        Promise.all(tarefas).then(function () { location.reload(); });
+      }
+
+      // 1) Captura erros. Falha ao CARREGAR um <script>/<link> do próprio site
+      //    (ex.: bundle com hash antigo que virou 404) dispara a auto-recuperação.
       window.addEventListener('error', function (e) {
+        var alvo = e && e.target;
+        if (alvo && (alvo.tagName === 'SCRIPT' || alvo.tagName === 'LINK')) {
+          var src = alvo.src || alvo.href || '';
+          if (src.indexOf(location.origin) === 0) { autoRecuperar(); return; }
+        }
         if (!primeiroErro) { primeiroErro = (e && e.message) ? e.message : 'erro de script'; }
       }, true);
-      // 2) Se em 12s o app não montou (o placeholder ainda existe), mostra a mensagem.
+
+      // 2) Se em 12s o app não montou (o placeholder ainda existe): tenta uma
+      //    auto-recuperação; se já tentou nesta sessão, mostra a mensagem.
       setTimeout(function () {
-        if (document.getElementById('ebd-carregando')) {
-          var s = document.getElementById('ebd-sem-suporte');
-          if (s) { s.style.display = 'flex'; }
-          var er = document.getElementById('ebd-erro');
-          if (er && primeiroErro) { er.textContent = 'Detalhe técnico: ' + primeiroErro; }
-        }
+        if (!document.getElementById('ebd-carregando')) { return; } // app subiu, ok
+        var jaTentou = false;
+        try { jaTentou = !!sessionStorage.getItem('ebd-recuperado'); } catch (e) {}
+        if (!jaTentou) { autoRecuperar(); return; }
+        var s = document.getElementById('ebd-sem-suporte');
+        if (s) { s.style.display = 'flex'; }
+        var er = document.getElementById('ebd-erro');
+        if (er && primeiroErro) { er.textContent = 'Detalhe técnico: ' + primeiroErro; }
       }, 12000);
     })();
 

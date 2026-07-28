@@ -12,8 +12,12 @@
 #   ./consolidar-contas.sh --executar               # consolida 4 pares + exclui 'tes'
 #   ./consolidar-contas.sh --executar --apagar-requisicoes-lid   # + apaga reqs do 'lid' e exclui 'lid'
 #
-# Conexao: por padrao usa o compose da ebd-db. Sobrescreva com EBD_PSQL, ex.:
-#   EBD_PSQL='psql "postgres://ebd:ebd@localhost:5432/ebd"' ./consolidar-contas.sh
+# Conexao (auto-detectada, nesta ordem):
+#   1) EBD_PSQL, se voce definir, vence sempre. Ex.:
+#        EBD_PSQL='psql "postgres://ebd:ebd@localhost:5432/ebd"' ./consolidar-contas.sh
+#   2) docker-compose.db.yml no diretorio atual + docker instalado -> compose da ebd-db
+#      (caso de PRODUCAO: rode dentro de ~/ebd-db na VM).
+#   3) psql nativo em postgres://ebd:ebd@localhost:5432/ebd (dev local neste Mac).
 #
 # ⚠️ FACA BACKUP ANTES (pg_dump). Veja docs/consolidacao-contas.md.
 
@@ -30,8 +34,19 @@ for arg in "$@"; do
   esac
 done
 
-# Comando psql. Default: compose da ebd-db (rode em ~/ebd-db). ON_ERROR_STOP no psql_run.
-EBD_PSQL=${EBD_PSQL:-"docker compose -f docker-compose.db.yml exec -T db psql -U ebd -d ebd"}
+# Comando psql, auto-detectado (veja o cabecalho). EBD_PSQL sobrescreve tudo.
+# ON_ERROR_STOP fica no psql_run.
+if [[ -z "${EBD_PSQL:-}" ]]; then
+  if [[ -f docker-compose.db.yml ]] && command -v docker >/dev/null 2>&1; then
+    EBD_PSQL='docker compose -f docker-compose.db.yml exec -T db psql -U ebd -d ebd'
+  elif command -v psql >/dev/null 2>&1; then
+    EBD_PSQL='psql postgres://ebd:ebd@localhost:5432/ebd'
+  else
+    echo "erro: sem docker-compose.db.yml no diretorio atual e sem psql instalado." >&2
+    echo "      Rode dentro de ~/ebd-db (VM) ou defina EBD_PSQL (veja o cabecalho)." >&2
+    exit 1
+  fi
+fi
 
 # Executa SQL vindo do stdin, abortando em qualquer erro.
 psql_run() { $EBD_PSQL -v ON_ERROR_STOP=1 -q "$@"; }
