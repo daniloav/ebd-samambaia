@@ -116,6 +116,8 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       `[a-z0-9]`+`. - _` (3–60, sem espaço/acento) e unicidade.
 - [x] **"Esqueci minha senha" / reset do aluno** — feito via link+token (ver item P3 em Segurança). Serve para qualquer usuário com e-mail cadastrado, inclusive o aluno.
 - [ ] **Observações por aula/aluno** (campo de texto livre na chamada).
+- [ ] **Copiar a chave PIX na requisição** — na tela da requisição já aberta, o campo `pix_chave` deve ter um botão **"copiar"** (ícone) que joga a chave no clipboard, para o tesoureiro colar direto no app do banco sem digitar. Só front (Clipboard API + toast de confirmação); sem backend.
+- [ ] **Falta justificada do aluno** — o aluno poderá **justificar suas faltas** (a partir da própria área do aluno); uma falta justificada vale **metade dos pontos de uma presença** no ranking (peso 0,5 vs. 1,0 da presença e 0 da falta não justificada). Precisa de: migration (marcar a presença/ausência como justificada + motivo, provavelmente uma coluna em `presenca` ou tabela de justificativas), fluxo de pedido/aprovação (aluno solicita → professor/admin valida? decidir), ajuste do `DesafiosService` (ranking "menos faltou" passa a somar 0,5 por falta justificada) e telas (aluno justifica, gestão revisa).
 
 ## 🟢 Qualidade e robustez
 
