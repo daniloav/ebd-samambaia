@@ -84,7 +84,8 @@ claude-trabalho/
     ├── deploy-oracle.md           ← passo a passo de deploy na VM
     ├── integracao-tesouraria.md   ← runbook: acesso read-only externo à tesouraria (view V17 + túnel SSH)
     ├── unificacao-papeis.md       ← papéis como capacidades (flags) + consolidação de contas duplicadas
-    └── self-hosted-runner.md      ← runner self-hosted (Docker numa VM OCI) p/ economizar minutos do Actions
+    ├── self-hosted-runner.md      ← runner self-hosted (Docker numa VM OCI) p/ economizar minutos do Actions
+    └── consolidacao-contas.md     ← runbook: consolidar contas duplicadas + excluir usuário com requisições (SQL prod)
 ```
 
 ## 4. Como rodar (dev)
