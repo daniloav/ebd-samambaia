@@ -297,8 +297,9 @@ export class ChamadaComponent {
       trazidoPorAlunoId: this.trazidoPorValido(),
     };
     this.api.adicionarVisitante(this.aulaSelecionadaId, payload).subscribe({
-      next: () => {
+      next: (r) => {
         this.toast.sucesso('Visitante cadastrado! Boas-vindas e aviso enviados.');
+        if (r?.alerta) { this.toast.sucesso(r.alerta); }
         this.novoVisitante = this.visitanteVazio();
         this.salvandoVisitante.set(false);
         this.carregarVisitantes(this.aulaSelecionadaId!);
@@ -329,6 +330,9 @@ export class ChamadaComponent {
       next: (r) => {
         const n = r?.emailsEnviados ?? 0;
         this.toast.sucesso(n > 0 ? `Chamada salva! ${n} e-mail(s) de notificação enviado(s).` : 'Chamada salva com sucesso!');
+        (r?.alertas ?? []).forEach((msg) => this.toast.sucesso(msg));
+        // Recarrega a lista: um aluno pode ter sido inativado (some da chamada).
+        if ((r?.alertas ?? []).length && this.aulaSelecionadaId) { this.aoTrocarAula(this.aulaSelecionadaId); }
         this.salvando.set(false);
       },
       error: () => { this.toast.erro('Erro ao salvar a chamada.'); this.salvando.set(false); },

@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @ApplicationScoped
@@ -28,9 +29,9 @@ public class DesafiosService {
     @Inject AlunoRepository alunoRepository;
 
     /** Métricas de presença acumuladas por aluno. */
-    private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante) {}
+    private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante, long justificadas) {}
 
-    private static final MetricasPresenca ZERO = new MetricasPresenca(0, 0, 0, 0, 0);
+    private static final MetricasPresenca ZERO = new MetricasPresenca(0, 0, 0, 0, 0, 0);
 
     public DesafiosResponse gerar(Long classeId, Integer ano, Integer trimestre) {
         escopo.assertClasse(classeId);
@@ -81,28 +82,31 @@ public class DesafiosService {
         Map<Long, Double> medias = carregarMediasNotas(cid, ini, fim);
 
         List<RankingItem> menosFaltou = ranking(nomes, presenca,
-                m -> (double) m.presencas(),
-                valor -> String.format("%d presença(s) de %d aula(s)", valor.longValue(), totalAulas),
+                m -> arred1(m.presencas() + 0.3 * m.justificadas()),
+                (valor, m) -> m.justificadas() > 0
+                        ? String.format("%d presença(s) + %d falta(s) justificada(s) de %d aula(s)",
+                                m.presencas(), m.justificadas(), totalAulas)
+                        : String.format("%d presença(s) de %d aula(s)", m.presencas(), totalAulas),
                 false);
 
         List<RankingItem> maisBiblia = ranking(nomes, presenca,
                 m -> (double) m.biblia(),
-                v -> String.format("trouxe a Bíblia %d vez(es)", v.longValue()),
+                (v, m) -> String.format("trouxe a Bíblia %d vez(es)", v.longValue()),
                 true);
 
         List<RankingItem> maisRevista = ranking(nomes, presenca,
                 m -> (double) m.revista(),
-                v -> String.format("trouxe a revista %d vez(es)", v.longValue()),
+                (v, m) -> String.format("trouxe a revista %d vez(es)", v.longValue()),
                 true);
 
         List<RankingItem> maisLicao = ranking(nomes, presenca,
                 m -> (double) m.licao(),
-                v -> String.format("estudou a lição %d vez(es)", v.longValue()),
+                (v, m) -> String.format("estudou a lição %d vez(es)", v.longValue()),
                 true);
 
         List<RankingItem> maisVisitante = ranking(nomes, presenca,
                 m -> (double) m.visitante(),
-                v -> String.format("trouxe %d visitante(s)", v.longValue()),
+                (v, m) -> String.format("trouxe %d visitante(s)", v.longValue()),
                 true);
 
         List<RankingItem> melhoresNotas = rankingNotas(nomes, medias, presenca);
@@ -135,7 +139,8 @@ public class DesafiosService {
                         "sum(case when p.presente = true then 1 else 0 end), " +
                         "sum(case when p.trouxeBiblia = true then 1 else 0 end), " +
                         "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
-                        "sum(case when p.estudouLicao = true then 1 else 0 end) " +
+                        "sum(case when p.estudouLicao = true then 1 else 0 end), " +
+                        "sum(case when p.presente = false and p.justificada = true then 1 else 0 end) " +
                         "from Presenca p join p.aula aula "
                         + "left join aula.professor prof left join prof.aluno profAluno "
                         + "where (:cid = -1 or aula.classe.id = :cid) and aula.data <= :hoje "
@@ -151,7 +156,7 @@ public class DesafiosService {
             Long alunoId = (Long) l[0];
             mapa.put(alunoId, new MetricasPresenca(
                     toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]),
-                    visitantes.getOrDefault(alunoId, 0L)));
+                    visitantes.getOrDefault(alunoId, 0L), toLong(l[5])));
         }
         return mapa;
     }
@@ -198,7 +203,7 @@ public class DesafiosService {
     private List<RankingItem> ranking(Map<Long, String> nomes,
                                       Map<Long, MetricasPresenca> presenca,
                                       Function<MetricasPresenca, Double> extrator,
-                                      Function<Double, String> detalhe,
+                                      BiFunction<Double, MetricasPresenca, String> detalhe,
                                       boolean ocultarZeros) {
         record Par(Long id, double valor, MetricasPresenca m) {}
         Comparator<Par> cmp = Comparator
@@ -223,7 +228,7 @@ public class DesafiosService {
                 pos = i + 1;
             }
             Par p = pares.get(i);
-            out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.valor(), detalhe.apply(p.valor())));
+            out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.valor(), detalhe.apply(p.valor(), p.m())));
         }
         return out;
     }
@@ -291,7 +296,7 @@ public class DesafiosService {
         for (Map.Entry<Long, String> e : nomes.entrySet()) {
             MetricasPresenca m = presenca.getOrDefault(e.getKey(), ZERO);
             double notas = notasPontos.getOrDefault(e.getKey(), 0.0);
-            double total = m.presencas() + m.biblia() + m.revista() + m.licao()
+            double total = m.presencas() + 0.3 * m.justificadas() + m.biblia() + m.revista() + m.licao()
                     + 2.0 * m.visitante() + notas;
             total = Math.round(total * 10.0) / 10.0;
             pares.add(new Par(e.getKey(), total, m.presencas(), m.visitante(), Math.round(notas * 10.0) / 10.0, m));
@@ -305,8 +310,10 @@ public class DesafiosService {
                 pos = i + 1;
             }
             Par p = pares.get(i);
-            String det = String.format("%d presença(s) · %d visitante(s) · %.0f pts de notas",
-                    p.pres(), p.vis(), p.notas());
+            String just = p.m().justificadas() > 0
+                    ? " (+" + p.m().justificadas() + " just.)" : "";
+            String det = String.format("%d presença(s)%s · %d visitante(s) · %.0f pts de notas",
+                    p.pres(), just, p.vis(), p.notas());
             out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.total(), det));
         }
         return out;
@@ -314,5 +321,10 @@ public class DesafiosService {
 
     private static long toLong(Object o) {
         return o == null ? 0L : ((Number) o).longValue();
+    }
+
+    /** Arredonda para 1 casa decimal (usado no valor do ranking com peso fracionário). */
+    private static double arred1(double v) {
+        return Math.round(v * 10.0) / 10.0;
     }
 }

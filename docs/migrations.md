@@ -23,6 +23,7 @@ O schema do banco é **versionado e gerenciado pelo Flyway**. As migrations fica
 | **V18** | `V18__papel_tesouraria_lider_como_flags.sql` | Tesoureiro/líder viram flags `eh_tesoureiro`/`eh_lider`; CHECK de role volta a ADMIN/PROFESSOR/ALUNO. |
 | **V19** | `V19__papeis_como_flags.sql` | Achata os papéis: flags `eh_admin`/`eh_professor`/`eh_aluno` (backfill 1:1) e **remove a coluna `role`**. Ver [`unificacao-papeis.md`](unificacao-papeis.md). |
 | **V20** | `V20__requisicao_forma_repasse.sql` | Requisição ganha `forma_repasse` (dinheiro/pix) + `pix_tipo`/`pix_chave`; anexo ganha `categoria` (nota fiscal x comprovante); view de integração atualizada (append-only) com forma/pix + `possui_comprovante`. |
+| **V24** | `V24__falta_justificada.sql` | Falta justificada: `justificada`/`justificativa_motivo`/`justificada_em` em `presenca`. O aluno justifica a própria falta (vale 0,3 no ranking); base das regras de inativação por faltas seguidas e de promoção de visitante. |
 
 ## Regras de ouro
 

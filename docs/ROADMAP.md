@@ -117,7 +117,11 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
 - [x] **"Esqueci minha senha" / reset do aluno** — feito via link+token (ver item P3 em Segurança). Serve para qualquer usuário com e-mail cadastrado, inclusive o aluno.
 - [ ] **Observações por aula/aluno** (campo de texto livre na chamada).
 - [ ] **Copiar a chave PIX na requisição** — na tela da requisição já aberta, o campo `pix_chave` deve ter um botão **"copiar"** (ícone) que joga a chave no clipboard, para o tesoureiro colar direto no app do banco sem digitar. Só front (Clipboard API + toast de confirmação); sem backend.
-- [ ] **Falta justificada do aluno** — o aluno poderá **justificar suas faltas** (a partir da própria área do aluno); uma falta justificada vale **metade dos pontos de uma presença** no ranking (peso 0,5 vs. 1,0 da presença e 0 da falta não justificada). Precisa de: migration (marcar a presença/ausência como justificada + motivo, provavelmente uma coluna em `presenca` ou tabela de justificativas), fluxo de pedido/aprovação (aluno solicita → professor/admin valida? decidir), ajuste do `DesafiosService` (ranking "menos faltou" passa a somar 0,5 por falta justificada) e telas (aluno justifica, gestão revisa).
+- [x] **Falta justificada do aluno + regras de status automático (2026-07-28)** — três entregas na mesma frente (migration **V24**: `justificada`/`justificativa_motivo`/`justificada_em` em `presenca`):
+  1. **Justificar falta (autosserviço, 30%)** — o aluno justifica suas faltas na própria área (`/minha-frequencia`, modal com motivo); vale na hora, sem aprovação. Uma falta justificada passa a valer **0,3** (30% de uma presença) no ranking *menos faltou* e no componente de presença da *classificação geral* (`DesafiosService`). Endpoints `POST/DELETE /api/me/frequencia/{aulaId}/justificar`.
+  2. **Inativação por faltas seguidas** — ao salvar a chamada, aluno com **mais de 4 faltas consecutivas sem justificativa** (5ª seguida) é **inativado** automaticamente (uma presença OU falta justificada zera a sequência). Registrado na Auditoria e devolvido como alerta (toast) a quem fez a chamada.
+  3. **Visitante vira aluno** — ao cadastrar visitante, quem compareceu às **3 aulas mais recentes seguidas** da turma (identidade = nome + telefone/e-mail) é promovido a **aluno** (com login automático). Registrado na Auditoria + alerta no cadastro.
+  Testes: `FaltaJustificadaEInativacaoTest` (5 casos), suíte com **50** testes verdes; `ng build` OK. Os dois eventos automáticos também disparam e-mail (aviso ao aluno inativado; boas-vindas ao visitante promovido) pelo `NotificacaoService` (toggle `ebd.notificacoes.enabled`).
 
 ## 🟢 Qualidade e robustez
 
@@ -201,8 +205,8 @@ Role `ALUNO` + tela de CRUD de usuários (ADMIN). Base para notificações/campa
 ## 💡 Ideias maiores (longo prazo)
 
 - [ ] **PWA / uso offline** para fazer chamada sem internet e sincronizar depois (item 4).
-- [ ] **Alertas de faltas seguidas** (ex.: 3 ausências consecutivas → e-mail especial ao aluno/coordenação)
-      e **aniversários** — reaproveita o `NotificacaoService`.
+- [ ] **Alertas de faltas seguidas por e-mail** (ex.: 3 ausências consecutivas → e-mail especial ao aluno/coordenação)
+      e **aniversários** — reaproveita o `NotificacaoService`. _A regra de **inativação** por 5 faltas seguidas já existe (V24); e o aviso por e-mail ao aluno inativado já existe (V24); falta só o e-mail de "3 ausências" preventivo e o de aniversário._
 - [ ] **Premiação automática** ao fim do trimestre com base nos rankings.
 - [ ] **Domínio próprio + DKIM** (sair do DuckDNS, que não permite DKIM) para o `no-reply@` entregável.
 

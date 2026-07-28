@@ -44,6 +44,18 @@ public class Presenca {
     @jakarta.persistence.Column(name = "notificada_assinatura", length = 16)
     private String notificadaAssinatura;
 
+    /** Falta justificada pelo próprio aluno (só faz sentido quando presente=false). Vale 0,3 no ranking. */
+    @Column(nullable = false)
+    private boolean justificada = false;
+
+    /** Motivo informado pelo aluno ao justificar a falta. */
+    @Column(name = "justificativa_motivo", length = 300)
+    private String justificativaMotivo;
+
+    /** Quando a falta foi justificada. */
+    @Column(name = "justificada_em")
+    private java.time.LocalDateTime justificadaEm;
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -68,5 +80,14 @@ public class Presenca {
 
     public String getNotificadaAssinatura() { return notificadaAssinatura; }
     public void setNotificadaAssinatura(String notificadaAssinatura) { this.notificadaAssinatura = notificadaAssinatura; }
+
+    public boolean isJustificada() { return justificada; }
+    public void setJustificada(boolean justificada) { this.justificada = justificada; }
+
+    public String getJustificativaMotivo() { return justificativaMotivo; }
+    public void setJustificativaMotivo(String justificativaMotivo) { this.justificativaMotivo = justificativaMotivo; }
+
+    public java.time.LocalDateTime getJustificadaEm() { return justificadaEm; }
+    public void setJustificadaEm(java.time.LocalDateTime justificadaEm) { this.justificadaEm = justificadaEm; }
 
 }
