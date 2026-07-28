@@ -496,6 +496,81 @@ public class NotificacaoService {
                 + "<td style=\"padding:8px 0;border-bottom:1px solid #edf0f4;text-align:right;font-weight:bold;\">" + valor + "</td></tr>";
     }
 
+    // ---------- Status automático (inativação / promoção de visitante) ----------
+
+    /**
+     * Avisa o aluno de que foi inativado por faltas seguidas. Respeita o toggle e exige e-mail;
+     * ignora o opt-in (é um aviso de status da conta). Retorna {@code true} se enfileirado. Nunca lança.
+     */
+    public boolean avisarAlunoInativado(Aluno a, int faltasSeguidas) {
+        if (!habilitado || a.getEmail() == null || a.getEmail().isBlank()) {
+            return false;
+        }
+        try {
+            String corpo = ""
+                    + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Sentimos a sua falta, "
+                    + esc(a.getNome()) + " \uD83D\uDC9B</h1>"
+                    + "<p style=\"margin:0 0 16px;\">Notamos que voc\u00ea faltou \u00e0s \u00faltimas <b>" + faltasSeguidas
+                    + " aulas</b> seguidas da Escola B\u00edblica Dominical. Por isso, o seu cadastro foi marcado como "
+                    + "<b>inativo</b> \u2014 mas voc\u00ea \u00e9 sempre bem-vindo(a) de volta!</p>"
+                    + "<p style=\"margin:0 0 16px;\">Se houve um motivo para as aus\u00eancias, voc\u00ea pode <b>justificar suas faltas</b> "
+                    + "na sua \u00e1rea do aluno. Para reativar o seu cadastro, fale com o seu professor ou com a lideran\u00e7a.</p>"
+                    + "<p style=\"margin:22px 0;text-align:center;\">"
+                    + "<a href=\"" + SITE + "\" style=\"background:#c9a24b;color:#ffffff;text-decoration:none;"
+                    + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">Acessar minha \u00e1rea</a></p>"
+                    + "<p style=\"margin:0;\">Contamos com voc\u00ea,<br>Escola B\u00edblica Dominical \u2014 ICE Samambaia \uD83D\uDE4F</p>";
+            String texto = "Sentimos a sua falta, " + a.getNome() + ".\n\n"
+                    + "Voc\u00ea faltou \u00e0s \u00faltimas " + faltasSeguidas + " aulas seguidas e o seu cadastro foi marcado como inativo. "
+                    + "Voc\u00ea pode justificar suas faltas na sua \u00e1rea do aluno; para reativar, fale com o professor ou a lideran\u00e7a.\n\n"
+                    + "Escola B\u00edblica Dominical \u2014 ICE Samambaia";
+            dispatcher.enfileirar(Mail.withHtml(a.getEmail(),
+                    "Sentimos a sua falta na EBD \uD83D\uDC9B", shell("Frequ\u00eancia", corpo)).setText(texto));
+            LOG.infof("Aviso de inativa\u00e7\u00e3o enviado a %s.", a.getEmail());
+            return true;
+        } catch (Exception e) {
+            LOG.warnf("Falha ao avisar inativa\u00e7\u00e3o de %s: %s", a.getEmail(), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * D\u00e1 boas-vindas ao visitante que virou aluno (3 aulas seguidas). Respeita o toggle e exige e-mail.
+     * Informa o login; a senha do 1\u00ba acesso \u00e9 fornecida pela lideran\u00e7a (n\u00e3o vai por e-mail). Nunca lança.
+     */
+    public boolean avisarVisitantePromovido(Aluno novo, String login) {
+        if (!habilitado || novo.getEmail() == null || novo.getEmail().isBlank()) {
+            return false;
+        }
+        try {
+            String turma = novo.getClasse() != null ? novo.getClasse().getNome() : "EBD";
+            String acesso = (login != null && !login.isBlank())
+                    ? "<p style=\"margin:0 0 16px;\">O seu acesso ao sistema foi criado. Login: <b>" + esc(login)
+                      + "</b>. A senha do 1\u00ba acesso \u00e9 informada pela lideran\u00e7a (voc\u00ea a troca no primeiro login).</p>"
+                    : "";
+            String corpo = ""
+                    + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Agora voc\u00ea \u00e9 da turma, "
+                    + esc(novo.getNome()) + "! \uD83C\uDF89</h1>"
+                    + "<p style=\"margin:0 0 16px;\">Voc\u00ea participou de <b>3 encontros seguidos</b> e agora faz parte oficialmente "
+                    + "da nossa Escola B\u00edblica Dominical \u2014 turma <b>" + esc(turma) + "</b>. Que alegria ter voc\u00ea conosco!</p>"
+                    + acesso
+                    + "<p style=\"margin:22px 0;text-align:center;\">"
+                    + "<a href=\"" + SITE + "\" style=\"background:#c9a24b;color:#ffffff;text-decoration:none;"
+                    + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">Acessar o sistema</a></p>"
+                    + "<p style=\"margin:0;\">Com carinho,<br>Escola B\u00edblica Dominical \u2014 ICE Samambaia \uD83D\uDE4F</p>";
+            String texto = "Parab\u00e9ns, " + novo.getNome() + "! Voc\u00ea participou de 3 encontros seguidos e agora \u00e9 aluno(a) da EBD "
+                    + "(turma " + turma + ")."
+                    + (login != null && !login.isBlank() ? " Login: " + login + " (senha do 1\u00ba acesso com a lideran\u00e7a)." : "")
+                    + "\n\nEscola B\u00edblica Dominical \u2014 ICE Samambaia";
+            dispatcher.enfileirar(Mail.withHtml(novo.getEmail(),
+                    "Bem-vindo(a) como aluno(a) da EBD! \uD83C\uDF89", shell(turma, corpo)).setText(texto));
+            LOG.infof("Boas-vindas de promo\u00e7\u00e3o enviadas a %s.", novo.getEmail());
+            return true;
+        } catch (Exception e) {
+            LOG.warnf("Falha ao avisar promo\u00e7\u00e3o de %s: %s", novo.getEmail(), e.getMessage());
+            return false;
+        }
+    }
+
     // ---------- Aniversário ----------
 
     /**

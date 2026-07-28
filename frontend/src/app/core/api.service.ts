@@ -154,6 +154,12 @@ export class ApiService {
   minhaFrequencia(): Observable<MinhaFrequenciaResponse> {
     return this.http.get<MinhaFrequenciaResponse>(`${this.api}/me/frequencia`);
   }
+  justificarFalta(aulaId: number, motivo: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/me/frequencia/${aulaId}/justificar`, { motivo });
+  }
+  removerJustificativa(aulaId: number): Observable<void> {
+    return this.http.delete<void>(`${this.api}/me/frequencia/${aulaId}/justificar`);
+  }
   // ---------- Visitantes ----------
   listarVisitantes(aulaId: number): Observable<Visitante[]> {
     return this.http.get<Visitante[]>(`${this.api}/visitantes`, { params: new HttpParams().set('aulaId', aulaId) });

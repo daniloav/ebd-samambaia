@@ -78,6 +78,7 @@ export interface ChamadaResponse {
   tema?: string | null;
   itens: PresencaItem[];
   emailsEnviados?: number | null;
+  alertas?: string[];
 }
 
 export type TipoProva = 'OFFLINE' | 'ONLINE';
@@ -294,12 +295,16 @@ export interface CampanhaRequest {
 }
 
 export interface MinhaFrequenciaItem {
+  aulaId: number;
   data: string;
   tema?: string | null;
   presente: boolean;
   trouxeBiblia: boolean;
   trouxeRevista: boolean;
   estudouLicao: boolean;
+  justificada: boolean;
+  justificativaMotivo?: string | null;
+  podeJustificar: boolean;
 }
 
 export interface MinhaFrequenciaResponse {
@@ -308,6 +313,7 @@ export interface MinhaFrequenciaResponse {
   presencas: number;
   faltas: number;
   percentualPresenca: number;
+  faltasJustificadas: number;
   itens: MinhaFrequenciaItem[];
 }
 
@@ -319,6 +325,7 @@ export interface Visitante {
   trazidoPorId?: number | null;
   trazidoPorNome?: string | null;
   dataCadastro: string;
+  alerta?: string | null;
 }
 
 export interface VisitanteRequest {

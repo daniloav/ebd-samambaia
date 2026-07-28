@@ -1,6 +1,7 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.BoletimResponse;
+import br.com.ice.ebd.dto.JustificarFaltaRequest;
 import br.com.ice.ebd.dto.MinhaFrequenciaResponse;
 import br.com.ice.ebd.dto.QuizAlunoDto;
 import br.com.ice.ebd.dto.TrocarSenhaRequest;
@@ -13,7 +14,9 @@ import br.com.ice.ebd.service.UsuarioService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -63,6 +66,25 @@ public class MeResource {
     @RolesAllowed("ALUNO")
     public MinhaFrequenciaResponse frequencia() {
         return minhaFrequenciaService.minha();
+    }
+
+    /** Justifica uma falta do próprio aluno numa aula (autosserviço; vale 30% no ranking). */
+    @POST
+    @Path("/frequencia/{aulaId}/justificar")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("ALUNO")
+    public Response justificarFalta(@PathParam("aulaId") Long aulaId, @Valid JustificarFaltaRequest req) {
+        minhaFrequenciaService.justificar(aulaId, req.motivo());
+        return Response.noContent().build();
+    }
+
+    /** Remove a justificativa de uma falta do próprio aluno. */
+    @DELETE
+    @Path("/frequencia/{aulaId}/justificar")
+    @RolesAllowed("ALUNO")
+    public Response removerJustificativa(@PathParam("aulaId") Long aulaId) {
+        minhaFrequenciaService.removerJustificativa(aulaId);
+        return Response.noContent().build();
     }
 
     /** Troca da própria senha (qualquer usuário autenticado, para a sua conta). */

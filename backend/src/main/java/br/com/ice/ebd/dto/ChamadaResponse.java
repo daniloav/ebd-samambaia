@@ -9,15 +9,23 @@ public record ChamadaResponse(
         LocalDate data,
         String tema,
         List<PresencaItem> itens,
-        Integer emailsEnviados) {
+        Integer emailsEnviados,
+        /** Avisos gerados ao salvar (ex.: alunos inativados por faltas seguidas). */
+        List<String> alertas) {
 
-    /** Construtor sem contagem (usado ao apenas montar a chamada — GET). */
+    /** Construtor sem contagem/alertas (usado ao apenas montar a chamada — GET). */
     public ChamadaResponse(Long aulaId, LocalDate data, String tema, List<PresencaItem> itens) {
-        this(aulaId, data, tema, itens, null);
+        this(aulaId, data, tema, itens, null, List.of());
     }
 
     /** Cópia com a quantidade de e-mails novos enviados no salvamento. */
     public ChamadaResponse comEmailsEnviados(int n) {
-        return new ChamadaResponse(aulaId, data, tema, itens, n);
+        return new ChamadaResponse(aulaId, data, tema, itens, n, alertas);
+    }
+
+    /** Cópia com os avisos gerados ao salvar. */
+    public ChamadaResponse comAlertas(List<String> novos) {
+        return new ChamadaResponse(aulaId, data, tema, itens, emailsEnviados,
+                novos == null ? List.of() : novos);
     }
 }

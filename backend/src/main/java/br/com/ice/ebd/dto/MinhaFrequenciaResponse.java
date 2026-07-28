@@ -10,14 +10,21 @@ public record MinhaFrequenciaResponse(
         int presencas,
         int faltas,
         int percentualPresenca,
+        int faltasJustificadas,
         List<Item> itens) {
 
     public record Item(
+            Long aulaId,
             LocalDate data,
             String tema,
             boolean presente,
             boolean trouxeBiblia,
             boolean trouxeRevista,
-            boolean estudouLicao) {
+            boolean estudouLicao,
+            /** Falta já justificada por este aluno. */
+            boolean justificada,
+            String justificativaMotivo,
+            /** true quando é uma falta (ausente) e pode receber justificativa. */
+            boolean podeJustificar) {
     }
 }
