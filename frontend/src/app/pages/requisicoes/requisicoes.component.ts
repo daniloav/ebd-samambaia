@@ -136,7 +136,13 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
             <div class="ff"><label>Valor aprovado (R$)</label><input type="number" min="0.01" step="0.01" [(ngModel)]="valorAprovado" /></div>
             <div class="ff"><label>Parecer / observação</label><textarea rows="2" [(ngModel)]="parecer" placeholder="Opcional"></textarea></div>
             @if (r.formaRepasse === 'PIX') {
-              <div class="ff muted" style="font-size:.85rem">PIX ({{ rotuloPix(r.pixTipo) }}): <b>{{ r.pixChave }}</b></div>
+              <div class="ff" style="font-size:.85rem">
+                <label>Chave PIX ({{ rotuloPix(r.pixTipo) }}) — para transferir</label>
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                  <b style="word-break:break-all">{{ r.pixChave }}</b>
+                  <button type="button" class="anexo" (click)="copiarPix(r.pixChave)">📋 Copiar chave</button>
+                </div>
+              </div>
             }
             <div class="ff"><label>Comprovante de transferência (opcional) — PDF ou imagem</label>
               <input type="file" accept=".pdf,image/*" (change)="onComprovante($event)" />
@@ -188,7 +194,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               @if (r.dataNecessidade) { <dt>Data necessária</dt><dd>{{ r.dataNecessidade | date:'dd/MM/yyyy' }}</dd> }
               <dt>Solicitante</dt><dd>{{ r.solicitanteNome }} · {{ r.criadoEm | date:'dd/MM/yyyy HH:mm' }}</dd>
               <dt>Forma de repasse</dt>
-              <dd>{{ r.formaRepasse === 'PIX' ? 'PIX' : 'Dinheiro' }}@if (r.formaRepasse === 'PIX') { — {{ rotuloPix(r.pixTipo) }}: <b>{{ r.pixChave }}</b> }</dd>
+              <dd>{{ r.formaRepasse === 'PIX' ? 'PIX' : 'Dinheiro' }}@if (r.formaRepasse === 'PIX') { — {{ rotuloPix(r.pixTipo) }}: <b>{{ r.pixChave }}</b> <button type="button" class="anexo" (click)="copiarPix(r.pixChave)">📋 Copiar</button> }</dd>
               @if (r.avaliadoPorNome) {
                 <dt>Avaliação</dt>
                 <dd>{{ r.status === 'NEGADA' ? 'Negada' : 'Aprovada' }} por {{ r.avaliadoPorNome }}
@@ -203,7 +209,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               }
               @if (r.anexos.length) {
                 <dt>Anexos</dt>
-                <dd>@for (a of r.anexos; track a.id) { <button class="anexo" (click)="abrirAnexo(a.id)">{{ a.categoria === 'COMPROVANTE' ? '🧾' : '📎' }} {{ a.categoria === 'COMPROVANTE' ? 'Comprovante' : 'Nota fiscal' }}: {{ a.nome || 'anexo' }}</button> }</dd>
+                <dd>@for (a of r.anexos; track a.id) { <button class="anexo" (click)="abrirAnexo(a.id, a.nome)">{{ a.categoria === 'COMPROVANTE' ? '🧾' : '📎' }} {{ a.categoria === 'COMPROVANTE' ? 'Comprovante' : 'Nota fiscal' }}: {{ a.nome || 'anexo' }}</button> }</dd>
               }
             </dl>
           </div>
@@ -279,6 +285,25 @@ export class RequisicoesComponent {
   abrirAvaliar(r: Requisicao): void { this.valorAprovado = r.valorSolicitado; this.parecer = ''; this.comprovante = null; this.avaliar.set(r); }
   onComprovante(e: Event): void { this.comprovante = (e.target as HTMLInputElement).files?.[0] ?? null; }
   rotuloPix(t?: string | null): string { return t === 'CPF' ? 'CPF' : t === 'EMAIL' ? 'e-mail' : t === 'TELEFONE' ? 'telefone' : '—'; }
+
+  /** Copia a chave PIX para a área de transferência (facilita colar no app do banco). */
+  async copiarPix(chave?: string | null): Promise<void> {
+    const valor = chave?.trim();
+    if (!valor) { return; }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(valor);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = valor; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); ta.remove();
+      }
+      this.toast.sucesso('Chave PIX copiada.');
+    } catch {
+      this.toast.erro('Não foi possível copiar a chave.');
+    }
+  }
   aprovar(r: Requisicao): void {
     this.avaliando.set(true);
     this.api.aprovarRequisicao(r.id, this.valorAprovado, this.parecer || null, this.comprovante).subscribe({
@@ -320,10 +345,23 @@ export class RequisicoesComponent {
       error: (e) => this.toast.erro(e?.error?.message || 'Não foi possível carregar os detalhes.'),
     });
   }
-  abrirAnexo(id: number): void {
+  abrirAnexo(id: number, nome?: string | null): void {
+    // Abre uma aba já dentro do gesto do clique (senão o navegador/PWA bloqueia o pop-up),
+    // e só aponta para o blob quando o download termina. Se a aba for bloqueada, cai para download.
+    const aba = window.open('', '_blank');
     this.api.baixarAnexo(id).subscribe({
-      next: (blob) => { const url = URL.createObjectURL(blob); window.open(url, '_blank'); setTimeout(() => URL.revokeObjectURL(url), 60000); },
-      error: () => this.toast.erro('Não foi possível abrir o anexo.'),
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        if (aba && !aba.closed) {
+          aba.location.href = url;
+        } else {
+          const link = document.createElement('a');
+          link.href = url; link.download = nome || 'anexo'; link.rel = 'noopener';
+          document.body.appendChild(link); link.click(); link.remove();
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      },
+      error: () => { aba?.close(); this.toast.erro('Não foi possível abrir o anexo.'); },
     });
   }
 
