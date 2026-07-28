@@ -10,6 +10,7 @@ import br.com.ice.ebd.model.AcaoAuditoria;
 import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.ClasseRepository;
+import br.com.ice.ebd.repository.RequisicaoRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import io.quarkus.elytron.security.common.BcryptUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -32,6 +33,7 @@ public class UsuarioService {
     @Inject LoginService loginService;
     @Inject AlunoRepository alunoRepository;
     @Inject ClasseRepository classeRepository;
+    @Inject RequisicaoRepository requisicaoRepository;
 
     public List<UsuarioResponse> listar() {
         return repository.listarOrdenado().stream().map(UsuarioResponse::de).toList();
@@ -78,6 +80,12 @@ public class UsuarioService {
         if (u.isEhAdmin() && contarAdmins() <= 1) {
             throw new WebApplicationException("Não é possível excluir o último administrador.",
                     Response.Status.CONFLICT);
+        }
+        long reqs = requisicaoRepository.contarComoSolicitante(id);
+        if (reqs > 0) {
+            throw new WebApplicationException(
+                    "Não é possível excluir: este usuário abriu " + reqs + " requisição(ões) de tesouraria. "
+                            + "Reatribua ou exclua essas requisições antes.", Response.Status.CONFLICT);
         }
         auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.USUARIO, u.getId(), u.getUsername());
         repository.delete(u);

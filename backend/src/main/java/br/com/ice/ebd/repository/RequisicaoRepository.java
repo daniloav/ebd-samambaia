@@ -31,4 +31,9 @@ public class RequisicaoRepository implements PanacheRepository<RequisicaoTesoura
     public long contarComPrefixo(String prefixo) {
         return count("numero like ?1", prefixo + "%");
     }
+
+    /** Quantas requisições este usuário abriu (solicitante) — bloqueia a exclusão do usuário. */
+    public long contarComoSolicitante(Long usuarioId) {
+        return count("solicitante.id", usuarioId);
+    }
 }
