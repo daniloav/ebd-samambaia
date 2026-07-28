@@ -1,13 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { APP_VERSION } from '../../version';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   styles: [`
     .tela {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -33,6 +33,9 @@ import { APP_VERSION } from '../../version';
                 border-radius:9px; color:#2c4770; font-size:.86rem; font-weight:600;
                 text-decoration:none; transition:background .15s, border-color .15s; }
     .tutorial:hover { background:#f4f7fb; border-color:#2c4770; text-decoration:none; }
+    .esqueci { display:block; text-align:center; margin-top:.9rem; font-size:.82rem;
+               color:var(--azul); text-decoration:none; }
+    .esqueci:hover { text-decoration:underline; }
   `],
   template: `
     <div class="tela">
@@ -60,6 +63,8 @@ import { APP_VERSION } from '../../version';
             {{ carregando() ? 'Entrando...' : 'Entrar' }}
           </button>
         </form>
+
+        <a class="esqueci" routerLink="/recuperar">Esqueci meu usuário ou senha</a>
 
         <a class="tutorial" href="/assets/tutoriais/index.html" target="_blank" rel="noopener">
           📖 Primeira vez? Veja como usar o app

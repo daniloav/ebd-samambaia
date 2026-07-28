@@ -13,6 +13,14 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class UsuarioRepository implements PanacheRepository<Usuario> {
 
+    /** Contas ativas com o e-mail informado (recuperação de senha). */
+    public java.util.List<Usuario> usuariosAtivosPorEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return java.util.List.of();
+        }
+        return list("lower(email) = ?1 and ativo = true", email.trim().toLowerCase());
+    }
+
     public Optional<Usuario> findByUsername(String username) {
         return find("username", username).firstResultOptional();
     }
