@@ -1,9 +1,11 @@
 package br.com.ice.ebd.resource;
 
+import br.com.ice.ebd.dto.AniversarianteResponse;
 import br.com.ice.ebd.dto.BoletimResponse;
 import br.com.ice.ebd.dto.MinhaFrequenciaResponse;
 import br.com.ice.ebd.dto.QuizAlunoDto;
 import br.com.ice.ebd.dto.TrocarSenhaRequest;
+import br.com.ice.ebd.service.AniversariantesService;
 import br.com.ice.ebd.service.BoletimService;
 import br.com.ice.ebd.service.MinhaFrequenciaService;
 import br.com.ice.ebd.service.QuizAlunoService;
@@ -50,6 +52,9 @@ public class MeResource {
     @Inject
     DesafiosService desafiosService;
 
+    @Inject
+    AniversariantesService aniversariantesService;
+
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
     public Map<String, Object> me() {
@@ -64,6 +69,14 @@ public class MeResource {
     @RolesAllowed("ALUNO")
     public MinhaFrequenciaResponse frequencia() {
         return minhaFrequenciaService.minha();
+    }
+
+    /** Aniversariantes da escola (hoje + próximos 7 dias) para a tela inicial do aluno. */
+    @GET
+    @Path("/aniversariantes")
+    @RolesAllowed("ALUNO")
+    public List<AniversarianteResponse> aniversariantes() {
+        return aniversariantesService.proximos();
     }
 
     /** Troca da própria senha (qualquer usuário autenticado, para a sua conta). */
