@@ -9,6 +9,7 @@ import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.model.Presenca;
 import br.com.ice.ebd.repository.AlunoRepository;
+import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.PresencaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
@@ -37,6 +39,7 @@ public class ChamadaService {
 
     @Inject AlunoRepository alunoRepository;
     @Inject PresencaRepository presencaRepository;
+    @Inject AulaRepository aulaRepository;
     @Inject AulaService aulaService;
     @Inject AuditoriaService auditoria;
     @Inject NotificacaoService notificacaoService;
@@ -50,7 +53,8 @@ public class ChamadaService {
         Aula aula = aulaService.obter(aulaId);
         escopo.assertClasse(aula.getClasse().getId());
 
-        Long professorAlunoId = professorAlunoId(aula);
+        // Alunos que estão dando aula neste dia (nesta ou em outra turma) — desabilitados hoje.
+        Set<Long> ensinandoHoje = aulaRepository.alunoIdsDeProfessoresComAulaEm(aula.getData());
 
         Map<Long, Presenca> porAluno = new LinkedHashMap<>();
         for (Presenca p : presencaRepository.listarPorAula(aulaId)) {
@@ -59,7 +63,7 @@ public class ChamadaService {
 
         List<PresencaItem> itens = alunoRepository.listarAtivosPorClasse(aula.getClasse().getId()).stream()
                 .map(aluno -> {
-                    boolean ehProfessor = aluno.getId().equals(professorAlunoId);
+                    boolean ehProfessor = ensinandoHoje.contains(aluno.getId());
                     Presenca p = porAluno.get(aluno.getId());
                     if (p == null || ehProfessor) {
                         return new PresencaItem(aluno.getId(), aluno.getNome(),
@@ -74,22 +78,16 @@ public class ChamadaService {
         return new ChamadaResponse(aula.getId(), aula.getData(), aula.getTema(), itens);
     }
 
-    /** Id do aluno vinculado ao professor da aula (ou null). Esse aluno não conta na chamada/ranking. */
-    private static Long professorAlunoId(Aula aula) {
-        return aula.getProfessor() != null && aula.getProfessor().getAluno() != null
-                ? aula.getProfessor().getAluno().getId() : null;
-    }
-
     /** Salva (upsert) a chamada da aula, uma linha por aluno. */
     @Transactional
     public ChamadaResponse salvarChamada(Long aulaId, SalvarChamadaRequest req) {
         Aula aula = aulaService.obter(aulaId);
         escopo.assertClasse(aula.getClasse().getId());
 
-        Long professorAlunoId = professorAlunoId(aula);
-        if (professorAlunoId != null) {
-            // o professor da aula não é contabilizado: remove qualquer presença dele nesta aula
-            presencaRepository.delete("aula.id = ?1 and aluno.id = ?2", aulaId, professorAlunoId);
+        // Quem dá aula neste dia (qualquer turma) não é contabilizado como aluno nesta chamada.
+        Set<Long> ensinandoHoje = aulaRepository.alunoIdsDeProfessoresComAulaEm(aula.getData());
+        if (!ensinandoHoje.isEmpty()) {
+            presencaRepository.delete("aula.id = ?1 and aluno.id in ?2", aulaId, ensinandoHoje);
         }
 
         Map<Long, Presenca> existentes = new LinkedHashMap<>();
@@ -99,8 +97,8 @@ public class ChamadaService {
 
         List<Long> ausentesIds = new ArrayList<>();
         for (SalvarChamadaRequest.Item item : req.itens()) {
-            if (professorAlunoId != null && professorAlunoId.equals(item.alunoId())) {
-                continue; // professor da aula — não registra presença
+            if (ensinandoHoje.contains(item.alunoId())) {
+                continue; // está dando aula neste dia — não registra presença
             }
             Aluno aluno = alunoRepository.findById(item.alunoId());
             if (aluno == null) {

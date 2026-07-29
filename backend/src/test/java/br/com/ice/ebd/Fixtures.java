@@ -3,12 +3,14 @@ package br.com.ice.ebd;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Classe;
+import br.com.ice.ebd.model.Presenca;
 import br.com.ice.ebd.model.Prova;
 import br.com.ice.ebd.model.Role;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.ClasseRepository;
+import br.com.ice.ebd.repository.PresencaRepository;
 import br.com.ice.ebd.repository.ProvaRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -25,6 +27,7 @@ public class Fixtures {
     @Inject AulaRepository aulaRepo;
     @Inject ProvaRepository provaRepo;
     @Inject UsuarioRepository usuarioRepo;
+    @Inject PresencaRepository presencaRepo;
 
     public Classe classe(String nome) {
         Classe c = new Classe();
@@ -53,6 +56,20 @@ public class Fixtures {
         aula.setTema("Tema de teste");
         aulaRepo.persist(aula);
         return aula;
+    }
+
+    /** Marca o aluno como presente na aula. */
+    public Presenca presente(Aula aula, Aluno aluno) {
+        return presenca(aula, aluno, true);
+    }
+
+    public Presenca presenca(Aula aula, Aluno aluno, boolean presente) {
+        Presenca p = new Presenca();
+        p.setAula(aula);
+        p.setAluno(aluno);
+        p.setPresente(presente);
+        presencaRepo.persist(p);
+        return p;
     }
 
     public Prova prova(Classe classe, String notaMaxima) {
