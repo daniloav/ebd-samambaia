@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
-  Aluno, AlunoRequest, Aula, AulaRequest, Campanha, ChamadaResponse,
+  Aluno, AlunoRequest, Aula, AulaRequest, AulaComplementarRequest, AulaComplementarResponse, Campanha, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Professor, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
@@ -62,6 +62,9 @@ export class ApiService {
   }
   deletarAula(id: number): Observable<void> {
     return this.http.delete<void>(`${this.api}/aulas/${id}`);
+  }
+  complementarAula(id: number, req: AulaComplementarRequest): Observable<AulaComplementarResponse> {
+    return this.http.post<AulaComplementarResponse>(`${this.api}/aulas/${id}/complementar`, req);
   }
 
   // ---------- Chamada ----------
