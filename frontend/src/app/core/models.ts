@@ -400,7 +400,6 @@ export interface BoletimResponse {
   aproveitamentoPct: number;
   frequencia: BoletimFrequencia;
   visitantesTrazidos: number;
-  situacao: string;
 }
 
 export interface DashPontoFrequencia {

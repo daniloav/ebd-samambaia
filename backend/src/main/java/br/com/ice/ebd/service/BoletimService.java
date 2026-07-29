@@ -17,14 +17,10 @@ import java.util.List;
 
 /**
  * Monta o boletim de um aluno num trimestre (Jan-Mar=1º, Abr-Jun=2º, Jul-Set=3º, Out-Dez=4º):
- * notas das provas, frequência (presenças/faltas + itens) e situação.
+ * notas das provas e frequência (presenças/faltas + itens).
  */
 @ApplicationScoped
 public class BoletimService {
-
-    /** Limiares da situação "Aprovado". */
-    static final double APROVEITAMENTO_MIN = 60.0;
-    static final double FREQUENCIA_MIN = 75.0;
 
     @Inject EscopoService escopo;
     @Inject EntityManager em;
@@ -127,26 +123,8 @@ public class BoletimService {
                 .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult()).longValue();
 
-        boolean trimestreEncerrado = hoje.isAfter(fim); // enquanto não fecha, não dá veredito
-        String situacao = situacao(totalAulas, comNota, percPresenca, aproveitamento, trimestreEncerrado);
-
         return new BoletimResponse(aid, aluno.getNome(), aluno.getClasse().getNome(),
-                ano, trimestre, ini, fim, provas, mediaNotas, aproveitamento, freq, visitantes, situacao);
-    }
-
-    private String situacao(long totalAulas, int comNota, double percPresenca, double aproveitamento,
-                            boolean trimestreEncerrado) {
-        if (totalAulas == 0 && comNota == 0) {
-            return "Sem registros no período";
-        }
-        // Boletim é por trimestre: enquanto o trimestre não encerra, não há veredito (pode mudar
-        // com aulas/provas futuras). Só ao fechar calcula Aprovado/Em recuperação.
-        if (!trimestreEncerrado) {
-            return "Trimestre em andamento";
-        }
-        boolean freqOk = percPresenca >= FREQUENCIA_MIN;
-        boolean notaOk = comNota == 0 || aproveitamento >= APROVEITAMENTO_MIN;
-        return (freqOk && notaOk) ? "Aprovado" : "Em recuperação";
+                ano, trimestre, ini, fim, provas, mediaNotas, aproveitamento, freq, visitantes);
     }
 
     private static long toLong(Object o) {

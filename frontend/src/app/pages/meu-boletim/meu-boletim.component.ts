@@ -16,7 +16,7 @@ import { BoletimViewComponent } from '../boletim/boletim-view.component';
   `],
   template: `
     <h2>Meu boletim</h2>
-    <p class="muted">Seu desempenho no trimestre — notas, frequência e situação.</p>
+    <p class="muted">Seu desempenho no trimestre — notas e frequência.</p>
 
     <div class="card" style="margin-bottom:1.5rem">
       <div class="filtros">

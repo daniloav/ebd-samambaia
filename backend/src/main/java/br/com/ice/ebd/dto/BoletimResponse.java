@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Boletim de um aluno num trimestre: provas, frequência e situação. */
+/** Boletim de um aluno num trimestre: provas e frequência. */
 public record BoletimResponse(
         Long alunoId,
         String alunoNome,
@@ -17,8 +17,7 @@ public record BoletimResponse(
         BigDecimal mediaNotas,
         double aproveitamentoPct,
         Frequencia frequencia,
-        long visitantesTrazidos,
-        String situacao) {
+        long visitantesTrazidos) {
 
     /** Uma prova do período e a nota do aluno (nota/percentual nulos se não lançada). */
     public record ProvaItem(

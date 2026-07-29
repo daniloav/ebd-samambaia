@@ -61,7 +61,7 @@ function brData(iso: string): string {
 
 /**
  * Gera e baixa o boletim de um aluno como PDF (cabeçalho + dados + provas +
- * frequência + situação). Recebe o objeto BoletimResponse da API.
+ * frequência). Recebe o objeto BoletimResponse da API.
  */
 export async function exportarBoletimPdf(b: any): Promise<void> {
   const jspdfMod: any = await import('jspdf');
@@ -119,14 +119,10 @@ export async function exportarBoletimPdf(b: any): Promise<void> {
   });
   y = (doc as any).lastAutoTable.finalY + 8;
 
-  // Situação
-  doc.setFontSize(12);
-  doc.setTextColor(...azul);
-  doc.text(`Situação: ${b.situacao}`, 14, y);
   if (b.visitantesTrazidos) {
     doc.setFontSize(9);
     doc.setTextColor(110);
-    doc.text(`Visitantes trazidos no período: ${b.visitantesTrazidos}`, 14, y + 6);
+    doc.text(`Visitantes trazidos no período: ${b.visitantesTrazidos}`, 14, y);
   }
 
   doc.save(`boletim-${b.alunoNome.replace(/\s+/g, '-').toLowerCase()}-${b.ano}-T${b.trimestre}.pdf`);
