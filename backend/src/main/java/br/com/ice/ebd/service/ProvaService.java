@@ -13,6 +13,7 @@ import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.model.TipoProva;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.NotaProvaRepository;
+import br.com.ice.ebd.repository.PresencaRepository;
 import br.com.ice.ebd.repository.ProvaRepository;
 import br.com.ice.ebd.repository.QuestaoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @ApplicationScoped
 public class ProvaService {
@@ -38,6 +40,7 @@ public class ProvaService {
     @Inject NotaProvaRepository notaRepository;
     @Inject QuestaoRepository questaoRepository;
     @Inject AlunoRepository alunoRepository;
+    @Inject PresencaRepository presencaRepository;
     @Inject NotificacaoService notificacaoService;
 
     // ---------- CRUD da prova ----------
@@ -83,7 +86,10 @@ public class ProvaService {
 
     // ---------- Notas ----------
 
-    /** Grade de notas: todos os alunos ativos, com a nota lançada (ou null). */
+    /**
+     * Grade de notas: os alunos elegíveis, com a nota lançada (ou null). Numa prova OFFLINE só
+     * entram os alunos <b>presentes</b> na aula da data da prova; nas demais, todos os ativos.
+     */
     public NotasProvaResponse obterNotas(Long provaId) {
         Prova prova = obter(provaId);
         escopo.assertClasse(prova.getClasse().getId());
@@ -91,17 +97,22 @@ public class ProvaService {
         for (NotaProva n : notaRepository.listarPorProva(provaId)) {
             notasPorAluno.put(n.getAluno().getId(), n.getNota());
         }
-        List<NotaItem> itens = alunoRepository.listarAtivosPorClasse(prova.getClasse().getId()).stream()
+        List<NotaItem> itens = alunosElegiveis(prova).stream()
                 .map(a -> new NotaItem(a.getId(), a.getNome(), notasPorAluno.get(a.getId())))
                 .toList();
         return new NotasProvaResponse(prova.getId(), prova.getTitulo(), prova.getData(),
-                prova.getNotaMaxima(), itens);
+                prova.getNotaMaxima(), prova.getTipo() == TipoProva.OFFLINE, itens);
     }
 
     @Transactional
     public NotasProvaResponse salvarNotas(Long provaId, SalvarNotasRequest req) {
         Prova prova = obter(provaId);
         escopo.assertClasse(prova.getClasse().getId());
+
+        // Prova OFFLINE: só é permitido lançar nota para quem esteve presente na aula da data.
+        Set<Long> presentes = prova.getTipo() == TipoProva.OFFLINE
+                ? presencaRepository.idsPresentesNaClasseEData(prova.getClasse().getId(), prova.getData())
+                : null; // null = sem restrição de presença
 
         Map<Long, NotaProva> existentes = new LinkedHashMap<>();
         for (NotaProva n : notaRepository.listarPorProva(provaId)) {
@@ -116,6 +127,11 @@ public class ProvaService {
                     notaRepository.delete(existente);
                 }
                 continue;
+            }
+            if (presentes != null && !presentes.contains(item.alunoId())) {
+                throw new WebApplicationException(
+                        "Só é possível lançar nota para alunos presentes na aula da data desta prova.",
+                        Response.Status.BAD_REQUEST);
             }
             if (item.nota().compareTo(prova.getNotaMaxima()) > 0) {
                 throw new WebApplicationException(
@@ -166,6 +182,20 @@ public class ProvaService {
     }
 
     // ---------- helpers ----------
+
+    /**
+     * Alunos que podem receber nota nesta prova. Prova OFFLINE: só os presentes na aula da data
+     * da prova (mesma turma). Demais tipos: todos os ativos da turma.
+     */
+    private List<Aluno> alunosElegiveis(Prova prova) {
+        List<Aluno> ativos = alunoRepository.listarAtivosPorClasse(prova.getClasse().getId());
+        if (prova.getTipo() != TipoProva.OFFLINE) {
+            return ativos;
+        }
+        Set<Long> presentes = presencaRepository.idsPresentesNaClasseEData(
+                prova.getClasse().getId(), prova.getData());
+        return ativos.stream().filter(a -> presentes.contains(a.getId())).toList();
+    }
 
     private Prova obter(Long id) {
         Prova p = provaRepository.findById(id);

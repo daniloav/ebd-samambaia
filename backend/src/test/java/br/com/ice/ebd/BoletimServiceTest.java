@@ -42,7 +42,8 @@ class BoletimServiceTest {
         chamadaService.salvarChamada(aula.getId(), new SalvarChamadaRequest(List.of(
                 new SalvarChamadaRequest.Item(a.getId(), true, true, false, false))));
 
-        Prova p = fx.prova(c, "10.00", LocalDate.of(2025, 2, 20));
+        // prova na mesma data da aula: o aluno presente pode receber nota (prova offline)
+        Prova p = fx.prova(c, "10.00", LocalDate.of(2025, 2, 15));
         provaService.salvarNotas(p.getId(), new SalvarNotasRequest(List.of(
                 new SalvarNotasRequest.Item(a.getId(), new BigDecimal("9.0")))));
 

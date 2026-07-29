@@ -36,7 +36,9 @@ class NotificacaoDedupOutrosTest {
     void notaProvaSoReenviaSeMudar() {
         Classe c = fx.classe("Turma Nota Notif");
         Aluno a = fx.aluno("Aluno Nota", c, "nota@ebd.test", true);
-        Prova p = fx.prova(c, "10.00");
+        java.time.LocalDate hoje = java.time.LocalDate.now();
+        fx.presente(fx.aula(c, hoje), a); // presente na aula da data da prova (offline)
+        Prova p = fx.prova(c, "10.00", hoje);
 
         provaService.salvarNotas(p.getId(), nota(a.getId(), "8.0"));
         assertEquals(1, provaService.notificarNotas(p.getId()));   // 1ª vez

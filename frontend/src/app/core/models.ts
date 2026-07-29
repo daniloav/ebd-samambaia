@@ -188,6 +188,8 @@ export interface NotasProvaResponse {
   titulo: string;
   data: string;
   notaMaxima: number;
+  /** true = a grade lista só os alunos presentes na aula da data (prova offline). */
+  somentePresentes?: boolean;
   itens: NotaItem[];
 }
 
