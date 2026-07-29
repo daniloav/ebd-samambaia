@@ -26,6 +26,15 @@ public class AulaRepository implements PanacheRepository<Aula> {
     }
 
     /**
+     * Aulas da turma com data &gt;= a informada, <b>em ordem decrescente de data</b>. Usado ao
+     * empurrar a agenda: deslocar a partir da mais recente evita colisão transitória com a
+     * unique {@code uq_aula_classe_data} (não-deferrable).
+     */
+    public List<Aula> listarPorClasseDesde(Long classeId, LocalDate data) {
+        return list("classe.id = ?1 and data >= ?2 order by data desc", classeId, data);
+    }
+
+    /**
      * IDs de alunos vinculados a professores que dão <b>alguma</b> aula na data informada
      * (nesta ou em qualquer outra turma). Esses alunos estão dando aula nesse dia e, por isso,
      * não recebem presença como alunos na chamada daquele dia. Num dia em que não dão aula,

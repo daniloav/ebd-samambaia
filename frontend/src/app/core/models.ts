@@ -526,3 +526,13 @@ export interface RequisicaoRequest {
   pixTipo?: TipoChavePix | null;
   pixChave?: string | null;
 }
+
+export interface AulaComplementarRequest {
+  tema?: string | null;
+  professorId?: number | null;
+}
+
+export interface AulaComplementarResponse {
+  aula: Aula;
+  aulasMovidas: number;
+}
