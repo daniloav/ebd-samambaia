@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
-import { MinhaFrequenciaResponse } from '../../core/models';
+import { Aniversariante, MinhaFrequenciaResponse } from '../../core/models';
 
 @Component({
   selector: 'app-minha-frequencia',
@@ -11,12 +11,37 @@ import { MinhaFrequenciaResponse } from '../../core/models';
   imports: [DatePipe],
   styles: [`
     .motivo { font-size: .8rem; color: var(--cinza-texto); font-style: italic; }
+    .aniversarios { border-left: 4px solid #d69e2e; }
+    .aniv-item { display: flex; align-items: center; gap: .75rem; padding: .55rem 0; border-top: 1px solid var(--borda, #eee); flex-wrap: wrap; }
+    .aniv-item:first-of-type { border-top: 0; }
+    .aniv-nome { font-weight: 600; }
+    .aniv-data { color: var(--cinza-texto); font-size: .85rem; }
+    .aniv-hoje { background: #faf089; color: #744210; border-radius: 999px; padding: .1rem .5rem; font-size: .75rem; font-weight: 600; }
+    .btn-zap { margin-left: auto; display: inline-flex; align-items: center; gap: .35rem; background: #25d366; color: #fff; text-decoration: none; padding: .35rem .7rem; border-radius: 6px; font-size: .85rem; font-weight: 600; }
+    .btn-zap:hover { background: #1ebe5b; }
   `],
   template: `
     <div style="margin-bottom:1.25rem">
       <h2>Minha frequência</h2>
       <p class="muted">Olá, {{ auth.username() }} — aqui está o seu histórico de presença na EBD.</p>
     </div>
+
+    @if (aniversariantes().length) {
+      <div class="card aniversarios" style="margin-bottom:1.5rem">
+        <h3 style="margin-top:0">🎉 Aniversariantes</h3>
+        <p class="muted" style="margin-top:-.4rem">Quem faz aniversário hoje e nos próximos dias. Que tal mandar os parabéns?</p>
+        @for (a of aniversariantes(); track a.id) {
+          <div class="aniv-item">
+            <span class="aniv-nome">{{ a.nome }}</span>
+            @if (a.hoje) { <span class="aniv-hoje">Hoje 🎂</span> }
+            @else { <span class="aniv-data">{{ a.dia }}/{{ a.mes }}</span> }
+            @if (a.whatsapp) {
+              <a class="btn-zap" [href]="linkWhatsapp(a)" target="_blank" rel="noopener">💬 Parabenizar no WhatsApp</a>
+            }
+          </div>
+        }
+      </div>
+    }
 
     @if (carregando()) {
       <div class="card"><div class="spinner-wrap muted">Carregando...</div></div>
@@ -88,6 +113,7 @@ export class MinhaFrequenciaComponent {
   auth = inject(AuthService);
 
   dados = signal<MinhaFrequenciaResponse | null>(null);
+  aniversariantes = signal<Aniversariante[]>([]);
   carregando = signal(true);
 
   constructor() {
@@ -103,5 +129,16 @@ export class MinhaFrequenciaComponent {
         this.carregando.set(false);
       },
     });
+    // Falha silenciosa: se não carregar, apenas não mostra o card de aniversariantes.
+    this.api.meusAniversariantes().subscribe({
+      next: (lista) => this.aniversariantes.set(lista),
+      error: () => this.aniversariantes.set([]),
+    });
+  }
+
+  linkWhatsapp(a: Aniversariante): string {
+    const primeiroNome = a.nome.trim().split(/\s+/)[0];
+    const msg = `Feliz aniversário, ${primeiroNome}! 🎉🎂 Que Deus te abençoe muito. Um abraço da EBD ICE Samambaia! 🙏`;
+    return `https://wa.me/${a.whatsapp}?text=${encodeURIComponent(msg)}`;
   }
 }
