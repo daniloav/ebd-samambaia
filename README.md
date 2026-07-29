@@ -31,6 +31,7 @@ claude-trabalho/
 | Documento | Para quê |
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Contexto completo do projeto (lido pelo Claude Code a cada sessão) |
+| [`CHANGELOG.md`](CHANGELOG.md) | **Histórico de versões** (o que subiu em cada release) |
 | [`docs/topologia.md`](docs/topologia.md) | **Topologia de produção** (2 VMs + GHCR + backups) |
 | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Modelo de dados, camadas e decisões técnicas |
 | [`docs/API.md`](docs/API.md) | Referência de endpoints com exemplos |

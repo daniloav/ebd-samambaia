@@ -43,15 +43,34 @@ jobs:
           ref: main
 
       - name: Bump de versão (SemVer por commit) + tag
+        id: bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           NEW="$(bash scripts/bump-version.sh)"
           echo "::notice title=Versão::Publicando v$NEW"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
           # version.ts é gravado localmente pelo bump e entra no build da imagem. NÃO commitamos na
           # main (protegida por ruleset — PR obrigatório): a versão é derivada das TAGS, então basta a tag.
           if ! git rev-parse -q --verify "refs/tags/v$NEW" >/dev/null; then
             git tag "v$NEW"; git push origin "v$NEW"
+            echo "created=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publicar GitHub Release (notas automáticas do changelog)
+        if: steps.bump.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW="${{ steps.bump.outputs.new }}"
+          NOTES="$(bash scripts/gerar-changelog.sh notas "v$NEW")"
+          # cria o release a partir da tag recém-publicada (idempotente: edita se já existir)
+          if gh release view "v$NEW" >/dev/null 2>&1; then
+            printf '%s' "$NOTES" | gh release edit "v$NEW" --notes-file -
+          else
+            printf '%s' "$NOTES" | gh release create "v$NEW" --title "v$NEW" --verify-tag --notes-file -
           fi
 
       - name: Login no GHCR

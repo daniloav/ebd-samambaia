@@ -39,6 +39,7 @@ Angular **17**, não 18+), Docker. Shell: **zsh** (atenção: scripts usam sheba
 claude-trabalho/
 ├── CLAUDE.md                      ← este arquivo
 ├── README.md                      ← visão geral + como rodar
+├── CHANGELOG.md                   ← histórico de versões (releases; gerado no CD)
 ├── docker-compose.yml             ← stack all-in-one (dev/local; fallback — prod usa os 2 abaixo)
 ├── docker-compose.app.yml         ← PROD VM app: caddy+frontend+backend (imagens do GHCR)
 ├── docker-compose.db.yml          ← PROD VM banco (ebd-db): só Postgres
