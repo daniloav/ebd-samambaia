@@ -455,6 +455,23 @@ export interface MeuRanking {
   minhaPosicao: RankingResumoItem | null;
 }
 
+// ---- Ranking por turma (desafio entre classes) ----
+export interface RankingTurmaItem {
+  posicao: number;
+  classeId: number;
+  turmaNome: string;
+  valor: number;   // média de pontos por aluno
+  total: number;   // soma bruta de pontos da turma
+  alunos: number;
+  detalhe: string;
+}
+export interface RankingTurmasResponse {
+  totalAulas: number;
+  totalProvas: number;
+  minhaClasseId: number | null;
+  turmas: RankingTurmaItem[];
+}
+
 // ---- Tesouraria: requisições ----
 export type StatusRequisicao = 'ABERTA' | 'APROVADA' | 'NEGADA' | 'FINALIZADA' | 'CANCELADA';
 export type FormaRepasse = 'DINHEIRO' | 'PIX';
