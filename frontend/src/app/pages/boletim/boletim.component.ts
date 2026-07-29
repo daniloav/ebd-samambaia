@@ -17,7 +17,7 @@ import { BoletimViewComponent } from './boletim-view.component';
   `],
   template: `
     <h2>Boletins</h2>
-    <p class="muted">Desempenho do aluno no trimestre — notas, frequência e situação.</p>
+    <p class="muted">Desempenho do aluno no trimestre — notas e frequência.</p>
 
     <div class="card" style="margin-bottom:1.5rem">
       <div class="filtros">

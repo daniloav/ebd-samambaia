@@ -96,26 +96,7 @@ class BoletimServiceTest {
     @Test
     @TestSecurity(user = "admin", roles = "ADMIN")
     @TestTransaction
-    void trimestreEmAndamentoNaoDaVeredito() {
-        Classe c = fx.classe("Turma Andamento");
-        Aluno a = fx.aluno("Fulano", c, null, false);
-
-        LocalDate hoje = LocalDate.now();
-        int tri = (hoje.getMonthValue() - 1) / 3 + 1;
-        int ano = hoje.getYear();
-        LocalDate iniTri = LocalDate.of(ano, (tri - 1) * 3 + 1, 1);
-        fx.aula(c, iniTri); // aula já realizada, sem presença -> frequência 0%
-
-        BoletimResponse b = boletimService.gerar(a.getId(), ano, tri);
-
-        // Trimestre ainda aberto: não vira "Em recuperação", mesmo com frequência baixa.
-        assertEquals("Trimestre em andamento", b.situacao());
-    }
-
-    @Test
-    @TestSecurity(user = "admin", roles = "ADMIN")
-    @TestTransaction
-    void trimestreEncerradoComBaixaFrequenciaFicaEmRecuperacao() {
+    void trimestreEncerradoContabilizaFrequencia() {
         Classe c = fx.classe("Turma Encerrada");
         Aluno a = fx.aluno("Ciclano", c, null, false);
         fx.aula(c, LocalDate.of(2025, 2, 15)); // 1º tri/2025 (encerrado), sem presença -> 0%
@@ -123,6 +104,6 @@ class BoletimServiceTest {
         BoletimResponse b = boletimService.gerar(a.getId(), 2025, 1);
 
         assertEquals(1, b.frequencia().totalAulas());
-        assertEquals("Em recuperação", b.situacao());
+        assertEquals(1, b.frequencia().faltas());
     }
 }

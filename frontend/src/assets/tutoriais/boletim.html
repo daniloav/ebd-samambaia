@@ -12,8 +12,6 @@
   .metrics{ display:flex; gap:9px; margin-bottom:10px; }
   .mbox{ flex:1; background:var(--ap-surface); border:1px solid var(--ap-border); border-radius:9px; padding:9px 8px; text-align:center; }
   .mbox .lb{ font-size:8.5px; color:var(--ap-muted); } .mbox b{ display:block; font-size:16px; color:var(--ap-navy); margin-top:2px; }
-  .sit{ display:inline-block; padding:5px 13px; border-radius:99px; font-weight:800; font-size:11.5px; }
-  .sit.and{ background:#dbeafe; color:#1e40af; } .sit.ok{ background:#c6f6d5; color:#22543d; } .sit.rec{ background:#fed7d7; color:#822727; }
   .prov{ display:flex; justify-content:space-between; font-size:10.5px; color:var(--ap-ink); border-bottom:1px solid var(--ap-border); padding:6px 2px; }
 </style>
 </head>
@@ -31,7 +29,7 @@
           <div class="bk">📄</div>
           <h1 class="serif">Boletim</h1>
           <div class="rule"></div>
-          <p>O desempenho do aluno por trimestre: notas, frequência e situação.</p>
+          <p>O desempenho do aluno por trimestre: notas e frequência.</p>
           <div class="tag">Professor e aluno</div>
         </div>
       </section>
@@ -67,22 +65,6 @@
               <div class="prov"><span>Prova Lição 5</span><span><b>9,0</b> / 10</span></div>
               <div class="prov" style="border:none"><span>Quiz Lição 1</span><span><b>10</b> / 10</span></div>
             </div>
-            <div style="margin-top:10px"><span class="sit ok">Aprovado</span></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="scene">
-        <div class="app" style="align-items:stretch">
-          <div class="main" style="flex:1">
-            <h4>Ana Beatriz Souza · 3º trimestre 2026</h4>
-            <div class="metrics">
-              <div class="mbox"><span class="lb">Presença</span><b>—</b></div>
-              <div class="mbox"><span class="lb">Aproveitamento</span><b>—</b></div>
-              <div class="mbox"><span class="lb">Média</span><b>—</b></div>
-            </div>
-            <div class="cardui" style="text-align:center; color:var(--ap-muted); font-size:11px; margin-bottom:12px">O trimestre ainda está acontecendo</div>
-            <div style="text-align:center"><span class="sit and glow">Trimestre em andamento</span></div>
           </div>
         </div>
       </section>
@@ -95,7 +77,6 @@
             <div class="metrics">
               <div class="mbox"><span class="lb">Presença</span><b>92%</b></div>
               <div class="mbox"><span class="lb">Média</span><b>8,5</b></div>
-              <div class="mbox"><span class="lb">Situação</span><b style="font-size:11px; color:#22543d">Aprovado</b></div>
             </div>
             <div style="text-align:right; margin-top:6px"><span class="btnp glow">📄 Baixar PDF</span></div>
           </div>
@@ -107,7 +88,7 @@
           <div class="bk">🎓</div>
           <h1 class="serif">Acompanhe o trimestre</h1>
           <div class="rule"></div>
-          <p>Notas, frequência e situação sempre atualizadas. O aluno vê o próprio boletim e pode baixar em PDF.</p>
+          <p>Notas e frequência sempre atualizadas. O aluno vê o próprio boletim e pode baixar em PDF.</p>
         </div>
       </section>
 
@@ -128,11 +109,10 @@
     ['Boletim: ', 'reúne o desempenho de cada aluno, trimestre a trimestre.'],
     ['Comece escolhendo ', 'o aluno e o trimestre, e toque em "Ver boletim".'],
     ['Você vê tudo: ', 'a frequência, o aproveitamento nas provas e a média do trimestre.'],
-    ['Enquanto o trimestre não acaba, ', 'aparece "Trimestre em andamento" — sem veredito. Só ao fechar vira Aprovado ou Em recuperação.'],
     ['O próprio aluno ', 'acompanha o seu boletim pelo app e ainda pode baixar em PDF.'],
     ['Assim, ', 'todo mundo acompanha o progresso da Escola Bíblica com clareza. Bons estudos!']
   ];
-  window.DURS = [6000, 8000, 8500, 10000, 8500, 8000];
+  window.DURS = [6000, 8000, 8500, 8500, 8000];
 </script>
 <script src="player.js"></script>
 </body>
