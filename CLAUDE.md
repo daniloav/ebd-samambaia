@@ -74,6 +74,7 @@ claude-trabalho/
 └── docs/
     ├── topologia.md               ← INFRA ATUAL: 2 VMs (app+banco) + GHCR + backups (LER p/ deploy/infra)
     ├── ARQUITETURA.md             ← modelo de dados, camadas, decisões (LER para mudanças estruturais)
+    ├── REGRAS-DE-NEGOCIO.md       ← catálogo das regras de negócio (ranking, inativação, boletim, tesouraria...)
     ├── migrations.md              ← changelog das migrations (Flyway) + como recriar o banco
     ├── API.md                     ← referência de endpoints com exemplos
     ├── ROADMAP.md                 ← backlog e limitações conhecidas
@@ -179,7 +180,7 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 - 📊 **Relatório de visitantes + batch de aniversário + evolução de provas** — relatório de visitantes
   por período (geral/turma, com export PDF/Excel); 1ª rotina batch (`quarkus-scheduler`) que às 12:00 BRT
   manda "feliz aniversário" a todos com e-mail; provas ganharam botão "Lançar e notificar" (e-mail de nota)
-  e **boletim por trimestre** (notas+frequência+situação) que o aluno extrai em PDF. Sem migration.
+  e **boletim por trimestre** (notas+frequência) que o aluno extrai em PDF. Sem migration.
 - 📧 **Alertas por e-mail** (roadmap item 2): ao salvar a chamada, envia e-mail aos alunos com opt-in
   (`recebe_notificacoes` + `email`, migration V4). Toggle `ebd.notificacoes.enabled` (off em prod até
   configurar SMTP). Validado em dev com mailer *mock*. Guia: [`docs/notificacoes-email.md`](docs/notificacoes-email.md).

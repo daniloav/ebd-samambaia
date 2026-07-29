@@ -34,6 +34,7 @@ claude-trabalho/
 | [`CHANGELOG.md`](CHANGELOG.md) | **Histórico de versões** (o que subiu em cada release) |
 | [`docs/topologia.md`](docs/topologia.md) | **Topologia de produção** (2 VMs + GHCR + backups) |
 | [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | Modelo de dados, camadas e decisões técnicas |
+| [`docs/REGRAS-DE-NEGOCIO.md`](docs/REGRAS-DE-NEGOCIO.md) | **Regras de negócio** (ranking, inativação, boletim, tesouraria, notificações...) |
 | [`docs/API.md`](docs/API.md) | Referência de endpoints com exemplos |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Backlog e limitações conhecidas |
 | [`docs/rodar-local.md`](docs/rodar-local.md) | **Como rodar o projeto localmente** (passo a passo) |
