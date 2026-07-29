@@ -74,6 +74,7 @@ claude-trabalho/
 └── docs/
     ├── topologia.md               ← INFRA ATUAL: 2 VMs (app+banco) + GHCR + backups (LER p/ deploy/infra)
     ├── ARQUITETURA.md             ← modelo de dados, camadas, decisões (LER para mudanças estruturais)
+    ├── REGRAS-DE-NEGOCIO.md       ← catálogo das regras de negócio (ranking, inativação, boletim, tesouraria...)
     ├── migrations.md              ← changelog das migrations (Flyway) + como recriar o banco
     ├── API.md                     ← referência de endpoints com exemplos
     ├── ROADMAP.md                 ← backlog e limitações conhecidas
