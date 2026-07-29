@@ -16,6 +16,10 @@ Datas no formato `AAAA-MM-DD` (fuso BRT).
 ## [Não lançado] — branch `develop`
 
 ### Adicionado
+- **Aniversariantes na tela do aluno + WhatsApp** — card em `/minha-frequencia` com os
+  aniversariantes da escola (**hoje + próximos 7 dias**, qualquer turma; o próprio aluno é
+  excluído) e botão **"Parabenizar no WhatsApp"** (link `wa.me` com mensagem pré-escrita:
+  aniversariante, remetente e turma). Complementa o e-mail automático de aniversário. Sem migration.
 - **Falta justificada (30%) + status automático** (migration **V24**):
   - Aluno **justifica a própria falta** em `/minha-frequencia` (autosserviço); a falta
     justificada passa a valer **0,3** no ranking *menos faltou* e na classificação geral.

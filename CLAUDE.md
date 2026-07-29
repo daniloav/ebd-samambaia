@@ -220,6 +220,19 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   em `/meu-ranking`. Validado: `mvn package` (novo `rankingPorTurmaUsaMediaPorAluno` em `DesafiosServiceTest`)
   e `ng build`. Branch `feature/ranking-por-turma`.
 - 🔁 **Aula complementar + empurrão da agenda (2026-07-29)** — para quando uma lição não termina no domingo e precisa continuar no domingo seguinte (que já está ocupado na agenda pré-montada). Botão **"Desdobrar"** por linha em /aulas: cria a continuação em `origem + 7 dias` (tema herdado com sufixo "(continuação)", mesmo professor — ambos editáveis) e **empurra +7 dias toda a agenda seguinte da turma**. O empurrão desloca as aulas afetadas em **ordem decrescente de data com flush por iteração** — a mais recente vai ao slot vazio e cada anterior ocupa o recém-liberado, sem nunca violar `uq_aula_classe_data` (não-deferrable). **Sem migration.** Backend: `AulaService.complementar` + `AulaRepository.listarPorClasseDesde`, DTOs `AulaComplementarRequest/Response`, endpoint `POST /api/aulas/{id}/complementar` (ADMIN/PROFESSOR, respeita escopo). Front: modal com prévia ("N aulas serão movidas") na tela Aulas. Validado: `mvn package` (novo `AulaComplementarServiceTest`, 2 casos: empurra 3 e origem-última não move nada) e `ng build`. Branch `feature/aula-complementar-empurra-agenda`.
+- 🎂 **Aniversariantes na tela do aluno + WhatsApp (2026-07-29)** — na home do aluno
+  (`/minha-frequencia`) um card lista os aniversariantes da escola de **hoje + próximos 7 dias**
+  (todos os ativos, qualquer turma; o próprio aluno é excluído), com selo **"Hoje 🎂"** e botão
+  **"Parabenizar no WhatsApp"** (link `wa.me` com mensagem pré-escrita) para quem tem telefone.
+  Complementa o e-mail automático de aniversário (`AniversarioService`). **Sem migration** (reusa
+  `dataNascimento`/`telefone`/`ativo`). Backend: DTO `AniversarianteResponse` (normaliza telefone
+  BR → DDI 55; expõe `turmaNome`), `AniversariantesService` (janela de 7 dias no fuso BRT, exclui o
+  logado, reusa `AlunoRepository.listarAtivos` + `EscopoService.alunoIdLogado`) e endpoint
+  `GET /api/me/aniversariantes` (ALUNO). Front: interface `Aniversariante`, `meusAniversariantes()`
+  e card em `minha-frequencia.component.ts` com a mensagem "Feliz aniversário, {aniversariante}! Do
+  seu colega {remetente}, da nossa EBD {turma}..." (remetente = aluno logado). Validado: `mvn package`
+  (`AniversarianteResponseTest`, 5 casos), `ng build` e teste visual ponta a ponta.
+  Branch `feature/aniversariantes-whatsapp` (PR #144 → develop).
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
 
 ## 10. Como pedir evoluções (dica para o Danilo)

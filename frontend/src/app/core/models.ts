@@ -27,6 +27,17 @@ export interface Aluno {
   login?: string | null;
 }
 
+export interface Aniversariante {
+  id: number;
+  nome: string;
+  dataNascimento: string;
+  dia: number;
+  mes: number;
+  hoje: boolean;
+  turmaNome: string;
+  whatsapp?: string | null;
+}
+
 export interface AlunoRequest {
   nome: string;
   classeId?: number;

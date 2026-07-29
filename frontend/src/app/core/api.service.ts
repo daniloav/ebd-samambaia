@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
-  Aluno, AlunoRequest, Aula, AulaRequest, AulaComplementarRequest, AulaComplementarResponse, Campanha, ChamadaResponse,
+  Aluno, Aniversariante, AlunoRequest, Aula, AulaRequest, AulaComplementarRequest, AulaComplementarResponse, Campanha, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Professor, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
@@ -165,6 +165,9 @@ export class ApiService {
   // ---------- Aluno (visão própria) ----------
   minhaFrequencia(): Observable<MinhaFrequenciaResponse> {
     return this.http.get<MinhaFrequenciaResponse>(`${this.api}/me/frequencia`);
+  }
+  meusAniversariantes(): Observable<Aniversariante[]> {
+    return this.http.get<Aniversariante[]>(`${this.api}/me/aniversariantes`);
   }
   // ---------- Visitantes ----------
   listarVisitantes(aulaId: number): Observable<Visitante[]> {
