@@ -9,6 +9,7 @@ import br.com.ice.ebd.service.MinhaFrequenciaService;
 import br.com.ice.ebd.service.QuizAlunoService;
 import br.com.ice.ebd.service.DesafiosService;
 import br.com.ice.ebd.dto.MeuRankingResponse;
+import br.com.ice.ebd.dto.RankingTurmasResponse;
 import br.com.ice.ebd.service.UsuarioService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
@@ -89,6 +90,14 @@ public class MeResource {
     @RolesAllowed("ALUNO")
     public MeuRankingResponse ranking() {
         return desafiosService.resumoDoAluno();
+    }
+
+    /** Ranking de todas as turmas (desafio entre classes), destacando a turma do aluno. */
+    @GET
+    @Path("/ranking-turmas")
+    @RolesAllowed("ALUNO")
+    public RankingTurmasResponse rankingTurmas() {
+        return desafiosService.resumoTurmasDoAluno();
     }
 
     /** Provas online da turma do aluno, com status (disponível/respondida/fechada/futura). */

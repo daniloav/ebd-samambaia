@@ -3,8 +3,11 @@ package br.com.ice.ebd.service;
 import br.com.ice.ebd.dto.DesafiosResponse;
 import br.com.ice.ebd.dto.RankingItem;
 import br.com.ice.ebd.dto.MeuRankingResponse;
+import br.com.ice.ebd.dto.RankingTurmasResponse;
+import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.repository.AlunoRepository;
+import br.com.ice.ebd.repository.ClasseRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -17,6 +20,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -27,11 +31,17 @@ public class DesafiosService {
 
     @Inject EntityManager em;
     @Inject AlunoRepository alunoRepository;
+    @Inject ClasseRepository classeRepository;
 
     /** Métricas de presença acumuladas por aluno. */
     private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante, long justificadas) {}
 
     private static final MetricasPresenca ZERO = new MetricasPresenca(0, 0, 0, 0, 0, 0);
+
+    /** Métricas de presença somadas por TURMA (mesmos quesitos, agregados por classe). */
+    private record MetricasTurma(long presencas, long biblia, long revista, long licao, long justificadas) {}
+
+    private static final MetricasTurma ZERO_TURMA = new MetricasTurma(0, 0, 0, 0, 0);
 
     public DesafiosResponse gerar(Long classeId, Integer ano, Integer trimestre) {
         escopo.assertClasse(classeId);
@@ -317,6 +327,148 @@ public class DesafiosService {
             out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.total(), det));
         }
         return out;
+    }
+
+    // ===================== Ranking por turma (desafio entre classes) =====================
+
+    /** Ranking das turmas no escopo do usuário (ADMIN = todas; PROFESSOR = as dele). */
+    public RankingTurmasResponse gerarPorTurma(Integer ano, Integer trimestre) {
+        Set<Long> permitidas = escopo.classesPermitidas(); // null = todas (ADMIN)
+        List<Classe> classes = classeRepository.listarAtivas();
+        if (permitidas != null) {
+            classes = classes.stream().filter(c -> permitidas.contains(c.getId())).toList();
+        }
+        return montarPorTurma(classes, ano, trimestre, null);
+    }
+
+    /** Ranking de todas as turmas para o aluno logado, destacando a turma dele. */
+    @Transactional
+    public RankingTurmasResponse resumoTurmasDoAluno() {
+        Long alunoId = escopo.alunoIdLogado();
+        Long minhaClasseId = null;
+        if (alunoId != null) {
+            Aluno aluno = alunoRepository.findById(alunoId);
+            if (aluno != null && aluno.getClasse() != null) {
+                minhaClasseId = aluno.getClasse().getId();
+            }
+        }
+        return montarPorTurma(classeRepository.listarAtivas(), null, null, minhaClasseId);
+    }
+
+    private RankingTurmasResponse montarPorTurma(List<Classe> classes, Integer ano, Integer trimestre, Long minhaClasseId) {
+        PeriodoLetivo p = PeriodoLetivo.deOuTudo(ano, trimestre);
+        LocalDate ini = p.inicio();
+        LocalDate fim = p.fim();
+        LocalDate hoje = LocalDate.now();
+
+        List<Long> ids = classes.stream().map(Classe::getId).toList();
+        long totalAulas = 0;
+        long totalProvas = 0;
+        if (!ids.isEmpty()) {
+            totalAulas = ((Number) em.createQuery("select count(a) from Aula a where a.classe.id in :ids and a.data <= :hoje and a.data between :ini and :fim")
+                    .setParameter("ids", ids).setParameter("hoje", hoje).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
+            totalProvas = ((Number) em.createQuery("select count(p) from Prova p where p.classe.id in :ids and p.data between :ini and :fim")
+                    .setParameter("ids", ids).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
+        }
+
+        Map<Long, MetricasTurma> pres = carregarPresencasPorTurma(ini, fim);
+        Map<Long, Long> visitantes = carregarVisitantesPorTurma(ini, fim);
+        Map<Long, Double> notas = carregarNotasPontosPorTurma(ini, fim);
+
+        record Par(Long id, String nome, double media, double total, int alunos) {}
+        Comparator<Par> cmp = Comparator
+                .comparingDouble((Par p2) -> p2.media()).reversed()
+                .thenComparing(Comparator.comparingDouble((Par p2) -> p2.total()).reversed())
+                .thenComparing(p2 -> p2.nome(), String.CASE_INSENSITIVE_ORDER);
+
+        List<Par> pares = new ArrayList<>();
+        for (Classe c : classes) {
+            int alunos = alunoRepository.listarAtivosPorClasse(c.getId()).size();
+            if (alunos == 0) {
+                continue; // turma sem alunos ativos não entra (evita divisão por zero)
+            }
+            MetricasTurma m = pres.getOrDefault(c.getId(), ZERO_TURMA);
+            long vis = visitantes.getOrDefault(c.getId(), 0L);
+            double pontosNotas = notas.getOrDefault(c.getId(), 0.0);
+            double total = m.presencas() + 0.3 * m.justificadas() + m.biblia() + m.revista() + m.licao()
+                    + 2.0 * vis + pontosNotas;
+            total = arred1(total);
+            double media = Math.round((total / alunos) * 100.0) / 100.0;
+            pares.add(new Par(c.getId(), c.getNome(), media, total, alunos));
+        }
+        pares.sort(cmp);
+
+        List<RankingTurmasResponse.Item> turmas = new ArrayList<>();
+        int pos = 0;
+        for (int i = 0; i < pares.size(); i++) {
+            if (i == 0 || cmp.compare(pares.get(i - 1), pares.get(i)) != 0) {
+                pos = i + 1;
+            }
+            Par par = pares.get(i);
+            String det = String.format("%s pts no total · %d aluno(s)", formatarPontos(par.total()), par.alunos());
+            turmas.add(new RankingTurmasResponse.Item(pos, par.id(), par.nome(),
+                    par.media(), par.total(), par.alunos(), det));
+        }
+        return new RankingTurmasResponse(totalAulas, totalProvas, minhaClasseId, turmas);
+    }
+
+    private Map<Long, MetricasTurma> carregarPresencasPorTurma(LocalDate ini, LocalDate fim) {
+        Map<Long, MetricasTurma> mapa = new LinkedHashMap<>();
+        List<Object[]> linhas = em.createQuery(
+                        "select aula.classe.id, " +
+                        "sum(case when p.presente = true then 1 else 0 end), " +
+                        "sum(case when p.trouxeBiblia = true then 1 else 0 end), " +
+                        "sum(case when p.trouxeRevista = true then 1 else 0 end), " +
+                        "sum(case when p.estudouLicao = true then 1 else 0 end), " +
+                        "sum(case when p.presente = false and p.justificada = true then 1 else 0 end) " +
+                        "from Presenca p join p.aula aula "
+                        + "left join aula.professor prof left join prof.aluno profAluno "
+                        + "where aula.data <= :hoje and aula.data between :ini and :fim "
+                        + "and (profAluno is null or profAluno.id <> p.aluno.id) "
+                        + "group by aula.classe.id", Object[].class)
+                .setParameter("hoje", LocalDate.now())
+                .setParameter("ini", ini).setParameter("fim", fim)
+                .getResultList();
+        for (Object[] l : linhas) {
+            mapa.put((Long) l[0], new MetricasTurma(
+                    toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]), toLong(l[5])));
+        }
+        return mapa;
+    }
+
+    private Map<Long, Long> carregarVisitantesPorTurma(LocalDate ini, LocalDate fim) {
+        Map<Long, Long> mapa = new LinkedHashMap<>();
+        List<Object[]> linhas = em.createQuery(
+                        "select aula.classe.id, count(v) from Visitante v join v.aula aula "
+                        + "left join aula.professor prof left join prof.aluno profAluno "
+                        + "where v.trazidoPor is not null and aula.data <= :hoje and aula.data between :ini and :fim "
+                        + "and (profAluno is null or profAluno.id <> v.trazidoPor.id) "
+                        + "group by aula.classe.id", Object[].class)
+                .setParameter("hoje", LocalDate.now())
+                .setParameter("ini", ini).setParameter("fim", fim)
+                .getResultList();
+        for (Object[] l : linhas) {
+            mapa.put((Long) l[0], toLong(l[1]));
+        }
+        return mapa;
+    }
+
+    private Map<Long, Double> carregarNotasPontosPorTurma(LocalDate ini, LocalDate fim) {
+        Map<Long, Double> mapa = new LinkedHashMap<>();
+        List<Object[]> linhas = em.createQuery(
+                        "select n.prova.classe.id, sum(n.nota / n.prova.notaMaxima) from NotaProva n where n.prova.data between :ini and :fim group by n.prova.classe.id",
+                        Object[].class)
+                .setParameter("ini", ini).setParameter("fim", fim)
+                .getResultList();
+        for (Object[] l : linhas) {
+            mapa.put((Long) l[0], ((Number) l[1]).doubleValue() * 5.0);
+        }
+        return mapa;
+    }
+
+    /** Formata pontos com no máximo 1 casa decimal (inteiro sem casa). */
+    private static String formatarPontos(double v) {
+        return v == Math.rint(v) ? String.valueOf((long) v) : String.format("%.1f", v);
     }
 
     private static long toLong(Object o) {

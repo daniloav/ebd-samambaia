@@ -1,6 +1,7 @@
 package br.com.ice.ebd;
 
 import br.com.ice.ebd.dto.DesafiosResponse;
+import br.com.ice.ebd.dto.RankingTurmasResponse;
 import br.com.ice.ebd.dto.SalvarChamadaRequest;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Aula;
@@ -17,6 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 class DesafiosServiceTest {
@@ -94,5 +96,41 @@ class DesafiosServiceTest {
         assertEquals(1, desafiosService.gerar(c.getId(), 2026, 2).totalAulas());
         // 4º trimestre de 2026 (sem aulas): nenhuma.
         assertEquals(0, desafiosService.gerar(c.getId(), 2026, 4).totalAulas());
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = "ADMIN")
+    @TestTransaction
+    void rankingPorTurmaUsaMediaPorAluno() {
+        // Turma grande (3 alunos), só 1 presença → média baixa por aluno.
+        Classe grande = fx.classe("Turma Grande RT");
+        Aluno g1 = fx.aluno("G1", grande, null, false);
+        fx.aluno("G2", grande, null, false);
+        fx.aluno("G3", grande, null, false);
+        Aula aulaG = fx.aula(grande, LocalDate.now());
+        chamadaService.salvarChamada(aulaG.getId(), new SalvarChamadaRequest(List.of(
+                new SalvarChamadaRequest.Item(g1.getId(), true, false, false, false))));
+
+        // Turma pequena (1 aluno) muito engajada: presença + Bíblia + revista + lição.
+        Classe pequena = fx.classe("Turma Pequena RT");
+        Aluno p1 = fx.aluno("P1", pequena, null, false);
+        Aula aulaP = fx.aula(pequena, LocalDate.now());
+        chamadaService.salvarChamada(aulaP.getId(), new SalvarChamadaRequest(List.of(
+                new SalvarChamadaRequest.Item(p1.getId(), true, true, true, true))));
+
+        RankingTurmasResponse r = desafiosService.gerarPorTurma(null, null);
+        var itGrande = r.turmas().stream().filter(t -> t.classeId().equals(grande.getId())).findFirst().orElseThrow();
+        var itPequena = r.turmas().stream().filter(t -> t.classeId().equals(pequena.getId())).findFirst().orElseThrow();
+
+        // Grande: 1 pt total / 3 alunos = 0,33 de média.
+        assertEquals(1.0, itGrande.total());
+        assertEquals(3, itGrande.alunos());
+        assertEquals(0.33, itGrande.valor());
+        // Pequena: 4 pts total / 1 aluno = 4,0 de média.
+        assertEquals(4.0, itPequena.total());
+        assertEquals(1, itPequena.alunos());
+        assertEquals(4.0, itPequena.valor());
+        // A turma pequena e engajada fica à frente da grande, apesar de ter menos gente.
+        assertTrue(itPequena.posicao() < itGrande.posicao());
     }
 }
