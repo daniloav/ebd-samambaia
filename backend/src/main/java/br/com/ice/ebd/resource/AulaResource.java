@@ -1,5 +1,7 @@
 package br.com.ice.ebd.resource;
 
+import br.com.ice.ebd.dto.AulaComplementarRequest;
+import br.com.ice.ebd.dto.AulaComplementarResponse;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
 import br.com.ice.ebd.service.AulaService;
@@ -50,6 +52,16 @@ public class AulaResource {
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public AulaResponse atualizar(@PathParam("id") Long id, @Valid AulaRequest request) {
         return service.atualizar(id, request);
+    }
+
+    /**
+     * Desdobra a aula: cria a continuação no próximo domingo e empurra +7 dias a agenda seguinte.
+     */
+    @POST
+    @Path("/{id}/complementar")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public Response complementar(@PathParam("id") Long id, @Valid AulaComplementarRequest request) {
+        return Response.status(Response.Status.CREATED).entity(service.complementar(id, request)).build();
     }
 
     @DELETE

@@ -28,7 +28,7 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
         <div class="tabela-scroll">
           <table class="tabela">
             <thead>
-              <tr><th style="width:130px">Data</th><th>Tema</th><th style="width:290px">Ações</th></tr>
+              <tr><th style="width:130px">Data</th><th>Tema</th><th style="width:390px">Ações</th></tr>
             </thead>
             <tbody>
               @for (a of aulas(); track a.id) {
@@ -40,6 +40,8 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
                   <td>
                     <a class="btn btn-dourado btn-sm" routerLink="/chamada">Fazer chamada</a>
                     <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
+                    <button class="btn btn-outline btn-sm" (click)="abrirComplementar(a)"
+                      title="Continuar esta aula no próximo domingo, empurrando a agenda seguinte">Desdobrar</button>
                     @if (auth.isAdmin()) {
                       <button class="btn btn-perigo btn-sm" (click)="excluir(a)">Excluir</button>
                     }
@@ -77,6 +79,44 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
         </div>
       </div>
     }
+
+    @if (modalComplementarAberto()) {
+      <div class="modal-backdrop" (click)="fecharComplementar()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header"><h3>Desdobrar aula (aula complementar)</h3></div>
+          <div class="modal-body">
+            <p class="muted" style="margin-top:0">
+              Aula de origem:
+              <b>{{ origem()?.data | date:'dd/MM/yyyy' }}</b>{{ origem()?.tema ? ' · ' + origem()?.tema : '' }}.
+            </p>
+            <div class="card" style="background:var(--cor-fundo-suave,#f7f7f5);padding:.75rem 1rem;margin-bottom:1rem">
+              A aula complementar será criada em <b>{{ novaData() | date:'dd/MM/yyyy' }}</b> (próximo domingo).
+              @if (qtdMovidas() > 0) {
+                <br>As <b>{{ qtdMovidas() }}</b> aula(s) seguinte(s) da turma serão movidas <b>+7 dias</b>.
+              } @else {
+                <br>Não há aulas posteriores — nada será movido.
+              }
+            </div>
+            <div class="form-group"><label>Tema da aula complementar</label>
+              <input type="text" [(ngModel)]="formComplementar.tema" maxlength="200"
+                placeholder="Ex.: A graça de Deus (continuação)" /></div>
+            <div class="form-group"><label>Professor da aula complementar</label>
+              <select [(ngModel)]="formComplementar.professorId">
+                <option [ngValue]="null">— sem professor definido —</option>
+                @for (pr of professores(); track pr.id) { <option [ngValue]="pr.id">{{ pr.nome }}</option> }
+              </select></div>
+            <small class="muted">Aulas que já tiveram chamada levam as presenças para a nova data — a função é
+              pensada para a agenda futura ainda sem chamada.</small>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="fecharComplementar()">Cancelar</button>
+            <button class="btn btn-verde" (click)="confirmarComplementar()" [disabled]="complementando()">
+              {{ complementando() ? 'Processando...' : 'Criar e empurrar agenda' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class AulasComponent {
@@ -93,6 +133,12 @@ export class AulasComponent {
   salvando = signal(false);
   editando = signal<Aula | null>(null);
   form: AulaRequest = this.vazio();
+
+  // Desdobramento (aula complementar + empurrão da agenda)
+  modalComplementarAberto = signal(false);
+  complementando = signal(false);
+  origem = signal<Aula | null>(null);
+  formComplementar: { tema: string | null; professorId: number | null } = { tema: '', professorId: null };
 
   constructor() {
     effect(() => { this.classeCtx.selecionadaId(); this.carregar(); this.carregarProfessores(); }, { allowSignalWrites: true });
@@ -136,6 +182,50 @@ export class AulasComponent {
         this.salvando.set(false); this.fechar(); this.carregar();
       },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao salvar aula.'); this.salvando.set(false); },
+    });
+  }
+
+  // ---- Desdobramento ----
+  abrirComplementar(a: Aula): void {
+    this.origem.set(a);
+    this.formComplementar = {
+      tema: a.tema ? `${a.tema} (continuação)` : '',
+      professorId: a.professorId ?? null,
+    };
+    this.modalComplementarAberto.set(true);
+  }
+  fecharComplementar(): void { this.modalComplementarAberto.set(false); this.origem.set(null); }
+
+  /** Próximo domingo = data da aula de origem + 7 dias. */
+  novaData(): Date | null {
+    const o = this.origem();
+    if (!o) { return null; }
+    const d = new Date(o.data + 'T00:00:00');
+    d.setDate(d.getDate() + 7);
+    return d;
+  }
+
+  /** Quantas aulas da turma serão empurradas (as com data posterior à de origem). */
+  qtdMovidas(): number {
+    const o = this.origem();
+    if (!o) { return 0; }
+    return this.aulas().filter((x) => x.data > o.data).length;
+  }
+
+  confirmarComplementar(): void {
+    const o = this.origem();
+    if (!o) { return; }
+    this.complementando.set(true);
+    const req = { tema: this.formComplementar.tema || null, professorId: this.formComplementar.professorId ?? null };
+    this.api.complementarAula(o.id, req).subscribe({
+      next: (r) => {
+        const msg = r.aulasMovidas > 0
+          ? `Aula complementar criada; ${r.aulasMovidas} aula(s) movida(s) +7 dias.`
+          : 'Aula complementar criada.';
+        this.toast.sucesso(msg);
+        this.complementando.set(false); this.fecharComplementar(); this.carregar();
+      },
+      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao desdobrar a aula.'); this.complementando.set(false); },
     });
   }
 
