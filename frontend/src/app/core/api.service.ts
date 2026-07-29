@@ -7,7 +7,7 @@ import {
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Professor, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
-  BoletimResponse, Auditoria, MeuRanking, Requisicao, RequisicaoRequest, Usuario, UsuarioRequest,
+  BoletimResponse, Auditoria, MeuRanking, RankingTurmasResponse, Requisicao, RequisicaoRequest, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest,
 } from './models';
 
@@ -113,6 +113,15 @@ export class ApiService {
     return this.http.get<DesafiosResponse>(`${this.api}/desafios/rankings`, { params });
   }
 
+  /** Ranking das turmas entre si (média por aluno). Compara todas as turmas do escopo — ignora o seletor de turma. */
+  rankingTurmas(ano?: number | null, trimestre?: number | null): Observable<RankingTurmasResponse> {
+    let params = new HttpParams();
+    if (ano != null && trimestre != null) {
+      params = params.set('ano', ano).set('trimestre', trimestre);
+    }
+    return this.http.get<RankingTurmasResponse>(`${this.api}/desafios/rankings-turmas`, { params });
+  }
+
   // ---------- Classes ----------
   listarClasses(apenasAtivas = false): Observable<Classe[]> {
     const params = new HttpParams().set('apenasAtivas', apenasAtivas);
@@ -193,6 +202,10 @@ export class ApiService {
   }
   meuRanking(): Observable<MeuRanking> {
     return this.http.get<MeuRanking>(`${this.api}/me/ranking`);
+  }
+
+  meuRankingTurmas(): Observable<RankingTurmasResponse> {
+    return this.http.get<RankingTurmasResponse>(`${this.api}/me/ranking-turmas`);
   }
 
   // ---------- Tesouraria: requisições ----------

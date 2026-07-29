@@ -1,9 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
-import { MeuRanking, RankingResumoItem } from '../../core/models';
+import { MeuRanking, RankingResumoItem, RankingTurmasResponse } from '../../core/models';
 
-/** Ranking resumido para o aluno: pódio (1º/2º/3º) da turma + a posição dele. */
+/** Ranking resumido para o aluno: pódio (1º/2º/3º) da turma + a posição dele, e a disputa entre turmas. */
 @Component({
   selector: 'app-meu-ranking',
   standalone: true,
@@ -25,6 +25,19 @@ import { MeuRanking, RankingResumoItem } from '../../core/models';
     .minha .pos { font-size: 1.8rem; font-weight: 800; color: var(--azul); font-variant-numeric: tabular-nums; }
     .minha .info b { color: var(--titulo); } .minha .info span { display: block; color: var(--cinza-texto); font-size: .85rem; }
     .no-pod { color: var(--cinza-texto); }
+
+    /* Ranking das turmas */
+    .turmas { list-style: none; margin: .6rem 0 0; padding: 0; }
+    .turmas li { display: flex; align-items: center; gap: .7rem; padding: .6rem .7rem; border: 1px solid var(--cinza-borda);
+      border-radius: 10px; margin-bottom: .5rem; background: var(--superficie); }
+    .turmas li.minha-turma { border-color: var(--azul); border-left: 4px solid var(--azul); background: #f5f9ff; }
+    .turmas .t-pos { width: 34px; text-align: center; font-weight: 800; font-size: 1.15rem; }
+    .turmas .t-nome { flex: 1; font-weight: 700; color: var(--titulo); }
+    .turmas .t-nome small { display: block; color: var(--cinza-texto); font-size: .78rem; font-weight: 500; }
+    .turmas .t-val { font-weight: 800; color: var(--dourado); text-align: right; }
+    .turmas .t-val small { display: block; font-size: .68rem; color: var(--cinza-texto); font-weight: 600; }
+    .sua-tag { display: inline-block; font-size: .66rem; font-weight: 800; color: #fff; background: var(--azul);
+      border-radius: 999px; padding: .05rem .45rem; margin-left: .4rem; }
   `],
   template: `
     <h2>🏆 Ranking da turma</h2>
@@ -62,6 +75,25 @@ import { MeuRanking, RankingResumoItem } from '../../core/models';
         <div class="card no-pod">Você ainda não pontuou nesta turma. Comece participando das aulas! 💪</div>
       }
     }
+
+    @if (turmas(); as t) {
+      @if (t.turmas.length > 1) {
+        <h3 style="margin:1.6rem 0 .3rem">🏫 Ranking das turmas</h3>
+        <p class="muted">Disputa entre as turmas pela <b>média de pontos por aluno</b> — sua turma está destacada.</p>
+        <ul class="turmas">
+          @for (item of t.turmas; track item.classeId) {
+            <li [class.minha-turma]="item.classeId === t.minhaClasseId">
+              <span class="t-pos">{{ medalha(item.posicao) }}</span>
+              <span class="t-nome">{{ item.turmaNome }}
+                @if (item.classeId === t.minhaClasseId) { <span class="sua-tag">Sua turma</span> }
+                <small>{{ item.detalhe }}</small>
+              </span>
+              <span class="t-val">{{ formatar(item.valor) }}<small>méd/aluno</small></span>
+            </li>
+          }
+        </ul>
+      }
+    }
   `,
 })
 export class MeuRankingComponent {
@@ -69,11 +101,17 @@ export class MeuRankingComponent {
   private toast = inject(ToastService);
   dados = signal<MeuRanking | null>(null);
   carregando = signal(true);
+  turmas = signal<RankingTurmasResponse | null>(null);
 
   constructor() {
     this.api.meuRanking().subscribe({
       next: (r) => { this.dados.set(r); this.carregando.set(false); },
       error: (e) => { this.toast.erro(e?.error?.message || 'Não foi possível carregar o ranking.'); this.carregando.set(false); },
+    });
+    // Ranking das turmas (silencioso: se falhar, apenas não exibe a seção).
+    this.api.meuRankingTurmas().subscribe({
+      next: (t) => this.turmas.set(t),
+      error: () => this.turmas.set(null),
     });
   }
 
@@ -86,5 +124,9 @@ export class MeuRankingComponent {
 
   medalha(pos: number): string {
     return pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : pos + 'º';
+  }
+
+  formatar(valor: number): string {
+    return Number.isInteger(valor) ? String(valor) : valor.toFixed(2);
   }
 }
