@@ -99,7 +99,7 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
                 <tr [style.opacity]="i.professorDaAula ? .55 : 1">
                   <td class="nome-col">{{ i.alunoNome }}
                     @if (i.professorDaAula) {
-                      <span style="display:inline-block;margin-left:.4rem;font-size:.72rem;font-weight:700;padding:.1rem .5rem;border-radius:999px;background:#e7eefb;color:#1e40af">👩‍🏫 Professor da aula</span>
+                      <span style="display:inline-block;margin-left:.4rem;font-size:.72rem;font-weight:700;padding:.1rem .5rem;border-radius:999px;background:#e7eefb;color:#1e40af">👩‍🏫 Dando aula</span>
                     }
                   </td>
                   <td class="chk" data-label="Presente" (click)="!i.professorDaAula && (i.presente = !i.presente)">

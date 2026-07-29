@@ -10,5 +10,7 @@ public record NotasProvaResponse(
         String titulo,
         LocalDate data,
         BigDecimal notaMaxima,
+        /** true = a grade lista só os alunos presentes na aula da data (prova offline). */
+        boolean somentePresentes,
         List<NotaItem> itens) {
 }

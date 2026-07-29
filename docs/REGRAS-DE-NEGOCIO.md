@@ -40,9 +40,12 @@ Fonte: `ChamadaService`.
   revista, estudou a lição.
 - Só entram na chamada os **alunos ativos da turma** da aula.
 - Salvar é **upsert**: uma linha de presença por aluno por aula (cria ou atualiza).
-- **O professor da aula não é contabilizado**: se o usuário professor estiver vinculado a um
-  aluno, esse aluno aparece marcado como "professor" e qualquer presença dele naquela aula é
-  removida ao salvar — ele não conta na chamada nem no ranking.
+- **Quem dá aula não é contabilizado como aluno naquele dia**: se um aluno está vinculado a um
+  usuário que é **professor de alguma aula na data da chamada** (nesta turma **ou em qualquer
+  outra**), esse aluno aparece marcado como "dando aula", vem **desabilitado** e qualquer
+  presença dele naquele dia é removida ao salvar — não conta na chamada nem no ranking. Num dia
+  em que **não** dá aula, ele conta normalmente como aluno. (Antes valia só na aula que ele
+  mesmo dava; agora abrange também o dia em que dá aula em outra turma.)
 - Marcar um aluno como **presente** limpa automaticamente uma eventual marca de falta
   justificada (motivo/data zerados).
 
@@ -152,7 +155,9 @@ Fonte: `ProvaService`. Uma prova tem `tipo` **OFFLINE** (nota lançada à mão) 
 (quiz auto-corrigido — seção 6).
 
 - CRUD da prova exige escopo da turma; excluir a prova remove as notas em cascata.
-- **Lançar notas** (`salvarNotas`): grade com todos os alunos ativos da turma.
+- **Lançar notas** (`salvarNotas`): a grade lista os alunos elegíveis da turma.
+  - **Prova OFFLINE**: só entram os alunos **presentes na aula da data da prova** (mesma turma).
+    Lançar nota para um ausente é rejeitado (erro 400). Prova ONLINE: todos os ativos.
   - Nota **em branco** → remove o registro existente daquele aluno (se houver).
   - Nota **acima da nota máxima** da prova → erro 400.
 - **Lançar e notificar** (`notificarNotas`): envia a cada aluno com nota lançada o e-mail do

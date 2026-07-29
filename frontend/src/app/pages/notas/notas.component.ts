@@ -29,8 +29,12 @@ import { NotasProvaResponse, NotaItem } from '../../core/models';
           <div class="box">Alunos: <b>{{ itens().length }}</b></div>
         </div>
 
+        @if (d.somentePresentes) {
+          <p class="muted" style="margin-top:-.4rem">Prova offline: só entram os alunos <b>presentes</b> na aula desta data.</p>
+        }
+
         @if (itens().length === 0) {
-          <p class="muted text-center">Nenhum aluno ativo para lançar notas.</p>
+          <p class="muted text-center">{{ d.somentePresentes ? 'Nenhum aluno presente na aula desta data para lançar notas.' : 'Nenhum aluno ativo para lançar notas.' }}</p>
         } @else {
           <div class="tabela-scroll">
             <table class="tabela">
