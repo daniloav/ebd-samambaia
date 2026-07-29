@@ -11,7 +11,6 @@ import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.service.ChamadaService;
 import br.com.ice.ebd.service.DesafiosService;
-import br.com.ice.ebd.service.MinhaFrequenciaService;
 import br.com.ice.ebd.service.VisitanteService;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.TestTransaction;
@@ -37,7 +36,6 @@ class FaltaJustificadaEInativacaoTest {
 
     @Inject ChamadaService chamadaService;
     @Inject DesafiosService desafiosService;
-    @Inject MinhaFrequenciaService minhaFrequenciaService;
     @Inject VisitanteService visitanteService;
     @Inject AlunoRepository alunoRepository;
     @Inject MockMailbox mailbox;
@@ -51,6 +49,12 @@ class FaltaJustificadaEInativacaoTest {
     private SalvarChamadaRequest ausente(Long alunoId) {
         return new SalvarChamadaRequest(List.of(
                 new SalvarChamadaRequest.Item(alunoId, false, false, false, false)));
+    }
+
+    /** Falta com justificativa do professor (marcada ao salvar a chamada). */
+    private SalvarChamadaRequest ausenteJustificado(Long alunoId, String motivo) {
+        return new SalvarChamadaRequest(List.of(
+                new SalvarChamadaRequest.Item(alunoId, false, false, false, false, true, motivo)));
     }
 
     @Test
@@ -70,8 +74,8 @@ class FaltaJustificadaEInativacaoTest {
         // Antes de justificar: só 1 presença conta.
         assertEquals(1.0, desafiosService.gerar(c.getId(), null, null).menosFaltou().get(0).valor());
 
-        // Aluno justifica a falta da aula 2 → passa a valer 0,3.
-        minhaFrequenciaService.justificar(a2.getId(), "Viagem de trabalho");
+        // Professor justifica a falta da aula 2 (ao salvar a chamada) → passa a valer 0,3.
+        chamadaService.salvarChamada(a2.getId(), ausenteJustificado(a.getId(), "Viagem de trabalho"));
 
         DesafiosResponse d = desafiosService.gerar(c.getId(), null, null);
         assertEquals(1.3, d.menosFaltou().get(0).valor());
@@ -116,8 +120,8 @@ class FaltaJustificadaEInativacaoTest {
             if (maisAntiga == null) maisAntiga = aula;
             chamadaService.salvarChamada(aula.getId(), ausente(a.getId()));
         }
-        // Justifica a falta MAIS ANTIGA → quebra a sequência antes de chegar a 5.
-        minhaFrequenciaService.justificar(maisAntiga.getId(), "Estava doente");
+        // Professor justifica a falta MAIS ANTIGA (via chamada) → quebra a sequência antes de chegar a 5.
+        chamadaService.salvarChamada(maisAntiga.getId(), ausenteJustificado(a.getId(), "Estava doente"));
 
         // 5ª aula (mais recente): a sequência sem justificativa é só 4 → não inativa.
         Aula recente = fx.aula(c, LocalDate.now().minusDays(1));

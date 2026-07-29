@@ -14,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,7 +66,8 @@ public class ChamadaService {
                                 false, false, false, false, ehProfessor);
                     }
                     return new PresencaItem(aluno.getId(), aluno.getNome(),
-                            p.isPresente(), p.isTrouxeBiblia(), p.isTrouxeRevista(), p.isEstudouLicao(), false);
+                            p.isPresente(), p.isTrouxeBiblia(), p.isTrouxeRevista(), p.isEstudouLicao(),
+                            false, p.isJustificada(), p.getJustificativaMotivo());
                 })
                 .toList();
 
@@ -114,8 +116,15 @@ public class ChamadaService {
             p.setTrouxeBiblia(item.trouxeBiblia());
             p.setTrouxeRevista(item.trouxeRevista());
             p.setEstudouLicao(item.estudouLicao());
-            // presente ou item re-marcado como presente perde a marca de falta justificada
-            if (item.presente()) {
+            // A justificativa vem do professor: só vale para quem faltou; presente sempre a limpa.
+            if (!item.presente() && item.justificada()) {
+                p.setJustificada(true);
+                p.setJustificativaMotivo(item.justificativaMotivo() != null
+                        ? item.justificativaMotivo().trim() : null);
+                if (p.getJustificadaEm() == null) {
+                    p.setJustificadaEm(LocalDateTime.now());
+                }
+            } else {
                 p.setJustificada(false);
                 p.setJustificativaMotivo(null);
                 p.setJustificadaEm(null);

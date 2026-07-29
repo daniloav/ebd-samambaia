@@ -21,10 +21,10 @@ public record MinhaFrequenciaResponse(
             boolean trouxeBiblia,
             boolean trouxeRevista,
             boolean estudouLicao,
-            /** Falta já justificada por este aluno. */
+            /** Falta justificada pelo professor (o aluno apenas visualiza). */
             boolean justificada,
             String justificativaMotivo,
-            /** true quando é uma falta (ausente) e pode receber justificativa. */
-            boolean podeJustificar) {
+            /** true quando é uma falta (ausente). */
+            boolean falta) {
     }
 }

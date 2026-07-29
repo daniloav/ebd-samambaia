@@ -15,11 +15,6 @@ import { exportarBoletimPdf } from '../../core/export.util';
     .metricas { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 1rem 0; }
     .metricas .box { background: #f7fafc; border-radius: 8px; padding: .6rem 1rem; }
     .metricas b { color: var(--azul); font-size: 1.15rem; }
-    .situacao { display: inline-block; padding: .35rem .9rem; border-radius: 999px; font-weight: 700; font-size: .9rem; }
-    .situacao.ok { background: #c6f6d5; color: #22543d; }
-    .situacao.rec { background: #fed7d7; color: #822727; }
-    .situacao.neutra { background: #e2e8f0; color: #2d3748; }
-    .situacao.andamento { background: #dbeafe; color: #1e40af; }
     h3 { margin: 1.2rem 0 .5rem; }
   `],
   template: `
@@ -37,11 +32,6 @@ import { exportarBoletimPdf } from '../../core/export.util';
         <div class="box">Média das notas<br><b>{{ b.mediaNotas }}</b></div>
         <div class="box">Aproveitamento<br><b>{{ b.aproveitamentoPct }}%</b></div>
         <div class="box">Presença<br><b>{{ b.frequencia.percentualPresenca }}%</b></div>
-        <div class="box" style="display:flex;flex-direction:column;justify-content:center">
-          <span class="situacao" [class.ok]="situacaoOk()" [class.rec]="situacaoRec()"
-                [class.andamento]="situacaoAndamento()"
-                [class.neutra]="!situacaoOk() && !situacaoRec() && !situacaoAndamento()">{{ b.situacao }}</span>
-        </div>
       </div>
 
       <h3>Provas</h3>
@@ -93,10 +83,6 @@ import { exportarBoletimPdf } from '../../core/export.util';
 })
 export class BoletimViewComponent {
   @Input({ required: true }) b!: BoletimResponse;
-
-  situacaoOk(): boolean { return this.b.situacao === 'Aprovado'; }
-  situacaoRec(): boolean { return this.b.situacao === 'Em recuperação'; }
-  situacaoAndamento(): boolean { return this.b.situacao === 'Trimestre em andamento'; }
 
   baixarPdf(): void {
     exportarBoletimPdf(this.b);

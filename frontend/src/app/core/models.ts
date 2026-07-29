@@ -70,6 +70,8 @@ export interface PresencaItem {
   trouxeRevista: boolean;
   estudouLicao: boolean;
   professorDaAula?: boolean;
+  justificada?: boolean;
+  justificativaMotivo?: string | null;
 }
 
 export interface ChamadaResponse {
@@ -304,7 +306,6 @@ export interface MinhaFrequenciaItem {
   estudouLicao: boolean;
   justificada: boolean;
   justificativaMotivo?: string | null;
-  podeJustificar: boolean;
 }
 
 export interface MinhaFrequenciaResponse {
@@ -400,7 +401,6 @@ export interface BoletimResponse {
   aproveitamentoPct: number;
   frequencia: BoletimFrequencia;
   visitantesTrazidos: number;
-  situacao: string;
 }
 
 export interface DashPontoFrequencia {
