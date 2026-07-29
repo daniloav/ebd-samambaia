@@ -17,16 +17,18 @@ public record AniversarianteResponse(
         int dia,
         int mes,
         boolean hoje,
+        String turmaNome,
         String whatsapp) {
 
     public static AniversarianteResponse de(Aluno a, LocalDate hoje) {
         LocalDate nasc = a.getDataNascimento();
         boolean ehHoje = nasc.getMonthValue() == hoje.getMonthValue()
                 && nasc.getDayOfMonth() == hoje.getDayOfMonth();
+        String turma = a.getClasse() != null ? a.getClasse().getNome() : null;
         return new AniversarianteResponse(
                 a.getId(), a.getNome(), nasc,
                 nasc.getDayOfMonth(), nasc.getMonthValue(), ehHoje,
-                normalizarWhatsapp(a.getTelefone()));
+                turma, normalizarWhatsapp(a.getTelefone()));
     }
 
     /**

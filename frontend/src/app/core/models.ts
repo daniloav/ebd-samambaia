@@ -34,6 +34,7 @@ export interface Aniversariante {
   dia: number;
   mes: number;
   hoje: boolean;
+  turmaNome: string;
   whatsapp?: string | null;
 }
 

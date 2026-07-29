@@ -138,7 +138,10 @@ export class MinhaFrequenciaComponent {
 
   linkWhatsapp(a: Aniversariante): string {
     const primeiroNome = a.nome.trim().split(/\s+/)[0];
-    const msg = `Feliz aniversário, ${primeiroNome}! 🎉🎂 Que Deus te abençoe muito. Um abraço da EBD ICE Samambaia! 🙏`;
+    const remetente = (this.dados()?.alunoNome || this.auth.username() || '').trim();
+    const msg =
+      `Feliz aniversário, ${primeiroNome}! 🎉🎂 Do seu colega ${remetente}, `
+      + `da nossa EBD ${a.turmaNome}. Que Deus te abençoe muito! 🙏`;
     return `https://wa.me/${a.whatsapp}?text=${encodeURIComponent(msg)}`;
   }
 }
