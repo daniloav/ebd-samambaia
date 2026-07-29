@@ -1,5 +1,7 @@
 package br.com.ice.ebd.service;
 
+import br.com.ice.ebd.dto.AulaComplementarRequest;
+import br.com.ice.ebd.dto.AulaComplementarResponse;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
 import br.com.ice.ebd.model.Aula;
@@ -14,6 +16,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,6 +83,57 @@ public class AulaService {
         Aula a = obter(id);
         auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         repository.delete(a); // presenças são removidas em cascata (FK ON DELETE CASCADE)
+    }
+
+    /**
+     * Desdobra uma aula: cria a <b>continuação no próximo domingo</b> (origem + 7 dias) e
+     * <b>empurra +7 dias toda a agenda seguinte</b> da mesma turma, preservando tema e professor
+     * de cada aula. O empurrão é feito da aula mais recente para a mais antiga, com flush por
+     * iteração, para nunca colidir com a unique {@code uq_aula_classe_data} (não-deferrable):
+     * a mais recente vai para o slot vazio e cada aula anterior ocupa o slot recém-liberado.
+     */
+    @Transactional
+    public AulaComplementarResponse complementar(Long origemId, AulaComplementarRequest req) {
+        Aula origem = obter(origemId);
+        Long classeId = origem.getClasse().getId();
+        escopo.assertClasse(classeId);
+
+        LocalDate novaData = origem.getData().plusDays(7);
+
+        // Empurra a agenda seguinte (já vem em ordem decrescente de data).
+        var seguintes = repository.listarPorClasseDesde(classeId, novaData);
+        for (Aula a : seguintes) {
+            a.setData(a.getData().plusDays(7));
+            repository.getEntityManager().flush();
+        }
+
+        // Cria a aula complementar no domingo recém-liberado.
+        Aula nova = new Aula();
+        nova.setClasse(origem.getClasse());
+        nova.setData(novaData);
+        nova.setTema(temaComplemento(req.tema(), origem.getTema()));
+        nova.setProfessor(req.professorId() != null ? resolverProfessor(req.professorId()) : origem.getProfessor());
+        validarDataUnica(classeId, novaData, null); // sanidade: já deve estar livre após o empurrão
+        repository.persist(nova);
+
+        auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.AULA, nova.getId(),
+                "complementar de " + origem.getData() + " · " + rotulo(nova));
+        if (!seguintes.isEmpty()) {
+            auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, origem.getId(),
+                    "empurrão +7d na agenda da turma: " + seguintes.size() + " aula(s)");
+        }
+        return new AulaComplementarResponse(AulaResponse.de(nova), seguintes.size());
+    }
+
+    /** Tema informado, ou o da origem com sufixo "(continuação)". */
+    private static String temaComplemento(String temaInformado, String temaOrigem) {
+        if (temaInformado != null && !temaInformado.isBlank()) {
+            return temaInformado;
+        }
+        if (temaOrigem == null || temaOrigem.isBlank()) {
+            return null;
+        }
+        return temaOrigem + " (continuação)";
     }
 
     /** Resolve o professor (usuário PROFESSOR) do id, ou null. Valida o perfil. */
