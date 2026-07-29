@@ -9,10 +9,8 @@ import br.com.ice.ebd.repository.PresencaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -21,8 +19,9 @@ import java.util.List;
  * Frequência do próprio aluno logado. O ALUNO só enxerga o seu cadastro/presenças —
  * nunca os de outros alunos (o id do aluno vem do vínculo do usuário, não do request).
  *
- * <p>Aqui também o aluno <b>justifica suas faltas</b> (autosserviço): uma falta justificada
- * passa a valer 30% dos pontos de uma presença no ranking (ver {@code DesafiosService}).</p>
+ * <p>Visão <b>somente-leitura</b>: quem justifica uma falta é o <b>professor</b>, na tela de
+ * chamada (ver {@code ChamadaService}). Uma falta justificada vale 30% dos pontos de uma
+ * presença no ranking (ver {@code DesafiosService}); aqui o aluno apenas a visualiza.</p>
  */
 @ApplicationScoped
 public class MinhaFrequenciaService {
@@ -57,35 +56,6 @@ public class MinhaFrequenciaService {
         int faltas = total - presentes;
         int percentual = total > 0 ? Math.round(presentes * 100f / total) : 0;
         return new MinhaFrequenciaResponse(aluno.getNome(), total, presentes, faltas, percentual, justificadas, itens);
-    }
-
-    /** Justifica (ou atualiza a justificativa de) uma falta do aluno logado numa aula. */
-    @Transactional
-    public void justificar(Long aulaId, String motivo) {
-        Aluno aluno = alunoLogado();
-        Presenca p = presencaRepository.buscarPorAulaEAluno(aulaId, aluno.getId());
-        if (p == null) {
-            throw new NotFoundException("Não há registro de chamada seu nesta aula para justificar.");
-        }
-        if (p.isPresente()) {
-            throw new BadRequestException("Você esteve presente nesta aula; não há falta a justificar.");
-        }
-        p.setJustificada(true);
-        p.setJustificativaMotivo(motivo.trim());
-        p.setJustificadaEm(LocalDateTime.now());
-    }
-
-    /** Remove a justificativa de uma falta do aluno logado (volta a valer 0 no ranking). */
-    @Transactional
-    public void removerJustificativa(Long aulaId) {
-        Aluno aluno = alunoLogado();
-        Presenca p = presencaRepository.buscarPorAulaEAluno(aulaId, aluno.getId());
-        if (p == null) {
-            throw new NotFoundException("Não há registro de chamada seu nesta aula.");
-        }
-        p.setJustificada(false);
-        p.setJustificativaMotivo(null);
-        p.setJustificadaEm(null);
     }
 
     private Aluno alunoLogado() {

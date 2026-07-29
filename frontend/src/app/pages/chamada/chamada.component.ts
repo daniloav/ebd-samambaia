@@ -30,6 +30,14 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
     .resumo span { font-size: .85rem; color: var(--cinza-texto); }
     .resumo b { color: var(--azul); }
     .nova-aula { display: flex; gap: .6rem; align-items: flex-end; flex-wrap: wrap; }
+    .just-btn { white-space: nowrap; }
+    .just-motivo { font-size: .78rem; color: var(--cinza-texto); font-style: italic; margin-top: .2rem; }
+    .modal-fundo { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex;
+      align-items: center; justify-content: center; z-index: 50; padding: 1rem; }
+    .modal-caixa { background: var(--superficie); border-radius: 12px; padding: 1.25rem;
+      width: 100%; max-width: 460px; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+    .modal-caixa textarea { width: 100%; min-height: 90px; resize: vertical; }
+    .modal-acoes { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1rem; }
   `],
   template: `
     <h2>Fazer chamada</h2>
@@ -83,6 +91,7 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
                 <th class="chk">Bíblia</th>
                 <th class="chk">Revista</th>
                 <th class="chk">Estudou a lição</th>
+                <th class="chk">Falta justificada</th>
               </tr>
             </thead>
             <tbody>
@@ -101,6 +110,19 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
                     <input type="checkbox" [(ngModel)]="i.trouxeRevista" [disabled]="!!i.professorDaAula" (click)="$event.stopPropagation()" /></td>
                   <td class="chk" data-label="Estudou a lição" (click)="!i.professorDaAula && (i.estudouLicao = !i.estudouLicao)">
                     <input type="checkbox" [(ngModel)]="i.estudouLicao" [disabled]="!!i.professorDaAula" (click)="$event.stopPropagation()" /></td>
+                  <td class="chk" data-label="Falta justificada">
+                    @if (i.professorDaAula || i.presente) { <span class="muted">—</span> }
+                    @else if (i.justificada) {
+                      <span class="badge" style="background:#faf089;color:#744210" [title]="i.justificativaMotivo || ''">Justificada</span>
+                      @if (i.justificativaMotivo) { <div class="just-motivo" [title]="i.justificativaMotivo">"{{ i.justificativaMotivo }}"</div> }
+                      <div style="margin-top:.3rem">
+                        <button class="btn btn-outline btn-sm just-btn" (click)="abrirJustificar(i)">Editar</button>
+                        <button class="btn btn-outline btn-sm just-btn" style="margin-left:.3rem" (click)="removerJustificativa(i)">Remover</button>
+                      </div>
+                    } @else {
+                      <button class="btn btn-outline btn-sm just-btn" (click)="abrirJustificar(i)">Justificar falta</button>
+                    }
+                  </td>
                 </tr>
               }
             </tbody>
@@ -170,6 +192,27 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
         }
       </div>
     }
+
+    @if (justificando(); as j) {
+      <div class="modal-fundo" (click)="fecharJustificar()">
+        <div class="modal-caixa" (click)="$event.stopPropagation()">
+          <h3 style="margin-top:0">Justificar falta</h3>
+          <p class="muted" style="margin-top:-.3rem">{{ j.alunoNome }}</p>
+          <div class="form-group">
+            <label>Motivo *</label>
+            <textarea [(ngModel)]="motivoJustificativa" maxlength="300"
+              placeholder="Ex.: estava doente, viagem de trabalho..."></textarea>
+          </div>
+          <p class="muted" style="font-size:.78rem;margin-top:-.4rem">
+            A justificativa é registrada ao <strong>salvar a chamada</strong>.
+          </p>
+          <div class="modal-acoes">
+            <button class="btn btn-outline" (click)="fecharJustificar()">Cancelar</button>
+            <button class="btn btn-verde" (click)="confirmarJustificar()">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
 })
 export class ChamadaComponent {
@@ -194,6 +237,9 @@ export class ChamadaComponent {
   visitantes = signal<Visitante[]>([]);
   salvandoVisitante = signal(false);
   novoVisitante: VisitanteRequest = this.visitanteVazio();
+
+  justificando = signal<PresencaItem | null>(null);
+  motivoJustificativa = '';
 
   constructor() {
     effect(() => {
@@ -269,6 +315,32 @@ export class ChamadaComponent {
     this.itens.update((lista) => lista.map((i) => (i.professorDaAula ? i : { ...i, presente: true })));
   }
 
+  abrirJustificar(i: PresencaItem): void {
+    this.motivoJustificativa = i.justificativaMotivo || '';
+    this.justificando.set(i);
+  }
+
+  fecharJustificar(): void {
+    this.justificando.set(null);
+    this.motivoJustificativa = '';
+  }
+
+  /** Aplica a justificativa no item (só persiste ao salvar a chamada). */
+  confirmarJustificar(): void {
+    const item = this.justificando();
+    if (!item) return;
+    const motivo = this.motivoJustificativa.trim();
+    if (!motivo) { this.toast.erro('Informe o motivo da falta.'); return; }
+    this.itens.update((lista) => lista.map((i) =>
+      i.alunoId === item.alunoId ? { ...i, justificada: true, justificativaMotivo: motivo } : i));
+    this.fecharJustificar();
+  }
+
+  removerJustificativa(i: PresencaItem): void {
+    this.itens.update((lista) => lista.map((x) =>
+      x.alunoId === i.alunoId ? { ...x, justificada: false, justificativaMotivo: null } : x));
+  }
+
   contar(campo: keyof PresencaItem): number {
     return this.itens().filter((i) => i[campo] === true).length;
   }
@@ -325,6 +397,8 @@ export class ChamadaComponent {
       trouxeBiblia: i.trouxeBiblia,
       trouxeRevista: i.trouxeRevista,
       estudouLicao: i.estudouLicao,
+      justificada: !i.presente && !!i.justificada,
+      justificativaMotivo: !i.presente && i.justificada ? (i.justificativaMotivo ?? null) : null,
     }));
     this.api.salvarChamada(this.aulaSelecionadaId, payload).subscribe({
       next: (r) => {
