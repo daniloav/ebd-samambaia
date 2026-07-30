@@ -27,7 +27,7 @@ import { exportarExcel, exportarPdf } from '../../core/export.util';
         <div class="form-group"><label>Fim</label><input type="date" [(ngModel)]="fim" /></div>
         <div class="form-group">
           <label>Turma</label>
-          <select [(ngModel)]="classeId">
+          <select aria-label="Turma" [(ngModel)]="classeId">
             @if (auth.isAdmin()) { <option [ngValue]="null">Todas as turmas</option> }
             @for (c of classeCtx.classes(); track c.id) {
               <option [ngValue]="c.id">{{ c.nome }}</option>

@@ -42,7 +42,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
     <div class="card">
       <div class="barra">
         <div class="form-group"><label>Status</label>
-          <select [(ngModel)]="filtro" (ngModelChange)="carregar()">
+          <select aria-label="Filtro de status" [(ngModel)]="filtro" (ngModelChange)="carregar()">
             <option [ngValue]="null">Todos</option>
             <option value="ABERTA">Aguardando</option>
             <option value="APROVADA">Aprovadas</option>
@@ -100,14 +100,14 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
             <div class="ff"><label>Valor solicitado (R$) *</label><input type="number" min="0.01" step="0.01" [(ngModel)]="form.valorSolicitado" /></div>
             <div class="ff"><label>Data necessária</label><input type="date" [(ngModel)]="form.dataNecessidade" /></div>
             <div class="ff"><label>Forma de repasse *</label>
-              <select [(ngModel)]="form.formaRepasse">
+              <select aria-label="Forma de repasse" [(ngModel)]="form.formaRepasse">
                 <option value="DINHEIRO">Dinheiro</option>
                 <option value="PIX">PIX</option>
               </select>
             </div>
             @if (form.formaRepasse === 'PIX') {
               <div class="ff"><label>Tipo da chave PIX *</label>
-                <select [(ngModel)]="form.pixTipo">
+                <select aria-label="Tipo de chave PIX" [(ngModel)]="form.pixTipo">
                   <option [ngValue]="null">— selecione —</option>
                   <option value="CPF">CPF</option>
                   <option value="EMAIL">E-mail</option>

@@ -71,7 +71,7 @@ import { Prova, ProvaRequest } from '../../core/models';
             <div class="form-group"><label>Título *</label>
               <input type="text" [(ngModel)]="form.titulo" maxlength="200" /></div>
             <div class="form-group"><label>Tipo</label>
-              <select [(ngModel)]="form.tipo">
+              <select aria-label="Tipo de prova" [(ngModel)]="form.tipo">
                 <option value="OFFLINE">Offline (nota lançada à mão)</option>
                 <option value="ONLINE">Online (quiz respondido pelo aluno)</option>
               </select>

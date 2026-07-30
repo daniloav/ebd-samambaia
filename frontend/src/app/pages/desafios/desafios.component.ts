@@ -61,7 +61,7 @@ interface Categoria {
 
     <div class="filtro-periodo">
       <label>Período:</label>
-      <select [(ngModel)]="periodoTri" (ngModelChange)="onPeriodo()">
+      <select aria-label="Período (trimestre)" [(ngModel)]="periodoTri" (ngModelChange)="onPeriodo()">
         <option [ngValue]="null">Todo o período</option>
         <option [ngValue]="1">1º trimestre (Jan-Mar)</option>
         <option [ngValue]="2">2º trimestre (Abr-Jun)</option>
