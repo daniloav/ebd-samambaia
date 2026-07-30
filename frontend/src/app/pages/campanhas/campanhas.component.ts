@@ -42,7 +42,7 @@ interface ImagemSel { file: File; url: string; }
       <h3 style="margin-top:0">Nova campanha</h3>
       <div class="form-group">
         <label>Público-alvo</label>
-        <select [(ngModel)]="classeId">
+        <select aria-label="Turma" [(ngModel)]="classeId">
           <option [ngValue]="null">Todas as turmas</option>
           @for (c of classeCtx.classes(); track c.id) { <option [ngValue]="c.id">{{ c.nome }}</option> }
         </select>

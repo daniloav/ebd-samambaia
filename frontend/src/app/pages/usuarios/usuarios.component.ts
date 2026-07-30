@@ -95,7 +95,7 @@ import { Aluno, Classe, Usuario, UsuarioRequest } from '../../core/models';
 
             @if (form.ehAluno || form.ehProfessor) {
               <div class="form-group"><label>Aluno vinculado</label>
-                <select [(ngModel)]="form.alunoId">
+                <select aria-label="Aluno vinculado" [(ngModel)]="form.alunoId">
                   <option [ngValue]="null">— nenhum —</option>
                   @for (a of alunos(); track a.id) {
                     <option [ngValue]="a.id">{{ a.nome }}{{ a.classeNome ? ' (' + a.classeNome + ')' : '' }}</option>

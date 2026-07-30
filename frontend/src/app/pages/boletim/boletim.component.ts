@@ -23,17 +23,17 @@ import { BoletimViewComponent } from './boletim-view.component';
       <div class="filtros">
         <div class="form-group">
           <label>Aluno</label>
-          <select [(ngModel)]="alunoId">
+          <select aria-label="Aluno" [(ngModel)]="alunoId">
             @for (a of alunos(); track a.id) { <option [ngValue]="a.id">{{ a.nome }}</option> }
           </select>
         </div>
         <div class="form-group">
           <label>Ano</label>
-          <input type="number" min="2000" max="2100" [(ngModel)]="ano" style="width:100px" />
+          <input aria-label="Ano" type="number" min="2000" max="2100" [(ngModel)]="ano" style="width:100px" />
         </div>
         <div class="form-group">
           <label>Trimestre</label>
-          <select [(ngModel)]="trimestre">
+          <select aria-label="Trimestre" [(ngModel)]="trimestre">
             <option [ngValue]="1">1º (Jan-Mar)</option>
             <option [ngValue]="2">2º (Abr-Jun)</option>
             <option [ngValue]="3">3º (Jul-Set)</option>

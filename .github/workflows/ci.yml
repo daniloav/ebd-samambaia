@@ -174,3 +174,82 @@ jobs:
           fi
           echo "✅ Migrations aplicadas e app subiu."
           grep -iE "Migrating schema|Successfully applied|Installed features" app.log | tail -n 20 || true
+
+  # ---------------- E2E + Acessibilidade (Playwright + axe) ----------------
+  e2e:
+    name: E2E & Acessibilidade · Playwright + axe
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ebd
+          POSTGRES_PASSWORD: ebd
+          POSTGRES_DB: ebd
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ebd -d ebd"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- Backend (Quarkus) ----
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Gerar chaves JWT (o app precisa para subir)
+        run: bash scripts/gen-jwt-keys.sh
+      - name: Empacotar backend
+        working-directory: backend
+        run: mvn -B -ntp package -DskipTests
+      - name: Subir backend (:8080) com CORS liberado para o :4200
+        env:
+          QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://localhost:5432/ebd
+          QUARKUS_DATASOURCE_USERNAME: ebd
+          QUARKUS_DATASOURCE_PASSWORD: ebd
+          QUARKUS_HTTP_CORS: 'true'
+          QUARKUS_HTTP_CORS_ORIGINS: http://localhost:4200
+          QUARKUS_HTTP_CORS_METHODS: GET,POST,PUT,DELETE,OPTIONS
+          QUARKUS_HTTP_CORS_HEADERS: Content-Type,Authorization
+          EBD_NOTIF_ENABLED: 'false'
+        run: |
+          java -jar backend/target/quarkus-app/quarkus-run.jar > backend.log 2>&1 &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8080/q/health 2>/dev/null | grep -q '"status": "UP"'; then
+              echo "✅ Backend UP (migrations aplicadas, seed criado)."; exit 0
+            fi
+            sleep 3
+          done
+          echo "::error title=E2E::Backend não subiu"; tail -n 60 backend.log; exit 1
+
+      # ---- Frontend + Playwright ----
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependências do frontend
+        working-directory: frontend
+        run: npm ci
+      - name: Instalar navegador do Playwright (Chromium)
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Rodar E2E + acessibilidade
+        working-directory: frontend
+        run: npx playwright test
+      - name: Guardar relatório do Playwright (inclui anexos do axe)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14
+      - name: Log do backend (em caso de falha)
+        if: failure()
+        run: tail -n 120 backend.log || true

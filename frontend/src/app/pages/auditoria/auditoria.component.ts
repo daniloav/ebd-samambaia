@@ -27,7 +27,7 @@ import { Auditoria, AcaoAuditoria } from '../../core/models';
       <div class="filtros">
         <div class="form-group">
           <label>Entidade</label>
-          <select [(ngModel)]="entidade">
+          <select aria-label="Entidade" [(ngModel)]="entidade">
             <option [ngValue]="null">Todas</option>
             <option value="ALUNO">Aluno</option>
             <option value="AULA">Aula</option>
