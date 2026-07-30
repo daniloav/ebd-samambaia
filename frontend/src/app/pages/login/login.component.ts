@@ -27,7 +27,7 @@ import { APP_VERSION } from '../../version';
             border-radius: 8px; font-size: .85rem; margin-bottom: 1rem; }
     .dica { margin-top: 1.25rem; font-size: .78rem; color: var(--cinza-texto);
             text-align: center; line-height: 1.5; }
-    .versao { display:block; margin-top:.5rem; opacity:.55; font-size:.72rem; }
+    .versao { display:block; margin-top:.5rem; color: var(--cinza-texto); font-size:.72rem; }
     .tutorial { display:flex; align-items:center; justify-content:center; gap:.5rem;
                 margin-top:1.1rem; padding:.62rem .8rem; border:1px solid #d7dee8;
                 border-radius:9px; color:#2c4770; font-size:.86rem; font-weight:600;

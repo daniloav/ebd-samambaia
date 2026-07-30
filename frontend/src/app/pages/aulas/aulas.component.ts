@@ -64,7 +64,7 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
             <div class="form-group"><label>Tema</label>
               <input type="text" [(ngModel)]="form.tema" maxlength="200" placeholder="Ex.: A graça de Deus" /></div>
             <div class="form-group"><label>Professor da aula</label>
-              <select [(ngModel)]="form.professorId">
+              <select aria-label="Professor" [(ngModel)]="form.professorId">
                 <option [ngValue]="null">— sem professor definido —</option>
                 @for (pr of professores(); track pr.id) { <option [ngValue]="pr.id">{{ pr.nome }}</option> }
               </select>
@@ -101,7 +101,7 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
               <input type="text" [(ngModel)]="formComplementar.tema" maxlength="200"
                 placeholder="Ex.: A graça de Deus (continuação)" /></div>
             <div class="form-group"><label>Professor da aula complementar</label>
-              <select [(ngModel)]="formComplementar.professorId">
+              <select aria-label="Professor da aula complementar" [(ngModel)]="formComplementar.professorId">
                 <option [ngValue]="null">— sem professor definido —</option>
                 @for (pr of professores(); track pr.id) { <option [ngValue]="pr.id">{{ pr.nome }}</option> }
               </select></div>

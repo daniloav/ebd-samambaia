@@ -47,7 +47,7 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
       <div class="barra">
         <div class="form-group" style="flex:1;min-width:220px">
           <label>Aula</label>
-          <select [(ngModel)]="aulaSelecionadaId" (ngModelChange)="aoTrocarAula($event)">
+          <select aria-label="Aula" [(ngModel)]="aulaSelecionadaId" (ngModelChange)="aoTrocarAula($event)">
             <option [ngValue]="null" disabled>Selecione uma aula...</option>
             @for (a of aulas(); track a.id) {
               <option [ngValue]="a.id">{{ a.data | date:'dd/MM/yyyy' }}{{ a.tema ? ' — ' + a.tema : '' }}</option>
@@ -66,7 +66,7 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
             <label>Tema (opcional)</label><input type="text" [(ngModel)]="novoTema" maxlength="200" /></div>
           <div class="form-group" style="min-width:190px">
             <label>Professor da aula</label>
-            <select [(ngModel)]="novoProfessorId">
+            <select aria-label="Professor" [(ngModel)]="novoProfessorId">
               <option [ngValue]="null">— sem professor —</option>
               @for (pr of professores(); track pr.id) { <option [ngValue]="pr.id">{{ pr.nome }}</option> }
             </select>
@@ -161,7 +161,7 @@ import { Aula, PresencaItem, Professor, Visitante, VisitanteRequest } from '../.
           <div class="form-group"><label>Telefone</label>
             <input type="text" [(ngModel)]="novoVisitante.telefone" maxlength="20" /></div>
           <div class="form-group" style="min-width:180px"><label>Trazido por <small style="opacity:.6">(só presentes)</small></label>
-            <select [(ngModel)]="novoVisitante.trazidoPorAlunoId">
+            <select aria-label="Trazido por" [(ngModel)]="novoVisitante.trazidoPorAlunoId">
               <option [ngValue]="null">— não informado —</option>
               @for (i of itens(); track i.alunoId) { @if (i.presente) { <option [ngValue]="i.alunoId">{{ i.alunoNome }}</option> } }
             </select>

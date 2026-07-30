@@ -34,7 +34,7 @@ import { Prova, QuizQuestaoEdit } from '../../core/models';
           <div class="q">
             <div class="q-topo">
               <span class="num">{{ qi + 1 }}.</span>
-              <select [ngModel]="q.tipo" (ngModelChange)="mudarTipo(qi, $event)">
+              <select aria-label="Tipo de questão" [ngModel]="q.tipo" (ngModelChange)="mudarTipo(qi, $event)">
                 <option value="MULTIPLA">Múltipla escolha</option>
                 <option value="VF">Verdadeiro / Falso</option>
               </select>

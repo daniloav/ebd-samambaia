@@ -113,6 +113,9 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   valida CDI, config, segurança e endpoints (é a verificação mais forte sem subir banco).
 - **Frontend**: `cd frontend && npx ng build` — compila todo o TS/templates.
 - **Runtime completo**: `docker compose up -d --build` e acessar `http://localhost`.
+- **E2E + acessibilidade** (frontend): com backend+Postgres no ar (`mvn quarkus:dev`),
+  `cd frontend && npm run e2e` roda regressão (auth/guards/telas) e a auditoria WCAG 2.1 AA
+  (axe). Detalhes em [`docs/testes-e2e.md`](docs/testes-e2e.md).
 
 ## 6. Segurança / perfis
 
@@ -221,6 +224,19 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   e `ng build`. Branch `feature/ranking-por-turma`.
 - 🔁 **Aula complementar + empurrão da agenda (2026-07-29)** — para quando uma lição não termina no domingo e precisa continuar no domingo seguinte (que já está ocupado na agenda pré-montada). Botão **"Desdobrar"** por linha em /aulas: cria a continuação em `origem + 7 dias` (tema herdado com sufixo "(continuação)", mesmo professor — ambos editáveis) e **empurra +7 dias toda a agenda seguinte da turma**. O empurrão desloca as aulas afetadas em **ordem decrescente de data com flush por iteração** — a mais recente vai ao slot vazio e cada anterior ocupa o recém-liberado, sem nunca violar `uq_aula_classe_data` (não-deferrable). **Sem migration.** Backend: `AulaService.complementar` + `AulaRepository.listarPorClasseDesde`, DTOs `AulaComplementarRequest/Response`, endpoint `POST /api/aulas/{id}/complementar` (ADMIN/PROFESSOR, respeita escopo). Front: modal com prévia ("N aulas serão movidas") na tela Aulas. Validado: `mvn package` (novo `AulaComplementarServiceTest`, 2 casos: empurra 3 e origem-última não move nada) e `ng build`. Branch `feature/aula-complementar-empurra-agenda`.
 - ⏳ **Deploy na OCI em andamento** — aguardando capacidade A1 (retry rodando).
+
+- ✅ **Testes E2E + acessibilidade (Playwright + axe) (2026-07-29)** — camada de ponta-a-ponta no
+  navegador que complementa o `mvn verify` do backend: **regressão** (login/credenciais inválidas,
+  guards por papel admin/professor/aluno, e as 15 telas de gestão renderizando sem erro de runtime)
+  e **acessibilidade** WCAG 2.1 A/AA com axe-core, que **bloqueia** o build em violação
+  `serious`/`critical` (as `minor`/`moderate` viram relatório/artifact). Rodando a suíte pela 1ª vez
+  achou 3 violações reais e recorrentes — corrigidas nesta branch: contraste do texto apagado da
+  sidebar (`#7f9cbf`→`#98b2d4`) e da versão no login; `aria-label` em **22 selects** e **8 inputs**
+  (senha/data/ano) que não tinham nome acessível. Novo job **`e2e`** no `ci.yml` (sobe Postgres+backend
+  com CORS liberado, instala o Chromium e publica o relatório do Playwright como artifact). Playwright
+  fixado em `1.49.1` p/ rodar no Node 18 local; CI em Node 20. **Validado local contra a stack real: 35/35
+  verdes.** Sem migration. Guia: [`docs/testes-e2e.md`](docs/testes-e2e.md). Branch
+  `feature/testes-e2e-acessibilidade`.
 
 ## 10. Como pedir evoluções (dica para o Danilo)
 

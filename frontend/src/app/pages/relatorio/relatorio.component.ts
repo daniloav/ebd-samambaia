@@ -30,7 +30,7 @@ import { exportarExcel, exportarPdf } from '../../core/export.util';
     <div class="card">
       <div class="filtros">
         <div class="form-group"><label>Trimestre</label>
-          <select [(ngModel)]="trimestre" (ngModelChange)="aplicarTrimestre()">
+          <select aria-label="Trimestre" [(ngModel)]="trimestre" (ngModelChange)="aplicarTrimestre()">
             <option [ngValue]="null">Personalizado</option>
             <option [ngValue]="1">1º (Jan-Mar)</option>
             <option [ngValue]="2">2º (Abr-Jun)</option>
@@ -40,11 +40,11 @@ import { exportarExcel, exportarPdf } from '../../core/export.util';
         </div>
         @if (trimestre !== null) {
           <div class="form-group"><label>Ano</label>
-            <input type="number" min="2000" max="2100" [(ngModel)]="ano" (ngModelChange)="aplicarTrimestre()" style="width:90px" />
+            <input aria-label="Ano" type="number" min="2000" max="2100" [(ngModel)]="ano" (ngModelChange)="aplicarTrimestre()" style="width:90px" />
           </div>
         }
-        <div class="form-group"><label>Início</label><input type="date" [(ngModel)]="inicio" (ngModelChange)="trimestre = null" /></div>
-        <div class="form-group"><label>Fim</label><input type="date" [(ngModel)]="fim" (ngModelChange)="trimestre = null" /></div>
+        <div class="form-group"><label>Início</label><input aria-label="Data de início" type="date" [(ngModel)]="inicio" (ngModelChange)="trimestre = null" /></div>
+        <div class="form-group"><label>Fim</label><input aria-label="Data de fim" type="date" [(ngModel)]="fim" (ngModelChange)="trimestre = null" /></div>
         <button class="btn" (click)="gerar()">Gerar relatório</button>
         <button class="btn btn-outline" (click)="limpar()">Limpar filtro</button>
         @if (dados()?.itens?.length) {

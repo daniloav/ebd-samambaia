@@ -32,13 +32,13 @@ import { TemaService } from '../core/tema.service';
     nav a.ativo { background: rgba(201,162,75,.16); color: #fff; border-left-color: var(--dourado); }
     .ico { font-size: 1.1rem; width: 1.3rem; text-align: center; }
     .seletor-classe { padding: .8rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,.12); }
-    .seletor-classe label { display: block; color: #7f9cbf; font-size: .68rem; text-transform: uppercase;
+    .seletor-classe label { display: block; color: #98b2d4; font-size: .68rem; text-transform: uppercase;
                             letter-spacing: .05em; margin-bottom: .3rem; }
     .seletor-classe select { width: 100%; padding: .4rem .5rem; border-radius: 6px; border: none;
                              background: rgba(255,255,255,.1); color: #fff; font-size: .88rem; }
     .seletor-classe select option { color: #1a202c; }
     .grupo { padding: .9rem 1.25rem .3rem; font-size: .7rem; text-transform: uppercase;
-             letter-spacing: .05em; color: #7f9cbf; }
+             letter-spacing: .05em; color: #98b2d4; }
     .rodape { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,.12); }
     .user { font-size: .85rem; margin-bottom: .5rem; }
     .user strong { display: block; }
@@ -110,7 +110,7 @@ import { TemaService } from '../core/tema.service';
         @if (auth.perfisDisponiveis().length > 1) {
           <div class="seletor-classe">
             <label>Atuando como</label>
-            <select [ngModel]="auth.perfilAtivo()" (ngModelChange)="trocarPerfil($event)">
+            <select aria-label="Atuando como (perfil de acesso)" [ngModel]="auth.perfilAtivo()" (ngModelChange)="trocarPerfil($event)">
               <option value="GESTAO">{{ auth.isAdmin() ? 'Administração' : 'Professor' }}</option>
               <option value="ALUNO">Aluno</option>
             </select>
@@ -119,7 +119,7 @@ import { TemaService } from '../core/tema.service';
         @if (auth.perfilAtivo() === 'GESTAO' && (auth.isProfessor() || auth.isAdmin()) && classeCtx.classes().length) {
           <div class="seletor-classe">
             <label>Turma</label>
-            <select [ngModel]="classeCtx.selecionadaId()" (ngModelChange)="classeCtx.selecionar($event)">
+            <select aria-label="Turma" [ngModel]="classeCtx.selecionadaId()" (ngModelChange)="classeCtx.selecionar($event)">
               @for (c of classeCtx.classes(); track c.id) {
                 <option [ngValue]="c.id">{{ c.nome }}</option>
               }

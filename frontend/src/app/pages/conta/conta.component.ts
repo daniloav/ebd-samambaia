@@ -31,18 +31,18 @@ import { ToastService } from '../../core/toast.service';
         <div class="form-group">
           <label>Senha atual</label>
           <input type="password" autocomplete="current-password"
-                 [(ngModel)]="senhaAtual" name="senhaAtual" />
+                 aria-label="Senha atual" [(ngModel)]="senhaAtual" name="senhaAtual" />
         </div>
         <div class="form-group">
           <label>Nova senha</label>
           <input type="password" autocomplete="new-password"
-                 [(ngModel)]="novaSenha" name="novaSenha" />
+                 aria-label="Nova senha" [(ngModel)]="novaSenha" name="novaSenha" />
           <small class="muted">Mínimo de {{ SENHA_MIN }} caracteres.</small>
         </div>
         <div class="form-group">
           <label>Confirmar nova senha</label>
           <input type="password" autocomplete="new-password"
-                 [(ngModel)]="confirma" name="confirma" />
+                 aria-label="Confirmar nova senha" [(ngModel)]="confirma" name="confirma" />
           @if (confirma && !confere()) {
             <small style="color:#c53030">As senhas não conferem.</small>
           }

@@ -46,3 +46,8 @@ keys/
 
 # Cópias offsite dos backups baixados da ebd-db
 backups-ebd/
+
+# Playwright (E2E + acessibilidade)
+frontend/playwright-report/
+frontend/test-results/
+frontend/playwright/.cache/
