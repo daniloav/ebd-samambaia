@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -33,8 +34,9 @@ public class AuthResource {
     @POST
     @Path("/login")
     @PermitAll
-    public LoginResponse login(@Valid LoginRequest request) {
-        return authService.autenticar(request);
+    public LoginResponse login(@Valid LoginRequest request,
+                              @HeaderParam("User-Agent") String userAgent) {
+        return authService.autenticar(request, userAgent);
     }
 
     /**

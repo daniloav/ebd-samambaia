@@ -23,7 +23,10 @@ public class AuthService {
     @Inject
     ProtecaoLoginService protecao;
 
-    public LoginResponse autenticar(LoginRequest req) {
+    @Inject
+    AcessoService acesso;
+
+    public LoginResponse autenticar(LoginRequest req, String userAgent) {
         protecao.verificarBloqueio(req.username());
         Optional<Usuario> opt = usuarioRepository.findByUsername(req.username());
         if (opt.isEmpty()) {
@@ -36,6 +39,11 @@ public class AuthService {
             throw new NotAuthorizedException("Usuário ou senha inválidos", "Bearer");
         }
         protecao.registrarSucesso(req.username());
+        try {
+            acesso.registrarLogin(usuario.getId(), userAgent);
+        } catch (RuntimeException e) {
+            // Estatística de uso nunca deve derrubar o login.
+        }
         String token = tokenService.gerarToken(usuario);
         boolean admin = usuario.isEhAdmin();
         return new LoginResponse(token, usuario.getUsername(),

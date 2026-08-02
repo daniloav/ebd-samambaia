@@ -137,6 +137,11 @@ export const routes: Routes = [
         canActivate: [adminGuard],
         loadComponent: () => import('./pages/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
       },
+      {
+        path: 'uso',
+        canActivate: [adminGuard],
+        loadComponent: () => import('./pages/uso/uso.component').then((m) => m.UsoComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

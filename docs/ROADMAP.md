@@ -123,6 +123,39 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
   3. **Visitante vira aluno** — ao cadastrar visitante, quem compareceu às **3 aulas mais recentes seguidas** da turma (identidade = nome + telefone/e-mail) é promovido a **aluno** (com login automático). Registrado na Auditoria + alerta no cadastro.
   Testes: `FaltaJustificadaEInativacaoTest` (5 casos), suíte com **50** testes verdes; `ng build` OK. Os dois eventos automáticos também disparam e-mail (aviso ao aluno inativado; boas-vindas ao visitante promovido) pelo `NotificacaoService` (toggle `ebd.notificacoes.enabled`).
 
+### 📊 Estatísticas de uso / engajamento (A–G)
+
+Telemetria de uso do app (quem acessa, quando, quanto), complementar aos rankings de domínio.
+Base já entregue no **quick win**; os demais itens (A–G) ficam neste backlog priorizado.
+
+- [x] **Quick win — painel `/uso` (ADMIN) + instrumentação de acesso (2026-08-02)** — migration **V25**
+      (`acesso_evento` + `usuario.ultimo_acesso`); o login grava um evento (com `user_agent`) e atualiza o
+      last-seen; **ping** leve (`PUT /api/me/ping`, a cada ~60s no shell) mantém o "online agora". Endpoint
+      `GET /api/uso` (`UsoService`) + página `/uso` (KPIs, gráficos em CSS, sem libs). Cobre, no todo ou em
+      parte, os itens **A, B, C, E (parcial), F (parcial) e G**. Validado: `mvn package` e `ng build`.
+- **A. Tempo real — "quem está online"** — 🟡 parte entregue (online agora via last-seen/ping).
+  - [x] Online agora (últimos 15 min) + lista (nome/papel).
+  - [ ] Pico de simultâneos (hoje/histórico) e "ao vivo na aula" (online no horário da EBD de domingo).
+- **B. Volume de acesso** — 🟢 entregue.
+  - [x] Acessos hoje/7d/30d e **DAU/WAU/MAU** (pessoas únicas ativas).
+  - [x] Série diária (14 dias); distribuição por **hora do dia** e **dia da semana** (30 dias).
+- **C. Adoção / ativação** — 🟢 entregue (núcleo).
+  - [x] Taxa de ativação (contas e alunos que já acessaram); contas que nunca acessaram.
+  - [ ] Funil completo (cadastrado → 1º login → trocou senha → usou 1 feature) e retenção por coorte (sem 1→2).
+- **D. Uso por funcionalidade** — 🔴 pendente (precisa instrumentar eventos de página/feature).
+  - [ ] Feature mais usada (chamada, frequência, quiz, boletim, desafios, requisições); exports e cliques
+        (ex.: "Parabenizar no WhatsApp"). Quiz respondido e requisições já são deriváveis do domínio.
+- **E. Engajamento & retenção do aluno** — 🟡 parte entregue.
+  - [x] Mais ativos (30 dias) e **dormentes** (login, mas 14+ dias sem acessar).
+  - [ ] Streak de semanas seguidas e % que abre fora do domingo.
+- **F. Professores / gestão** — 🟡 parte derivável.
+  - [ ] Professores mais ativos (via `auditoria`); chamada no prazo × atrasada; cobertura de turmas na semana.
+- **G. Dispositivos / técnico** — 🟢 entregue (núcleo) — **alimenta a decisão do upgrade do Angular**.
+  - [x] Classificação por dispositivo/SO (iPhone/Android/Mac/Windows…) a partir do `user_agent` — mede a
+        exposição real a **Safari/iOS antigo** antes de decidir o salto de major (ver seção Compatibilidade mobile).
+  - [ ] Versão exata de iOS/navegador, mobile × desktop e PWA instalado × navegador.
+
+
 ## 🟢 Qualidade e robustez
 
 - [x] **Testes automatizados (backend)** — 23 `@QuarkusTest` cobrindo login/JWT + proteção de rota, `ChamadaService` (upsert), `ProvaService` (validação de nota), `RelatorioService` (agregação), `DesafiosService` (rankings), `BoletimService` (trimestre), `NotificacaoService`/campanha (e-mail via `MockMailbox`), **auto-correção do quiz** (`QuizAlunoService`) e **acesso/login do aluno** (`AcessoAlunoService`: geração, colisão, edição de login). Rodam contra Postgres real (`ebd_test`) local e no CI (`mvn verify` com serviço Postgres).
