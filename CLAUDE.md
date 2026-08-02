@@ -250,6 +250,19 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   fixado em `1.49.1` p/ rodar no Node 18 local; CI em Node 20. **Validado local contra a stack real: 35/35
   verdes.** Sem migration. Guia: [`docs/testes-e2e.md`](docs/testes-e2e.md). Branch
   `feature/testes-e2e-acessibilidade`.
+- 📈 **Estatísticas de uso / engajamento — painel `/uso` (ADMIN) (2026-08-02)** — 1ª camada de
+  telemetria de uso (quem acessa, quando, quanto), complementar aos rankings de domínio. Migration **V25**
+  (`acesso_evento` + `usuario.ultimo_acesso`): o login grava um evento com `user_agent` e atualiza o
+  last-seen (`AcessoService`, em transação própria — falha nunca derruba o login); um **ping** leve
+  (`PUT /api/me/ping`, disparado a cada ~60s no `shell.component`) mantém o "online agora". `UsoService`
+  agrega tudo (JPQL + SQL nativo Postgres) e o `UsoResource` expõe `GET /api/uso` (`@RolesAllowed ADMIN`).
+  Front: página `/uso` (KPIs + gráficos de barra em CSS puro, **sem libs**), link **Uso** no menu de
+  Administração e o ping no shell. Cobre os itens **A, B, C, E/F (parcial) e G** do roadmap de uso
+  (online agora, DAU/WAU/MAU, taxa de ativação, série diária, por hora/dia-da-semana, mais ativos,
+  dormentes, dispositivos por `user_agent` — este último **alimenta a decisão do upgrade do Angular**,
+  medindo a exposição real a Safari/iOS antigo). Backlog **A–G completo** em [`docs/ROADMAP.md`](docs/ROADMAP.md).
+  Validado: `mvn package`, `ng build` e **smoke ponta-a-ponta** contra Postgres real (V25 migrou, login
+  gravou evento, ping 204, `/api/uso` respondeu e a tela renderizou com dados reais).
 
 ## 10. Como pedir evoluções (dica para o Danilo)
 

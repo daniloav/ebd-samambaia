@@ -5,6 +5,7 @@ import br.com.ice.ebd.dto.BoletimResponse;
 import br.com.ice.ebd.dto.MinhaFrequenciaResponse;
 import br.com.ice.ebd.dto.QuizAlunoDto;
 import br.com.ice.ebd.dto.TrocarSenhaRequest;
+import br.com.ice.ebd.service.AcessoService;
 import br.com.ice.ebd.service.AniversariantesService;
 import br.com.ice.ebd.service.BoletimService;
 import br.com.ice.ebd.service.MinhaFrequenciaService;
@@ -13,6 +14,7 @@ import br.com.ice.ebd.service.DesafiosService;
 import br.com.ice.ebd.dto.MeuRankingResponse;
 import br.com.ice.ebd.dto.RankingTurmasResponse;
 import br.com.ice.ebd.service.UsuarioService;
+import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -54,6 +56,9 @@ public class MeResource {
 
     @Inject
     AniversariantesService aniversariantesService;
+
+    @Inject
+    AcessoService acessoService;
 
     @GET
     @RolesAllowed({"ADMIN", "PROFESSOR", "ALUNO"})
@@ -144,5 +149,14 @@ public class MeResource {
     @RolesAllowed("ALUNO")
     public QuizAlunoDto.Resultado resultado(@PathParam("id") Long id) {
         return quizAlunoService.obterResultado(id);
+    }
+
+    /** Heartbeat leve: atualiza o last-seen do usuário (base do "online agora" no painel /uso). */
+    @PUT
+    @Path("/ping")
+    @Authenticated
+    public Response ping() {
+        acessoService.ping(identity.getPrincipal().getName());
+        return Response.noContent().build();
     }
 }

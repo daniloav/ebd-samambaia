@@ -536,3 +536,48 @@ export interface AulaComplementarResponse {
   aula: Aula;
   aulasMovidas: number;
 }
+
+// ---------- Estatísticas de uso (painel /uso, ADMIN) ----------
+export interface UsuarioAtivoUso {
+  username: string;
+  papel: string;
+  ultimoAcesso: string;
+}
+export interface PontoDiaUso {
+  data: string;
+  acessos: number;
+  ativos: number;
+}
+export interface TopUsuarioUso {
+  username: string;
+  papel: string;
+  acessos: number;
+  ultimoAcesso: string;
+}
+export interface ContagemUso {
+  rotulo: string;
+  quantidade: number;
+}
+export interface UsoResponse {
+  onlineAgora: number;
+  online: UsuarioAtivoUso[];
+  acessosHoje: number;
+  acessos7d: number;
+  acessos30d: number;
+  ativosHoje: number;
+  ativos7d: number;
+  ativos30d: number;
+  totalUsuarios: number;
+  usuariosComAcesso: number;
+  usuariosNuncaAcessaram: number;
+  taxaAtivacaoPct: number;
+  alunosTotal: number;
+  alunosAtivados: number;
+  taxaAtivacaoAlunosPct: number;
+  serieDiaria: PontoDiaUso[];
+  porHora: number[];
+  porDiaSemana: number[];
+  maisAtivos: TopUsuarioUso[];
+  dormentes: TopUsuarioUso[];
+  dispositivos: ContagemUso[];
+}

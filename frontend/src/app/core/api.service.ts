@@ -8,7 +8,7 @@ import {
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
   DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
   BoletimResponse, Auditoria, MeuRanking, RankingTurmasResponse, Requisicao, RequisicaoRequest, Usuario, UsuarioRequest,
-  Visitante, VisitanteRequest,
+  Visitante, VisitanteRequest, UsoResponse,
 } from './models';
 
 /** Cliente único para todos os endpoints da API. */
@@ -296,5 +296,13 @@ export class ApiService {
     if (inicio) { params = params.set('inicio', inicio); }
     if (fim) { params = params.set('fim', fim); }
     return this.http.get<Auditoria[]>(`${this.api}/auditoria`, { params });
+  }
+
+  // ---------- Uso (estatísticas de engajamento) ----------
+  uso(): Observable<UsoResponse> {
+    return this.http.get<UsoResponse>(`${this.api}/uso`);
+  }
+  ping(): Observable<void> {
+    return this.http.put<void>(`${this.api}/me/ping`, {});
   }
 }

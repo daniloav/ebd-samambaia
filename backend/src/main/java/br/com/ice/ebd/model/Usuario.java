@@ -62,6 +62,10 @@ public class Usuario {
     @Column(name = "data_cadastro", nullable = false)
     private LocalDateTime dataCadastro = LocalDateTime.now();
 
+    /** Último acesso (last-seen): atualizado no login e no ping do app. Base do "online agora". */
+    @Column(name = "ultimo_acesso")
+    private LocalDateTime ultimoAcesso;
+
     /** Aluno vinculado (usado pela role ALUNO para a visão própria). */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "aluno_id")
@@ -109,6 +113,9 @@ public class Usuario {
 
     public LocalDateTime getDataCadastro() { return dataCadastro; }
     public void setDataCadastro(LocalDateTime dataCadastro) { this.dataCadastro = dataCadastro; }
+
+    public LocalDateTime getUltimoAcesso() { return ultimoAcesso; }
+    public void setUltimoAcesso(LocalDateTime ultimoAcesso) { this.ultimoAcesso = ultimoAcesso; }
 
     public Aluno getAluno() { return aluno; }
     public void setAluno(Aluno aluno) { this.aluno = aluno; }
