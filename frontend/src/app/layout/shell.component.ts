@@ -1,8 +1,9 @@
 import { Perfil } from '../core/models';
-import { Component, OnInit, effect, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, effect, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
+import { ApiService } from '../core/api.service';
 import { ClasseContextService } from '../core/classe-context.service';
 import { APP_VERSION } from '../version';
 import { ConfirmDialogComponent } from '../core/confirm-dialog.component';
@@ -152,6 +153,7 @@ import { TemaService } from '../core/tema.service';
               <a routerLink="/campanhas" routerLinkActive="ativo"><span class="ico">📣</span> Campanhas</a>
             <a routerLink="/relatorio-geral" routerLinkActive="ativo"><span class="ico">📋</span> Relatório geral</a>
             <a routerLink="/auditoria" routerLinkActive="ativo"><span class="ico">📜</span> Auditoria</a>
+            <a routerLink="/uso" routerLinkActive="ativo"><span class="ico">📈</span> Uso</a>
             }
           }
           @if (auth.isAdmin() || auth.isTesoureiro() || auth.isLider()) {
@@ -178,11 +180,13 @@ import { TemaService } from '../core/tema.service';
     <app-confirm-dialog />
   `,
 })
-export class ShellComponent implements OnInit {
+export class ShellComponent implements OnInit, OnDestroy {
   auth = inject(AuthService);
   tema = inject(TemaService);
   classeCtx = inject(ClasseContextService);
   private router = inject(Router);
+  private api = inject(ApiService);
+  private pingId?: ReturnType<typeof setInterval>;
   menuAberto = signal(false);
   versao = APP_VERSION;
 
@@ -197,6 +201,17 @@ export class ShellComponent implements OnInit {
     if (this.auth.isProfessor() || this.auth.isAdmin()) {
       this.classeCtx.carregar();
     }
+    // Heartbeat de presença (base do "online agora" no painel de uso).
+    this.enviarPing();
+    this.pingId = setInterval(() => this.enviarPing(), 60_000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.pingId) { clearInterval(this.pingId); }
+  }
+
+  private enviarPing(): void {
+    this.api.ping().subscribe({ error: () => {} });
   }
 
   perfilLabel(): string {
