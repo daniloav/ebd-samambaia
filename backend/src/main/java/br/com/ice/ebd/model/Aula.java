@@ -33,6 +33,14 @@ public class Aula {
     @JoinColumn(name = "professor_id")
     private Usuario professor;
 
+    /**
+     * Aula adiada/cancelada (ex.: evento da igreja no domingo). Uma aula adiada é ignorada por
+     * toda pontuação e retrospecto (chamada, rankings, relatórios, boletim, dashboard, frequência,
+     * inativação por faltas e promoção de visitante) — ninguém é penalizado por ela.
+     */
+    @Column(nullable = false)
+    private boolean adiada = false;
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -48,4 +56,7 @@ public class Aula {
 
     public Usuario getProfessor() { return professor; }
     public void setProfessor(Usuario professor) { this.professor = professor; }
+
+    public boolean isAdiada() { return adiada; }
+    public void setAdiada(boolean adiada) { this.adiada = adiada; }
 }

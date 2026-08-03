@@ -97,7 +97,7 @@ public class BoletimService {
 
         // Frequência do aluno no período.
         long totalAulas = ((Number) em.createQuery(
-                        "select count(a) from Aula a where a.classe.id = :cid and a.data between :ini and :fim and a.data <= :hoje")
+                        "select count(a) from Aula a where a.adiada = false and a.classe.id = :cid and a.data between :ini and :fim and a.data <= :hoje")
                 .setParameter("cid", cid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult()).longValue();
         Object[] ag = (Object[]) em.createQuery(
@@ -106,7 +106,7 @@ public class BoletimService {
                         + "sum(case when p.trouxeBiblia = true then 1 else 0 end), "
                         + "sum(case when p.trouxeRevista = true then 1 else 0 end), "
                         + "sum(case when p.estudouLicao = true then 1 else 0 end) "
-                        + "from Presenca p where p.aluno.id = :aid and p.aula.data between :ini and :fim and p.aula.data <= :hoje")
+                        + "from Presenca p where p.aula.adiada = false and p.aluno.id = :aid and p.aula.data between :ini and :fim and p.aula.data <= :hoje")
                 .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult();
         long presencas = toLong(ag[0]);
@@ -119,7 +119,7 @@ public class BoletimService {
 
         long visitantes = ((Number) em.createQuery(
                         "select count(v) from Visitante v where v.trazidoPor.id = :aid "
-                        + "and v.aula.data between :ini and :fim and v.aula.data <= :hoje")
+                        + "and v.aula.adiada = false and v.aula.data between :ini and :fim and v.aula.data <= :hoje")
                 .setParameter("aid", aid).setParameter("ini", ini).setParameter("fim", fim).setParameter("hoje", hoje)
                 .getSingleResult()).longValue();
 

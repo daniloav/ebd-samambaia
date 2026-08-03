@@ -1,6 +1,7 @@
 package br.com.ice.ebd.service;
 
 import br.com.ice.ebd.dto.AulaComplementarRequest;
+import br.com.ice.ebd.dto.AulaAdiarResponse;
 import br.com.ice.ebd.dto.AulaComplementarResponse;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
@@ -100,12 +101,8 @@ public class AulaService {
 
         LocalDate novaData = origem.getData().plusDays(7);
 
-        // Empurra a agenda seguinte (já vem em ordem decrescente de data).
-        var seguintes = repository.listarPorClasseDesde(classeId, novaData);
-        for (Aula a : seguintes) {
-            a.setData(a.getData().plusDays(7));
-            repository.getEntityManager().flush();
-        }
+        // Empurra a agenda seguinte (+7d) para abrir o domingo recém-liberado.
+        int movidas = empurrarAgenda(classeId, novaData);
 
         // Cria a aula complementar no domingo recém-liberado.
         Aula nova = new Aula();
@@ -118,11 +115,72 @@ public class AulaService {
 
         auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.AULA, nova.getId(),
                 "complementar de " + origem.getData() + " · " + rotulo(nova));
-        if (!seguintes.isEmpty()) {
+        if (movidas > 0) {
             auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, origem.getId(),
-                    "empurrão +7d na agenda da turma: " + seguintes.size() + " aula(s)");
+                    "empurrão +7d na agenda da turma: " + movidas + " aula(s)");
         }
-        return new AulaComplementarResponse(AulaResponse.de(nova), seguintes.size());
+        return new AulaComplementarResponse(AulaResponse.de(nova), movidas);
+    }
+
+    /**
+     * Adia (cancela) uma aula: marca a origem como <b>adiada</b> — a partir daí ela é ignorada por
+     * toda pontuação e retrospecto (chamada, rankings, relatórios, boletim, dashboard, frequência,
+     * inativação por faltas e promoção de visitante), então ninguém é penalizado por ela — e
+     * <b>empurra +7 dias a agenda seguinte</b> da turma, criando uma aula de <b>reposição</b> no
+     * domingo recém-liberado (herda tema e professor da origem), para a lição não se perder. Usa a
+     * mesma mecânica de empurrão do desdobramento (DESC + flush por item, sem violar a unique
+     * {@code uq_aula_classe_data}).
+     */
+    @Transactional
+    public AulaAdiarResponse adiar(Long id) {
+        Aula origem = obter(id);
+        Long classeId = origem.getClasse().getId();
+        escopo.assertClasse(classeId);
+        if (origem.isAdiada()) {
+            throw new WebApplicationException("Esta aula já está adiada.", Response.Status.CONFLICT);
+        }
+
+        LocalDate novaData = origem.getData().plusDays(7);
+
+        // Desabilita a pontuação/retrospecto da aula cancelada (fica no lugar, marcada).
+        origem.setAdiada(true);
+
+        // Empurra a agenda seguinte (+7d) e cria a reposição no domingo recém-liberado.
+        int movidas = empurrarAgenda(classeId, novaData);
+
+        Aula reposicao = new Aula();
+        reposicao.setClasse(origem.getClasse());
+        reposicao.setData(novaData);
+        reposicao.setTema(origem.getTema());
+        reposicao.setProfessor(origem.getProfessor());
+        validarDataUnica(classeId, novaData, null); // sanidade: já deve estar livre após o empurrão
+        repository.persist(reposicao);
+
+        auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, origem.getId(),
+                "aula adiada (pontuação desabilitada) · " + rotulo(origem));
+        auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.AULA, reposicao.getId(),
+                "reposição de aula adiada de " + origem.getData() + " · " + rotulo(reposicao));
+        if (movidas > 0) {
+            auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, origem.getId(),
+                    "empurrão +7d na agenda da turma: " + movidas + " aula(s)");
+        }
+        return new AulaAdiarResponse(AulaResponse.de(origem), AulaResponse.de(reposicao), movidas);
+    }
+
+    /**
+     * Empurra +7 dias todas as aulas da turma com data &gt;= {@code aPartir}, da mais recente para
+     * a mais antiga com flush por iteração — a mais recente vai ao slot vazio e cada anterior ocupa
+     * o recém-liberado, sem nunca violar a unique {@code uq_aula_classe_data} (não-deferrable).
+     *
+     * @return quantas aulas foram movidas.
+     */
+    private int empurrarAgenda(Long classeId, LocalDate aPartir) {
+        var seguintes = repository.listarPorClasseDesde(classeId, aPartir);
+        for (Aula a : seguintes) {
+            a.setData(a.getData().plusDays(7));
+            repository.getEntityManager().flush();
+        }
+        return seguintes.size();
     }
 
     /** Tema informado, ou o da origem com sufixo "(continuação)". */

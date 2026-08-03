@@ -30,7 +30,7 @@ public class RelatorioService {
         long cid = classeId != null ? classeId : -1L;
 
         long totalAulas = em.createQuery(
-                        "select count(a) from Aula a where a.data between :ini and :fim and (:cid = -1 or a.classe.id = :cid)", Long.class)
+                        "select count(a) from Aula a where a.adiada = false and a.data between :ini and :fim and (:cid = -1 or a.classe.id = :cid)", Long.class)
                 .setParameter("ini", ini).setParameter("fim", f).setParameter("cid", cid)
                 .getSingleResult();
 
@@ -41,7 +41,7 @@ public class RelatorioService {
                         + "sum(case when p.trouxeBiblia = true then 1 else 0 end), "
                         + "sum(case when p.trouxeRevista = true then 1 else 0 end), "
                         + "sum(case when p.estudouLicao = true then 1 else 0 end) "
-                        + "from Presenca p where p.aula.data between :ini and :fim and (:cid = -1 or p.aula.classe.id = :cid) "
+                        + "from Presenca p where p.aula.adiada = false and p.aula.data between :ini and :fim and (:cid = -1 or p.aula.classe.id = :cid) "
                         + "group by p.aluno.id", Object[].class)
                 .setParameter("ini", ini).setParameter("fim", f).setParameter("cid", cid)
                 .getResultList()) {
@@ -52,7 +52,7 @@ public class RelatorioService {
         Map<Long, Long> visitantes = new HashMap<>();
         for (Object[] l : em.createQuery(
                         "select v.trazidoPor.id, count(v) from Visitante v where v.trazidoPor is not null "
-                        + "and v.aula.data between :ini and :fim and (:cid = -1 or v.aula.classe.id = :cid) "
+                        + "and v.aula.adiada = false and v.aula.data between :ini and :fim and (:cid = -1 or v.aula.classe.id = :cid) "
                         + "group by v.trazidoPor.id", Object[].class)
                 .setParameter("ini", ini).setParameter("fim", f).setParameter("cid", cid)
                 .getResultList()) {

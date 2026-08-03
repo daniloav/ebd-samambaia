@@ -35,6 +35,7 @@ public class MinhaFrequenciaService {
         Aluno aluno = alunoLogado();
 
         List<Presenca> presencas = new ArrayList<>(presencaRepository.listarPorAluno(aluno.getId()));
+        presencas.removeIf(p -> p.getAula().isAdiada()); // aula adiada não conta na frequência
         presencas.sort(Comparator.comparing((Presenca p) -> p.getAula().getData()).reversed());
 
         List<Item> itens = new ArrayList<>();
