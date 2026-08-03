@@ -23,6 +23,12 @@ public class UsoService {
     private static final int DORMENTE_DIAS = 14;
     private static final int TOP_LIMITE = 10;
 
+    // SQL nativo em constantes literais (sem interpolação de variável) — extract(hour|dow ...).
+    private static final String SQL_ACESSOS_POR_HORA =
+            "select cast(extract(hour from data_hora) as int) b, count(*) from acesso_evento where data_hora >= :desde group by b";
+    private static final String SQL_ACESSOS_POR_DOW =
+            "select cast(extract(dow from data_hora) as int) b, count(*) from acesso_evento where data_hora >= :desde group by b";
+
     @Inject EntityManager em;
 
     public UsoResponse gerar() {
@@ -65,8 +71,8 @@ public class UsoService {
 
         // ---- B) Séries ----
         List<UsoResponse.PontoDia> serieDiaria = serieDiaria(agora.minusDays(DIAS_SERIE - 1L));
-        List<Long> porHora = distribuicao(ha30, "hour", 24);
-        List<Long> porDiaSemana = distribuicao(ha30, "dow", 7);
+        List<Long> porHora = distribuicao(ha30, SQL_ACESSOS_POR_HORA, 24);
+        List<Long> porDiaSemana = distribuicao(ha30, SQL_ACESSOS_POR_DOW, 7);
 
         // ---- E/F) Mais ativos (30 dias) ----
         List<UsoResponse.TopUsuario> maisAtivos = new ArrayList<>();
@@ -134,13 +140,11 @@ public class UsoService {
         return serie;
     }
 
-    /** Distribuição de acessos por parte da data (hour: 0..23 / dow: 0=Dom..6=Sáb). */
-    private List<Long> distribuicao(LocalDateTime desde, String parte, int tamanho) {
+    /** Distribuição de acessos por bucket (0..23 p/ hora; 0=Dom..6=Sáb p/ dia da semana). */
+    private List<Long> distribuicao(LocalDateTime desde, String sqlLiteral, int tamanho) {
         long[] buckets = new long[tamanho];
         @SuppressWarnings("unchecked")
-        List<Object[]> linhas = em.createNativeQuery(
-                        "select cast(extract(" + parte + " from data_hora) as int) b, count(*) "
-                        + "from acesso_evento where data_hora >= :desde group by b")
+        List<Object[]> linhas = em.createNativeQuery(sqlLiteral)
                 .setParameter("desde", desde).getResultList();
         for (Object[] l : linhas) {
             int b = ((Number) l[0]).intValue();
