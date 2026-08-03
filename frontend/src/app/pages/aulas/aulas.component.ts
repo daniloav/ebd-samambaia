@@ -28,22 +28,33 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
         <div class="tabela-scroll">
           <table class="tabela">
             <thead>
-              <tr><th style="width:130px">Data</th><th>Tema</th><th style="width:390px">Ações</th></tr>
+              <tr><th style="width:130px">Data</th><th>Tema</th><th style="width:470px">Ações</th></tr>
             </thead>
             <tbody>
               @for (a of aulas(); track a.id) {
-                <tr>
+                <tr [class.linha-adiada]="a.adiada">
                   <td>{{ a.data | date:'dd/MM/yyyy' }}</td>
                   <td>{{ a.tema || '—' }}
+                    @if (a.adiada) { <span class="badge badge-dourado" title="Aula adiada: fora de toda pontuação e retrospecto">Adiada</span> }
                     @if (a.professorNome) { <br><small class="muted">👩‍🏫 Professor: {{ a.professorNome }}</small> }
                   </td>
                   <td>
-                    <a class="btn btn-dourado btn-sm" routerLink="/chamada">Fazer chamada</a>
-                    <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
-                    <button class="btn btn-outline btn-sm" (click)="abrirComplementar(a)"
-                      title="Continuar esta aula no próximo domingo, empurrando a agenda seguinte">Desdobrar</button>
-                    @if (auth.isAdmin()) {
-                      <button class="btn btn-perigo btn-sm" (click)="excluir(a)">Excluir</button>
+                    @if (a.adiada) {
+                      <small class="muted">Adiada — fora de pontuação/retrospecto.</small>
+                      <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
+                      @if (auth.isAdmin()) {
+                        <button class="btn btn-perigo btn-sm" (click)="excluir(a)">Excluir</button>
+                      }
+                    } @else {
+                      <a class="btn btn-dourado btn-sm" routerLink="/chamada">Fazer chamada</a>
+                      <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
+                      <button class="btn btn-outline btn-sm" (click)="abrirComplementar(a)"
+                        title="Continuar esta aula no próximo domingo, empurrando a agenda seguinte">Desdobrar</button>
+                      <button class="btn btn-outline btn-sm" (click)="abrirAdiar(a)"
+                        title="Cancelar/adiar esta aula (evento da igreja): sai da pontuação e a agenda seguinte anda +7 dias">Adiar</button>
+                      @if (auth.isAdmin()) {
+                        <button class="btn btn-perigo btn-sm" (click)="excluir(a)">Excluir</button>
+                      }
                     }
                   </td>
                 </tr>
@@ -117,7 +128,43 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
         </div>
       </div>
     }
+
+    @if (modalAdiarAberto()) {
+      <div class="modal-backdrop" (click)="fecharAdiar()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header"><h3>Adiar aula</h3></div>
+          <div class="modal-body">
+            <p class="muted" style="margin-top:0">
+              Aula:
+              <b>{{ alvoAdiar()?.data | date:'dd/MM/yyyy' }}</b>{{ alvoAdiar()?.tema ? ' · ' + alvoAdiar()?.tema : '' }}.
+            </p>
+            <div class="card" style="background:var(--cor-fundo-suave,#f7f7f5);padding:.75rem 1rem;margin-bottom:1rem">
+              A aula ficará marcada como <b>Adiada</b> e sairá de <b>toda pontuação e retrospecto</b>
+              (chamada, rankings, relatórios, boletim e frequência) — <b>ninguém é penalizado</b> por ela.
+              <br>Uma aula de <b>reposição</b> será criada em <b>{{ novaDataAdiar() | date:'dd/MM/yyyy' }}</b>
+              (próximo domingo), herdando o tema.
+              @if (qtdMovidasAdiar() > 0) {
+                <br>As <b>{{ qtdMovidasAdiar() }}</b> aula(s) seguinte(s) da turma serão movidas <b>+7 dias</b>.
+              } @else {
+                <br>Não há aulas posteriores — só a reposição será criada.
+              }
+            </div>
+            <small class="muted">Use quando o encontro foi cancelado (ex.: evento da igreja no domingo).</small>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="fecharAdiar()">Cancelar</button>
+            <button class="btn btn-verde" (click)="confirmarAdiar()" [disabled]="adiando()">
+              {{ adiando() ? 'Processando...' : 'Adiar e empurrar agenda' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
+  styles: [`
+    .linha-adiada > td { opacity: .62; }
+    .linha-adiada .badge { opacity: 1; }
+  `],
 })
 export class AulasComponent {
   private api = inject(ApiService);
@@ -139,6 +186,11 @@ export class AulasComponent {
   complementando = signal(false);
   origem = signal<Aula | null>(null);
   formComplementar: { tema: string | null; professorId: number | null } = { tema: '', professorId: null };
+
+  // Adiamento (aula cancelada: sai da pontuação + empurra agenda + reposição)
+  modalAdiarAberto = signal(false);
+  adiando = signal(false);
+  alvoAdiar = signal<Aula | null>(null);
 
   constructor() {
     effect(() => { this.classeCtx.selecionadaId(); this.carregar(); this.carregarProfessores(); }, { allowSignalWrites: true });
@@ -197,20 +249,10 @@ export class AulasComponent {
   fecharComplementar(): void { this.modalComplementarAberto.set(false); this.origem.set(null); }
 
   /** Próximo domingo = data da aula de origem + 7 dias. */
-  novaData(): Date | null {
-    const o = this.origem();
-    if (!o) { return null; }
-    const d = new Date(o.data + 'T00:00:00');
-    d.setDate(d.getDate() + 7);
-    return d;
-  }
+  novaData(): Date | null { return this.maisSete(this.origem()); }
 
   /** Quantas aulas da turma serão empurradas (as com data posterior à de origem). */
-  qtdMovidas(): number {
-    const o = this.origem();
-    if (!o) { return 0; }
-    return this.aulas().filter((x) => x.data > o.data).length;
-  }
+  qtdMovidas(): number { return this.qtdPosteriores(this.origem()); }
 
   confirmarComplementar(): void {
     const o = this.origem();
@@ -227,6 +269,46 @@ export class AulasComponent {
       },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao desdobrar a aula.'); this.complementando.set(false); },
     });
+  }
+
+  // ---- Adiamento ----
+  abrirAdiar(a: Aula): void { this.alvoAdiar.set(a); this.modalAdiarAberto.set(true); }
+  fecharAdiar(): void { this.modalAdiarAberto.set(false); this.alvoAdiar.set(null); }
+
+  /** Domingo da reposição = data da aula adiada + 7 dias. */
+  novaDataAdiar(): Date | null { return this.maisSete(this.alvoAdiar()); }
+
+  /** Quantas aulas seguintes serão empurradas ao adiar. */
+  qtdMovidasAdiar(): number { return this.qtdPosteriores(this.alvoAdiar()); }
+
+  confirmarAdiar(): void {
+    const a = this.alvoAdiar();
+    if (!a) { return; }
+    this.adiando.set(true);
+    this.api.adiarAula(a.id).subscribe({
+      next: (r) => {
+        const msg = r.aulasMovidas > 0
+          ? `Aula adiada; reposição criada e ${r.aulasMovidas} aula(s) movida(s) +7 dias.`
+          : 'Aula adiada; reposição criada no próximo domingo.';
+        this.toast.sucesso(msg);
+        this.adiando.set(false); this.fecharAdiar(); this.carregar();
+      },
+      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao adiar a aula.'); this.adiando.set(false); },
+    });
+  }
+
+  /** Utilitário: data da aula + 7 dias (ou null). */
+  private maisSete(a: Aula | null): Date | null {
+    if (!a) { return null; }
+    const d = new Date(a.data + 'T00:00:00');
+    d.setDate(d.getDate() + 7);
+    return d;
+  }
+
+  /** Utilitário: quantas aulas da turma têm data posterior à da aula informada. */
+  private qtdPosteriores(a: Aula | null): number {
+    if (!a) { return 0; }
+    return this.aulas().filter((x) => x.data > a.data).length;
   }
 
   async excluir(a: Aula): Promise<void> {

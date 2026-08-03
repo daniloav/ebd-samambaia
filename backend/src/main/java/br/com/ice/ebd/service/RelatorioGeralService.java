@@ -27,7 +27,7 @@ public class RelatorioGeralService {
         LocalDate dia = data != null ? data : LocalDate.now();
 
         List<Aula> aulas = em.createQuery(
-                        "select a from Aula a where a.data = :d order by a.classe.nome", Aula.class)
+                        "select a from Aula a where a.adiada = false and a.data = :d order by a.classe.nome", Aula.class)
                 .setParameter("d", dia).getResultList();
 
         // Agregados de presença por aula: [presentes, faltosos, biblias, revistas, licoes]
@@ -39,7 +39,7 @@ public class RelatorioGeralService {
                         + "sum(case when p.trouxeBiblia = true then 1 else 0 end), "
                         + "sum(case when p.trouxeRevista = true then 1 else 0 end), "
                         + "sum(case when p.estudouLicao = true then 1 else 0 end) "
-                        + "from Presenca p where p.aula.data = :d group by p.aula.id", Object[].class)
+                        + "from Presenca p where p.aula.adiada = false and p.aula.data = :d group by p.aula.id", Object[].class)
                 .setParameter("d", dia).getResultList()) {
             presencaPorAula.put(num(r[0]),
                     new long[]{num(r[1]), num(r[2]), num(r[3]), num(r[4]), num(r[5])});
@@ -48,7 +48,7 @@ public class RelatorioGeralService {
         // Visitantes por aula (do cadastro de visitantes).
         Map<Long, Long> visitantesPorAula = new HashMap<>();
         for (Object[] r : em.createQuery(
-                "select v.aula.id, count(v) from Visitante v where v.aula.data = :d group by v.aula.id", Object[].class)
+                "select v.aula.id, count(v) from Visitante v where v.aula.adiada = false and v.aula.data = :d group by v.aula.id", Object[].class)
                 .setParameter("d", dia).getResultList()) {
             visitantesPorAula.put(num(r[0]), (long) num(r[1]));
         }

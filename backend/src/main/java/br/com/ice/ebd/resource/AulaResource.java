@@ -1,5 +1,6 @@
 package br.com.ice.ebd.resource;
 
+import br.com.ice.ebd.dto.AulaAdiarResponse;
 import br.com.ice.ebd.dto.AulaComplementarRequest;
 import br.com.ice.ebd.dto.AulaComplementarResponse;
 import br.com.ice.ebd.dto.AulaRequest;
@@ -62,6 +63,17 @@ public class AulaResource {
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public Response complementar(@PathParam("id") Long id, @Valid AulaComplementarRequest request) {
         return Response.status(Response.Status.CREATED).entity(service.complementar(id, request)).build();
+    }
+
+    /**
+     * Adia (cancela) a aula: desabilita a pontuação/retrospecto dela, empurra +7 dias a agenda
+     * seguinte da turma e cria a aula de reposição no domingo liberado.
+     */
+    @POST
+    @Path("/{id}/adiar")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public AulaAdiarResponse adiar(@PathParam("id") Long id) {
+        return service.adiar(id);
     }
 
     @DELETE

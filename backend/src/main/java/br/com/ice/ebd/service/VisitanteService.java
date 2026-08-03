@@ -54,6 +54,10 @@ public class VisitanteService {
     public VisitanteResponse adicionar(Long aulaId, VisitanteRequest req) {
         Aula aula = aulaService.obter(aulaId);
         escopo.assertClasse(aula.getClasse().getId());
+        if (aula.isAdiada()) {
+            throw new jakarta.ws.rs.WebApplicationException(
+                    "Esta aula foi adiada e não recebe visitantes.", jakarta.ws.rs.core.Response.Status.CONFLICT);
+        }
 
         Visitante v = new Visitante();
         v.setAula(aula);
@@ -101,6 +105,7 @@ public class VisitanteService {
         }
         // 3 aulas mais recentes da turma com data <= a desta.
         List<Aula> recentes = aulaRepository.listarPorClasse(aula.getClasse().getId()).stream()
+                .filter(a -> !a.isAdiada()) // aulas adiadas não entram na janela de promoção
                 .filter(a -> !a.getData().isAfter(aula.getData()))
                 .limit(AULAS_PARA_PROMOVER)
                 .toList();

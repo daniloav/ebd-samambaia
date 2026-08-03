@@ -33,7 +33,7 @@ public class DashboardService {
         long totalAlunos = ativos.size();
 
         long totalAulas = ((Number) em.createQuery(
-                        "select count(a) from Aula a where (:cid = -1 or a.classe.id = :cid)")
+                        "select count(a) from Aula a where a.adiada = false and (:cid = -1 or a.classe.id = :cid)")
                 .setParameter("cid", cid).getSingleResult()).longValue();
         long totalProvas = ((Number) em.createQuery(
                         "select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid)")
@@ -44,7 +44,7 @@ public class DashboardService {
         List<Object[]> linhas = em.createQuery(
                         "select a.data, a.tema, "
                         + "(select count(pr) from Presenca pr where pr.aula = a and pr.presente = true) "
-                        + "from Aula a where (:cid = -1 or a.classe.id = :cid) order by a.data desc", Object[].class)
+                        + "from Aula a where a.adiada = false and (:cid = -1 or a.classe.id = :cid) order by a.data desc", Object[].class)
                 .setParameter("cid", cid).setMaxResults(MAX_AULAS_GRAFICO).getResultList();
         for (Object[] l : linhas) {
             LocalDate data = (LocalDate) l[0];
@@ -59,7 +59,7 @@ public class DashboardService {
         Map<Long, Long> presencasPorAluno = new HashMap<>();
         for (Object[] l : em.createQuery(
                         "select p.aluno.id, sum(case when p.presente = true then 1 else 0 end) "
-                        + "from Presenca p where (:cid = -1 or p.aula.classe.id = :cid) group by p.aluno.id", Object[].class)
+                        + "from Presenca p where p.aula.adiada = false and (:cid = -1 or p.aula.classe.id = :cid) group by p.aluno.id", Object[].class)
                 .setParameter("cid", cid).getResultList()) {
             presencasPorAluno.put((Long) l[0], ((Number) l[1]).longValue());
         }

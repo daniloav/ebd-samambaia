@@ -85,7 +85,7 @@ public class DesafiosService {
         }
 
         LocalDate hoje = LocalDate.now();
-        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where (:cid = -1 or a.classe.id = :cid) and a.data <= :hoje and a.data between :ini and :fim").setParameter("cid", cid).setParameter("hoje", hoje).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
+        long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where a.adiada = false and (:cid = -1 or a.classe.id = :cid) and a.data <= :hoje and a.data between :ini and :fim").setParameter("cid", cid).setParameter("hoje", hoje).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
         long totalProvas = ((Number) em.createQuery("select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid) and p.data between :ini and :fim").setParameter("cid", cid).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
 
         Map<Long, MetricasPresenca> presenca = carregarPresencas(cid, ini, fim);
@@ -153,7 +153,7 @@ public class DesafiosService {
                         "sum(case when p.presente = false and p.justificada = true then 1 else 0 end) " +
                         "from Presenca p join p.aula aula "
                         + "left join aula.professor prof left join prof.aluno profAluno "
-                        + "where (:cid = -1 or aula.classe.id = :cid) and aula.data <= :hoje "
+                        + "where aula.adiada = false and (:cid = -1 or aula.classe.id = :cid) and aula.data <= :hoje "
                         + "and aula.data between :ini and :fim "
                         + "and (profAluno is null or profAluno.id <> p.aluno.id) "
                         + "group by p.aluno.id", Object[].class)
@@ -177,7 +177,7 @@ public class DesafiosService {
         List<Object[]> linhas = em.createQuery(
                         "select v.trazidoPor.id, count(v) from Visitante v join v.aula aula "
                         + "left join aula.professor prof left join prof.aluno profAluno "
-                        + "where v.trazidoPor is not null and (:cid = -1 or aula.classe.id = :cid) "
+                        + "where v.trazidoPor is not null and aula.adiada = false and (:cid = -1 or aula.classe.id = :cid) "
                         + "and aula.data <= :hoje and aula.data between :ini and :fim "
                         + "and (profAluno is null or profAluno.id <> v.trazidoPor.id) "
                         + "group by v.trazidoPor.id", Object[].class)
@@ -365,7 +365,7 @@ public class DesafiosService {
         long totalAulas = 0;
         long totalProvas = 0;
         if (!ids.isEmpty()) {
-            totalAulas = ((Number) em.createQuery("select count(a) from Aula a where a.classe.id in :ids and a.data <= :hoje and a.data between :ini and :fim")
+            totalAulas = ((Number) em.createQuery("select count(a) from Aula a where a.adiada = false and a.classe.id in :ids and a.data <= :hoje and a.data between :ini and :fim")
                     .setParameter("ids", ids).setParameter("hoje", hoje).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
             totalProvas = ((Number) em.createQuery("select count(p) from Prova p where p.classe.id in :ids and p.data between :ini and :fim")
                     .setParameter("ids", ids).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
@@ -423,7 +423,7 @@ public class DesafiosService {
                         "sum(case when p.presente = false and p.justificada = true then 1 else 0 end) " +
                         "from Presenca p join p.aula aula "
                         + "left join aula.professor prof left join prof.aluno profAluno "
-                        + "where aula.data <= :hoje and aula.data between :ini and :fim "
+                        + "where aula.adiada = false and aula.data <= :hoje and aula.data between :ini and :fim "
                         + "and (profAluno is null or profAluno.id <> p.aluno.id) "
                         + "group by aula.classe.id", Object[].class)
                 .setParameter("hoje", LocalDate.now())
@@ -441,7 +441,7 @@ public class DesafiosService {
         List<Object[]> linhas = em.createQuery(
                         "select aula.classe.id, count(v) from Visitante v join v.aula aula "
                         + "left join aula.professor prof left join prof.aluno profAluno "
-                        + "where v.trazidoPor is not null and aula.data <= :hoje and aula.data between :ini and :fim "
+                        + "where v.trazidoPor is not null and aula.adiada = false and aula.data <= :hoje and aula.data between :ini and :fim "
                         + "and (profAluno is null or profAluno.id <> v.trazidoPor.id) "
                         + "group by aula.classe.id", Object[].class)
                 .setParameter("hoje", LocalDate.now())

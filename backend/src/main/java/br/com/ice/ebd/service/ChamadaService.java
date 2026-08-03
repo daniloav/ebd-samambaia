@@ -83,6 +83,10 @@ public class ChamadaService {
     public ChamadaResponse salvarChamada(Long aulaId, SalvarChamadaRequest req) {
         Aula aula = aulaService.obter(aulaId);
         escopo.assertClasse(aula.getClasse().getId());
+        if (aula.isAdiada()) {
+            throw new jakarta.ws.rs.WebApplicationException(
+                    "Esta aula foi adiada e não recebe chamada.", jakarta.ws.rs.core.Response.Status.CONFLICT);
+        }
 
         // Quem dá aula neste dia (qualquer turma) não é contabilizado como aluno nesta chamada.
         Set<Long> ensinandoHoje = aulaRepository.alunoIdsDeProfessoresComAulaEm(aula.getData());
@@ -176,6 +180,9 @@ public class ChamadaService {
         for (Presenca p : presencaRepository.listarPorAlunoDesc(aluno.getId())) {
             if (p.getAula().getData().isAfter(aula.getData())) {
                 continue; // ignora aulas posteriores à avaliada
+            }
+            if (p.getAula().isAdiada()) {
+                continue; // aula adiada não conta na sequência de faltas
             }
             if (p.isPresente() || p.isJustificada()) {
                 break; // sequência quebrada
