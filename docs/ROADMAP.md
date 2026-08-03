@@ -43,6 +43,15 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       **aluno, aula, prova e usuário** (usuário, data/hora, ação, entidade, id e rótulo). `AuditoriaService`
       grava dentro da transação da própria operação; tela admin `/auditoria` (só ADMIN) com filtros por
       entidade/período. Testes em `AuditoriaServiceTest`.
+- [ ] **Vulnerabilidades do Dependabot (deps do frontend) — 9 high (2026-08)** — o `npm audit` acusa:
+      (1) **`@angular/core` — 6 advisories de XSS** (i18n, SVG, sanitization/namespace bypass, hydration)
+      que só têm patch em **majors suportados** → dependem do **upgrade do Angular** (ver Compatibilidade
+      mobile). Impacto real menor neste app: **não** usamos `@angular/localize` nem SSR/hydration e não há
+      `bypassSecurityTrust`/`DomSanitizer` no código — sobram os *sanitization bypass* genéricos, num app
+      interno e autenticado. (2) **`xlsx` (SheetJS) — Prototype Pollution + ReDoS**, **sem fix no npm** (a
+      SheetJS saiu do registry): migrar para **`exceljs`** ou instalar do **CDN oficial** da SheetJS.
+      **Adiado** junto com o upgrade do Angular; reavaliar assim que o `/uso` indicar baixa exposição a
+      iOS antigo. Repo privado, então o risco de exposição é contido.
 - [ ] **P3 · Token em localStorage** — acessível a XSS (Angular escapa por padrão; risco baixo). Alternativa
       robusta (cookie httpOnly + CSRF) só se o app crescer.
 - [ ] **P3 · "Entrar como" com restrição no backend** — hoje o alternador de perfil "Atuando como"
@@ -71,6 +80,16 @@ Lista viva de próximos passos e ideias. Marque o que for concluindo e adicione 
       deixando iPhones com iOS < 18 na **tela branca**. Adicionado `frontend/.browserslistrc` incluindo
       **Safari/iOS ≥ 14** (esbuild rebaixa a sintaxe) + **tela de fallback** no `index.html` (nunca fica
       branco; mostra "atualize o navegador" e captura o erro). Piso realista do Angular 17: Safari 15.
+- [ ] **Upgrade do Angular 17 → major suportado (adiado — decisão baseada em dado)** — as
+      vulnerabilidades do Dependabot (ver Segurança) só têm correção em majors **ainda suportados** do
+      Angular; ficar no 17 é insustentável a médio prazo. **Adiado de propósito** para não arriscar o
+      engajamento no lançamento (2026-08). Quando for: subir **major por major** com `ng update`
+      (17→18→19…), **mantendo o `.browserslistrc`** (Safari/iOS 14) e **testando num iPhone antigo a
+      cada passo** — o risco não é a sintaxe (o esbuild rebaixa), é o **runtime do framework** elevar o
+      piso de Safari/iOS. Exige **subir o Node** (18.19+/20; build-time, não afeta o device). O card
+      **Dispositivos** do painel `/uso` passa a **medir a exposição real a iOS antigo**, para escolher o
+      alvo do salto com número, não achismo. **Não** rodar `npm audit fix --force` (pula direto pro
+      major mais novo — pior caminho p/ device antigo).
 > O caso de uso nº 1 no celular é o professor **fazendo a chamada em sala**. Priorizar essa tela.
 - [x] **P1 · Chamada otimizada para toque** — checkboxes nativos são pequenos para dedo; aumentar a área
       de toque (célula inteira clicável, alvos ≥44px) e testar a tabela de 5 colunas em 360px de largura.
