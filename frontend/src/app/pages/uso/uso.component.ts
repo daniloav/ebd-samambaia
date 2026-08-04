@@ -198,6 +198,97 @@ import { UsoResponse } from '../../core/models';
           }
         </div>
       </div>
+
+      <!-- ===================== D) Uso por funcionalidade ===================== -->
+      <h3 style="margin:1.75rem 0 .25rem">Uso por funcionalidade</h3>
+      <p class="muted" style="margin:0 0 .9rem;font-size:.82rem">Telas mais abertas e ações registradas nos últimos 30 dias.</p>
+      <div class="grid2">
+        <div class="card">
+          <p class="subt">Telas mais abertas</p>
+          @if (u.featuresMaisUsadas.length === 0) {
+            <p class="vazio">Sem navegação registrada ainda.</p>
+          } @else {
+            <div class="bars">
+              @for (f of u.featuresMaisUsadas; track f.rotulo) {
+                <div class="bar-row">
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ rotuloRecurso(f.rotulo) }}</span>
+                  <div class="bar-track"><div class="bar-fill" [style.width.%]="perc(f.quantidade, maxFeature())"></div></div>
+                  <span class="bar-val">{{ f.quantidade }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="card">
+          <p class="subt">Ações registradas (cliques)</p>
+          @if (u.acoesNotaveis.length === 0) {
+            <p class="vazio">Nenhum clique instrumentado ainda (export, WhatsApp…).</p>
+          } @else {
+            <div class="bars">
+              @for (a of u.acoesNotaveis; track a.rotulo) {
+                <div class="bar-row">
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ rotuloRecurso(a.rotulo) }}</span>
+                  <div class="bar-track"><div class="bar-fill verde" [style.width.%]="perc(a.quantidade, maxAcao())"></div></div>
+                  <span class="bar-val">{{ a.quantidade }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ===================== F) Professores & gestão ===================== -->
+      <h3 style="margin:1.75rem 0 .25rem">Professores &amp; gestão</h3>
+      <p class="muted" style="margin:0 0 .9rem;font-size:.82rem">Atividade de gestão e disciplina da chamada.</p>
+      <div class="kpis">
+        <div class="kpi verde"><div class="n">{{ u.chamadaPrazo.noPrazo }}</div><div class="l">Chamadas no prazo (no dia da aula)</div></div>
+        <div class="kpi laranja"><div class="n">{{ u.chamadaPrazo.atrasadas }}</div><div class="l">Chamadas atrasadas</div></div>
+        <div class="kpi roxo"><div class="n">{{ u.chamadaPrazo.pctNoPrazo | number:'1.0-0' }}%</div><div class="l">No prazo</div></div>
+        <div class="kpi"><div class="n">{{ turmasCobertas() }}/{{ u.coberturaTurmas.length }}</div><div class="l">Turmas com chamada nesta semana</div></div>
+      </div>
+
+      <div class="grid2">
+        <!-- Professores mais ativos (auditoria) -->
+        <div class="card">
+          <p class="subt">Mais ativos na gestão (30 dias)</p>
+          @if (u.professoresMaisAtivos.length === 0) {
+            <p class="vazio">Nenhuma ação de gestão registrada.</p>
+          } @else {
+            <div class="bars">
+              @for (pa of u.professoresMaisAtivos; track pa.username) {
+                <div class="bar-row">
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ pa.username }} <span class="pill">{{ pa.papel }}</span></span>
+                  <div class="bar-track"><div class="bar-fill" [style.width.%]="perc(pa.acessos, maxProf())"></div></div>
+                  <span class="bar-val">{{ pa.acessos }}</span>
+                </div>
+              }
+            </div>
+            <p class="muted" style="font-size:.75rem;margin-top:.6rem">Nº de ações na auditoria (criar/editar/excluir aluno, aula, prova, usuário).</p>
+          }
+        </div>
+
+        <!-- Cobertura de turmas na semana -->
+        <div class="card">
+          <p class="subt">Cobertura de turmas (semana atual)</p>
+          @if (u.coberturaTurmas.length === 0) {
+            <p class="vazio">Nenhuma turma ativa.</p>
+          } @else {
+            <div class="bars">
+              @for (ct of u.coberturaTurmas; track ct.turma) {
+                <div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center">
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ct.turma }}</span>
+                  @if (ct.cobriu) {
+                    <span class="pill" style="background:#dcfce7;color:#166534">✓ {{ ct.aulaData | date:'dd/MM' }}</span>
+                  } @else {
+                    <span class="pill" style="background:#fee2e2;color:#991b1b">pendente</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
     }
     @if (!carregando() && !d()) {
       <p class="muted" style="margin-top:1.5rem">Não foi possível carregar as estatísticas.</p>
@@ -219,6 +310,14 @@ export class UsoComponent implements OnInit {
     Math.max(1, ...((this.d()?.serieDiaria ?? []).map((p) => p.acessos))));
   maxHora = computed(() => Math.max(1, ...((this.d()?.porHora ?? []))));
   maxDiaSemana = computed(() => Math.max(1, ...((this.d()?.porDiaSemana ?? []))));
+  maxFeature = computed(() =>
+    Math.max(1, ...((this.d()?.featuresMaisUsadas ?? []).map((x) => x.quantidade))));
+  maxAcao = computed(() =>
+    Math.max(1, ...((this.d()?.acoesNotaveis ?? []).map((x) => x.quantidade))));
+  maxProf = computed(() =>
+    Math.max(1, ...((this.d()?.professoresMaisAtivos ?? []).map((x) => x.acessos))));
+  turmasCobertas = computed(() =>
+    (this.d()?.coberturaTurmas ?? []).filter((x) => x.cobriu).length);
 
   ngOnInit(): void {
     this.carregar();
@@ -242,6 +341,22 @@ export class UsoComponent implements OnInit {
 
   diaSemana(i: number): string {
     return this.DIAS[i] ?? String(i);
+  }
+
+  private readonly ROTULOS: Record<string, string> = {
+    painel: 'Painel', chamada: 'Chamada', aulas: 'Aulas', alunos: 'Alunos',
+    relatorio: 'Relatório de presenças', 'relatorio-visitantes': 'Relatório de visitantes',
+    provas: 'Provas', desafios: 'Desafios', boletim: 'Boletim', classes: 'Turmas',
+    requisicoes: 'Requisições', conta: 'Minha conta', usuarios: 'Usuários',
+    'minha-frequencia': 'Minha frequência', 'meu-boletim': 'Meu boletim',
+    'meu-ranking': 'Meu ranking', 'minhas-provas': 'Minhas provas', uso: 'Uso & engajamento',
+    'whatsapp-parabenizar': '💬 Parabenizar (WhatsApp)',
+    'export-pdf-relatorio': '📄 PDF do relatório', 'export-excel-relatorio': '📊 Excel do relatório',
+    'export-pdf-boletim': '📄 PDF do boletim',
+  };
+
+  rotuloRecurso(chave: string): string {
+    return this.ROTULOS[chave] ?? chave;
   }
 
   rotuloHora(i: number): string {

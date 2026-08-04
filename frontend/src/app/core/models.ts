@@ -580,4 +580,24 @@ export interface UsoResponse {
   maisAtivos: TopUsuarioUso[];
   dormentes: TopUsuarioUso[];
   dispositivos: ContagemUso[];
+  // D) Uso por funcionalidade
+  featuresMaisUsadas: ContagemUso[];
+  acoesNotaveis: ContagemUso[];
+  // F) Professores / gestão
+  professoresMaisAtivos: TopUsuarioUso[];
+  chamadaPrazo: ChamadaPrazoUso;
+  coberturaTurmas: CoberturaTurmaUso[];
+}
+
+export interface ChamadaPrazoUso {
+  noPrazo: number;
+  atrasadas: number;
+  semData: number;
+  pctNoPrazo: number;
+}
+
+export interface CoberturaTurmaUso {
+  turma: string;
+  cobriu: boolean;
+  aulaData: string | null;
 }

@@ -114,6 +114,10 @@ public class ChamadaService {
             p.setTrouxeBiblia(item.trouxeBiblia());
             p.setTrouxeRevista(item.trouxeRevista());
             p.setEstudouLicao(item.estudouLicao());
+            // Marca o 1º registro da chamada desta aula (para o "no prazo × atrasada" do painel /uso).
+            if (p.getRegistradaEm() == null) {
+                p.setRegistradaEm(LocalDateTime.now());
+            }
             // A justificativa vem do professor: só vale para quem faltou; presente sempre a limpa.
             if (!item.presente() && item.justificada()) {
                 p.setJustificada(true);

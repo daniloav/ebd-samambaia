@@ -305,4 +305,7 @@ export class ApiService {
   ping(): Observable<void> {
     return this.http.put<void>(`${this.api}/me/ping`, {});
   }
+  evento(recurso: string, acao: 'ABRIR' | 'CLICAR' = 'ABRIR'): Observable<void> {
+    return this.http.post<void>(`${this.api}/me/evento`, { recurso, acao });
+  }
 }

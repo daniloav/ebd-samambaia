@@ -263,6 +263,22 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   medindo a exposição real a Safari/iOS antigo). Backlog **A–G completo** em [`docs/ROADMAP.md`](docs/ROADMAP.md).
   Validado: `mvn package`, `ng build` e **smoke ponta-a-ponta** contra Postgres real (V25 migrou, login
   gravou evento, ping 204, `/api/uso` respondeu e a tela renderizou com dados reais).
+- 📈 **Estatísticas de uso — lote 2: uso por funcionalidade (D) + professores/gestão (F) (2026-08-04)** —
+  2ª camada sobre o painel `/uso`. Migration **V27** (`uso_evento` + `presenca.registrada_em`).
+  **D (uso por funcionalidade):** até então só o login era instrumentado; agora um `POST /api/me/evento`
+  (`@Authenticated`) grava page views e cliques notáveis em `uso_evento`. No front, `TelemetriaService`
+  loga **1 page view por navegação** (hook `NavigationEnd` no `shell`, recurso = 1º segmento da rota,
+  dedup de repetição) + **cliques** instrumentados (WhatsApp "Parabenizar", export PDF/Excel do relatório,
+  PDF do boletim). O painel mostra **telas mais abertas** e **ações registradas** (30 dias, rótulos
+  humanizados). **F (professores/gestão):** **professores mais ativos** (nº de ações na `auditoria`, 30d),
+  **chamada no prazo × atrasada** (novo carimbo `registrada_em`, gravado no 1º save da chamada em
+  `ChamadaService`, comparado com a data da aula — histórico pré-V27 conta como "sem data") e **cobertura
+  de turmas na semana** (turmas ativas com/sem chamada na semana corrente). Registro de evento e telemetria
+  **nunca derrubam** o fluxo (transação própria + erros engolidos). Validado: **63 testes** (novo
+  `UsoServiceLote2Test`, 4 casos: contagem D, chamada no prazo/atrasada/sem-data, cobertura), `ng build`
+  e **smoke ponta-a-ponta** contra Postgres real (evento 204, `/api/uso` com os campos D/F, e salvar a
+  chamada virou "no prazo"; tela renderizou as 2 seções). Branch `feature/estatisticas-uso-lote2`
+  (empilhada sobre `feature/estatisticas-uso`). ⚠️ Migration **V27** (a `feature/adiar-aula` usa a V26).
 
 ## 10. Como pedir evoluções (dica para o Danilo)
 

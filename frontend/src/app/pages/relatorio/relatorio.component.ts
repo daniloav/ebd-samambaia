@@ -6,6 +6,7 @@ import { ToastService } from '../../core/toast.service';
 import { ClasseContextService } from '../../core/classe-context.service';
 import { RelatorioPresencaResponse } from '../../core/models';
 import { exportarExcel, exportarPdf } from '../../core/export.util';
+import { TelemetriaService } from '../../core/telemetria.service';
 
 @Component({
   selector: 'app-relatorio',
@@ -101,6 +102,7 @@ import { exportarExcel, exportarPdf } from '../../core/export.util';
 })
 export class RelatorioComponent {
   private api = inject(ApiService);
+  private telemetria = inject(TelemetriaService);
   private toast = inject(ToastService);
   private classeCtx = inject(ClasseContextService);
 
@@ -164,12 +166,14 @@ export class RelatorioComponent {
   }
 
   async exportarPdf(): Promise<void> {
+    this.telemetria.clique('export-pdf-relatorio');
     const d = this.dados(); if (!d) { return; }
     await exportarPdf('relatorio-presencas', `Relatório de presenças — ${this.turma()}`,
       `Período: ${this.br(d.inicio)} a ${this.br(d.fim)} · Total de aulas: ${d.totalAulas}`, this.cols(), this.linhas(d));
   }
 
   async exportarExcel(): Promise<void> {
+    this.telemetria.clique('export-excel-relatorio');
     const d = this.dados(); if (!d) { return; }
     await exportarExcel('relatorio-presencas', 'Presenças', this.cols(), this.linhas(d));
   }

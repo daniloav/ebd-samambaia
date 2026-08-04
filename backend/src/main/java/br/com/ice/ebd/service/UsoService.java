@@ -28,8 +28,19 @@ public class UsoService {
             "select cast(extract(hour from data_hora) as int) b, count(*) from acesso_evento where data_hora >= :desde group by b";
     private static final String SQL_ACESSOS_POR_DOW =
             "select cast(extract(dow from data_hora) as int) b, count(*) from acesso_evento where data_hora >= :desde group by b";
+    // Chamada no prazo × atrasada: agrega por aula o 1º registro da chamada vs. a data da aula.
+    private static final String SQL_CHAMADA_PRAZO =
+            "select "
+            + "  coalesce(sum(case when dt is not null and dt <= a_data then 1 else 0 end), 0), "
+            + "  coalesce(sum(case when dt is not null and dt >  a_data then 1 else 0 end), 0), "
+            + "  coalesce(sum(case when dt is null then 1 else 0 end), 0) "
+            + "from ("
+            + "  select p.aula_id, cast(min(p.registrada_em) as date) dt, max(a.data) a_data "
+            + "  from presenca p join aula a on a.id = p.aula_id group by p.aula_id"
+            + ") t";
 
     @Inject EntityManager em;
+    @Inject br.com.ice.ebd.repository.UsuarioRepository usuarioRepository;
 
     public UsoResponse gerar() {
         LocalDateTime agora = LocalDateTime.now();
@@ -106,7 +117,112 @@ public class UsoService {
                 totalUsuarios, comAcesso, nuncaAcessaram, taxaAtivacao,
                 alunosTotal, alunosAtivados, taxaAtivacaoAlunos,
                 serieDiaria, porHora, porDiaSemana,
-                maisAtivos, dormentes, dispositivos);
+                maisAtivos, dormentes, dispositivos,
+                // D) Uso por funcionalidade
+                featuresMaisUsadas(ha30), acoesNotaveis(ha30),
+                // F) Professores / gestão
+                professoresMaisAtivos(ha30), chamadaPrazo(), coberturaTurmas());
+    }
+
+    // ============================ D) Uso por funcionalidade ============================
+
+    /** Telas mais abertas nos últimos 30 dias (uso_evento com acao ABRIR), agregado por recurso. */
+    private List<UsoResponse.Contagem> featuresMaisUsadas(LocalDateTime desde) {
+        return contagemUsoEvento(desde, "ABRIR");
+    }
+
+    /** Cliques notáveis nos últimos 30 dias (uso_evento com acao CLICAR), agregado por recurso. */
+    private List<UsoResponse.Contagem> acoesNotaveis(LocalDateTime desde) {
+        return contagemUsoEvento(desde, "CLICAR");
+    }
+
+    private List<UsoResponse.Contagem> contagemUsoEvento(LocalDateTime desde, String acao) {
+        List<Object[]> linhas = em.createQuery(
+                        "select e.recurso, count(e) from UsoEvento e "
+                        + "where e.dataHora >= :desde and e.acao = :acao "
+                        + "group by e.recurso order by count(e) desc", Object[].class)
+                .setParameter("desde", desde)
+                .setParameter("acao", br.com.ice.ebd.model.UsoEvento.Acao.valueOf(acao))
+                .getResultList();
+        List<UsoResponse.Contagem> lista = new ArrayList<>();
+        for (Object[] r : linhas) {
+            lista.add(new UsoResponse.Contagem((String) r[0], ((Number) r[1]).longValue()));
+        }
+        return lista;
+    }
+
+    // ============================ F) Professores / gestão ============================
+
+    /**
+     * Usuários que mais agiram na gestão nos últimos 30 dias (nº de registros na auditoria —
+     * criar/atualizar/excluir aluno, aula, prova, usuário). O username da auditoria é casado
+     * com Usuario para exibir o papel; quem não é mais encontrado aparece como "—".
+     */
+    private List<UsoResponse.TopUsuario> professoresMaisAtivos(LocalDateTime desde) {
+        List<Object[]> linhas = em.createQuery(
+                        "select a.usuario, count(a) from Auditoria a where a.dataHora >= :desde "
+                        + "group by a.usuario order by count(a) desc", Object[].class)
+                .setParameter("desde", desde).setMaxResults(TOP_LIMITE).getResultList();
+        List<UsoResponse.TopUsuario> lista = new ArrayList<>();
+        for (Object[] r : linhas) {
+            String username = (String) r[0];
+            long qtd = ((Number) r[1]).longValue();
+            Usuario u = usuarioRepository.findByUsername(username).orElse(null);
+            String papel = u != null ? papel(u) : "—";
+            LocalDateTime ultimo = u != null ? u.getUltimoAcesso() : null;
+            lista.add(new UsoResponse.TopUsuario(username, papel, qtd, ultimo));
+        }
+        return lista;
+    }
+
+    /**
+     * Chamadas no prazo × atrasadas: por aula (que tenha presença), compara a data do 1º
+     * registro da chamada (min registrada_em) com a data da aula. No prazo = registrada até
+     * o dia da aula; atrasada = depois; sem data = presenças antigas sem carimbo (pré-V27).
+     */
+    private UsoResponse.ChamadaPrazo chamadaPrazo() {
+        Object[] r = (Object[]) em.createNativeQuery(SQL_CHAMADA_PRAZO).getSingleResult();
+        long noPrazo = ((Number) r[0]).longValue();
+        long atrasadas = ((Number) r[1]).longValue();
+        long semData = ((Number) r[2]).longValue();
+        long comData = noPrazo + atrasadas;
+        double pct = comData > 0 ? Math.round(noPrazo * 10000.0 / comData) / 100.0 : 0.0;
+        return new UsoResponse.ChamadaPrazo(noPrazo, atrasadas, semData, pct);
+    }
+
+    /**
+     * Cobertura da semana corrente (segunda a domingo): para cada turma ativa, se já houve
+     * chamada (aula com presença) numa aula desta semana e em qual data.
+     */
+    private List<UsoResponse.CoberturaTurma> coberturaTurmas() {
+        LocalDate hoje = LocalDate.now();
+        LocalDate inicioSemana = hoje.with(java.time.DayOfWeek.MONDAY);
+        LocalDate fimSemana = inicioSemana.plusDays(6);
+
+        // turma_id -> data da aula desta semana que já teve chamada (a mais recente)
+        Map<Long, LocalDate> cobertas = new java.util.HashMap<>();
+        @SuppressWarnings("unchecked")
+        List<Object[]> linhas = em.createNativeQuery(
+                        "select a.classe_id, max(a.data) from aula a "
+                        + "where a.data between :ini and :fim "
+                        + "and exists (select 1 from presenca p where p.aula_id = a.id) "
+                        + "group by a.classe_id")
+                .setParameter("ini", inicioSemana).setParameter("fim", fimSemana).getResultList();
+        for (Object[] l : linhas) {
+            Long turmaId = ((Number) l[0]).longValue();
+            LocalDate data = ((java.sql.Date) l[1]).toLocalDate();
+            cobertas.put(turmaId, data);
+        }
+
+        List<br.com.ice.ebd.model.Classe> turmas = em.createQuery(
+                        "select c from Classe c where c.ativo = true order by c.nome", br.com.ice.ebd.model.Classe.class)
+                .getResultList();
+        List<UsoResponse.CoberturaTurma> lista = new ArrayList<>();
+        for (br.com.ice.ebd.model.Classe c : turmas) {
+            LocalDate data = cobertas.get(c.getId());
+            lista.add(new UsoResponse.CoberturaTurma(c.getNome(), data != null, data));
+        }
+        return lista;
     }
 
     private long contarEventos(LocalDateTime desde) {

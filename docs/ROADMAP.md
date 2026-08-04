@@ -142,14 +142,17 @@ Base já entregue no **quick win**; os demais itens (A–G) ficam neste backlog 
 - **C. Adoção / ativação** — 🟢 entregue (núcleo).
   - [x] Taxa de ativação (contas e alunos que já acessaram); contas que nunca acessaram.
   - [ ] Funil completo (cadastrado → 1º login → trocou senha → usou 1 feature) e retenção por coorte (sem 1→2).
-- **D. Uso por funcionalidade** — 🔴 pendente (precisa instrumentar eventos de página/feature).
-  - [ ] Feature mais usada (chamada, frequência, quiz, boletim, desafios, requisições); exports e cliques
-        (ex.: "Parabenizar no WhatsApp"). Quiz respondido e requisições já são deriváveis do domínio.
+- **D. Uso por funcionalidade** — 🟢 entregue (lote 2 · migration V27).
+  - [x] Instrumentação de página/feature: `uso_evento` (page view + clique), `POST /api/me/evento`,
+        `TelemetriaService` no front (page view por navegação no shell + cliques notáveis: WhatsApp
+        e exports de PDF/Excel). Painel mostra **telas mais abertas** e **ações registradas** (30 dias).
 - **E. Engajamento & retenção do aluno** — 🟡 parte entregue.
   - [x] Mais ativos (30 dias) e **dormentes** (login, mas 14+ dias sem acessar).
   - [ ] Streak de semanas seguidas e % que abre fora do domingo.
-- **F. Professores / gestão** — 🟡 parte derivável.
-  - [ ] Professores mais ativos (via `auditoria`); chamada no prazo × atrasada; cobertura de turmas na semana.
+- **F. Professores / gestão** — 🟢 entregue (lote 2 · migration V27).
+  - [x] **Professores mais ativos** (nº de ações na `auditoria`, 30 dias); **chamada no prazo × atrasada**
+        (novo carimbo `presenca.registrada_em` vs. data da aula); **cobertura de turmas na semana**
+        (turmas ativas com/sem chamada na semana corrente).
 - **G. Dispositivos / técnico** — 🟢 entregue (núcleo) — **alimenta a decisão do upgrade do Angular**.
   - [x] Classificação por dispositivo/SO (iPhone/Android/Mac/Windows…) a partir do `user_agent` — mede a
         exposição real a **Safari/iOS antigo** antes de decidir o salto de major (ver seção Compatibilidade mobile).

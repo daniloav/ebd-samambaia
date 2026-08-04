@@ -28,7 +28,14 @@ public record UsoResponse(
         List<TopUsuario> maisAtivos,     // top 10 por nº de acessos (30 dias)
         List<TopUsuario> dormentes,      // com login, mas sem acesso há 14+ dias
         // G) Dispositivos
-        List<Contagem> dispositivos) {
+        List<Contagem> dispositivos,
+        // D) Uso por funcionalidade (lote 2)
+        List<Contagem> featuresMaisUsadas,   // telas mais abertas (30 dias)
+        List<Contagem> acoesNotaveis,        // cliques instrumentados (30 dias)
+        // F) Professores / gestão (lote 2)
+        List<TopUsuario> professoresMaisAtivos, // por nº de ações na auditoria (30 dias)
+        ChamadaPrazo chamadaPrazo,              // chamadas no prazo × atrasadas
+        List<CoberturaTurma> coberturaTurmas) { // turmas com/sem chamada na semana atual
 
     public record UsuarioAtivo(String username, String papel, LocalDateTime ultimoAcesso) {}
 
@@ -37,4 +44,10 @@ public record UsoResponse(
     public record TopUsuario(String username, String papel, long acessos, LocalDateTime ultimoAcesso) {}
 
     public record Contagem(String rotulo, long quantidade) {}
+
+    /** Chamadas lançadas no prazo (no dia da aula) × atrasadas × sem data (histórico sem carimbo). */
+    public record ChamadaPrazo(long noPrazo, long atrasadas, long semData, double pctNoPrazo) {}
+
+    /** Cobertura de uma turma na semana corrente: se já teve chamada e em qual aula. */
+    public record CoberturaTurma(String turma, boolean cobriu, LocalDate aulaData) {}
 }

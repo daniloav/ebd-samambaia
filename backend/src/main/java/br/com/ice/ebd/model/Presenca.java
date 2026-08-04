@@ -56,6 +56,10 @@ public class Presenca {
     @Column(name = "justificada_em")
     private java.time.LocalDateTime justificadaEm;
 
+    /** Quando esta chamada foi 1ª vez registrada (base do "no prazo × atrasada" no painel /uso). */
+    @Column(name = "registrada_em")
+    private java.time.LocalDateTime registradaEm;
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -89,5 +93,8 @@ public class Presenca {
 
     public java.time.LocalDateTime getJustificadaEm() { return justificadaEm; }
     public void setJustificadaEm(java.time.LocalDateTime justificadaEm) { this.justificadaEm = justificadaEm; }
+
+    public java.time.LocalDateTime getRegistradaEm() { return registradaEm; }
+    public void setRegistradaEm(java.time.LocalDateTime registradaEm) { this.registradaEm = registradaEm; }
 
 }
