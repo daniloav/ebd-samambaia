@@ -279,6 +279,20 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   e **smoke ponta-a-ponta** contra Postgres real (evento 204, `/api/uso` com os campos D/F, e salvar a
   chamada virou "no prazo"; tela renderizou as 2 seções). Branch `feature/estatisticas-uso-lote2`
   (empilhada sobre `feature/estatisticas-uso`). ⚠️ Migration **V27** (a `feature/adiar-aula` usa a V26).
+- 📈 **Estatísticas de uso — lote 3: fecha o backlog A–G (2026-08-04)** — 3ª camada sobre `/uso`, **sem
+  migration** (tudo derivado de `acesso_evento` + `uso_evento` + `usuario`). **A (tempo real):** pico
+  simultâneo hoje/30d (máx. de usuários distintos numa janela de 15 min, sobre logins + page views) e
+  "ao vivo na aula" (ativos 08–12h do último domingo). **C (adoção):** funil completo (cadastrado → 1º
+  acesso → trocou a senha padrão → usou uma função) + coortes por mês de cadastro (entraram/ativaram/ativos
+  30d). **E (aluno):** streak de semanas seguidas com atividade (top alunos, contadas a partir da semana
+  atual para trás) + % da atividade fora do domingo (30d). **G (técnico):** versão exata de SO via parse do
+  `user_agent` (ex.: "iOS 14", "Android 10" — o sinal direto p/ a decisão do upgrade do Angular) + celular ×
+  computador. Único sub-item de G que fica p/ depois: **PWA instalado × navegador** (precisa do cliente
+  reportar `display-mode: standalone`). Validado: **66 testes** (novo `UsoServiceLote3Test`: pico,
+  streak de 2 semanas, % fora do domingo — com limpeza commitada das tabelas de evento no `@BeforeEach`,
+  pois o `ebd_test` acumula logins do `AuthResourceTest`), `ng build` e smoke ponta-a-ponta contra Postgres
+  real (todos os campos populados; tela renderizou as 4 seções). Branch `feature/estatisticas-uso-lote3`
+  (empilhada sobre a do lote 2). Backlog **A–G agora 100%** (menos o PWA-install). Ver [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## 10. Como pedir evoluções (dica para o Danilo)
 

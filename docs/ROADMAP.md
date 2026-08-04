@@ -133,30 +133,33 @@ Base já entregue no **quick win**; os demais itens (A–G) ficam neste backlog 
       last-seen; **ping** leve (`PUT /api/me/ping`, a cada ~60s no shell) mantém o "online agora". Endpoint
       `GET /api/uso` (`UsoService`) + página `/uso` (KPIs, gráficos em CSS, sem libs). Cobre, no todo ou em
       parte, os itens **A, B, C, E (parcial), F (parcial) e G**. Validado: `mvn package` e `ng build`.
-- **A. Tempo real — "quem está online"** — 🟡 parte entregue (online agora via last-seen/ping).
+- **A. Tempo real — "quem está online"** — 🟢 entregue (lote 3).
   - [x] Online agora (últimos 15 min) + lista (nome/papel).
-  - [ ] Pico de simultâneos (hoje/histórico) e "ao vivo na aula" (online no horário da EBD de domingo).
+  - [x] **Pico simultâneo** (hoje/30d, máx. de usuários distintos numa janela de 15 min sobre logins +
+        page views) e **"ao vivo na aula"** (ativos na janela 08–12h do último domingo).
 - **B. Volume de acesso** — 🟢 entregue.
   - [x] Acessos hoje/7d/30d e **DAU/WAU/MAU** (pessoas únicas ativas).
   - [x] Série diária (14 dias); distribuição por **hora do dia** e **dia da semana** (30 dias).
-- **C. Adoção / ativação** — 🟢 entregue (núcleo).
+- **C. Adoção / ativação** — 🟢 entregue (núcleo + lote 3).
   - [x] Taxa de ativação (contas e alunos que já acessaram); contas que nunca acessaram.
-  - [ ] Funil completo (cadastrado → 1º login → trocou senha → usou 1 feature) e retenção por coorte (sem 1→2).
+  - [x] **Funil completo** (cadastrado → 1º acesso → trocou a senha padrão → usou uma função) e
+        **coortes por mês de cadastro** (entraram / ativaram / seguem ativos em 30d).
 - **D. Uso por funcionalidade** — 🟢 entregue (lote 2 · migration V27).
   - [x] Instrumentação de página/feature: `uso_evento` (page view + clique), `POST /api/me/evento`,
         `TelemetriaService` no front (page view por navegação no shell + cliques notáveis: WhatsApp
         e exports de PDF/Excel). Painel mostra **telas mais abertas** e **ações registradas** (30 dias).
-- **E. Engajamento & retenção do aluno** — 🟡 parte entregue.
+- **E. Engajamento & retenção do aluno** — 🟢 entregue (lote 3).
   - [x] Mais ativos (30 dias) e **dormentes** (login, mas 14+ dias sem acessar).
-  - [ ] Streak de semanas seguidas e % que abre fora do domingo.
+  - [x] **Streak de semanas seguidas** com atividade (top alunos) e **% que abre fora do domingo** (30d).
 - **F. Professores / gestão** — 🟢 entregue (lote 2 · migration V27).
   - [x] **Professores mais ativos** (nº de ações na `auditoria`, 30 dias); **chamada no prazo × atrasada**
         (novo carimbo `presenca.registrada_em` vs. data da aula); **cobertura de turmas na semana**
         (turmas ativas com/sem chamada na semana corrente).
-- **G. Dispositivos / técnico** — 🟢 entregue (núcleo) — **alimenta a decisão do upgrade do Angular**.
+- **G. Dispositivos / técnico** — 🟢 entregue (núcleo + lote 3) — **alimenta a decisão do upgrade do Angular**.
   - [x] Classificação por dispositivo/SO (iPhone/Android/Mac/Windows…) a partir do `user_agent` — mede a
         exposição real a **Safari/iOS antigo** antes de decidir o salto de major (ver seção Compatibilidade mobile).
-  - [ ] Versão exata de iOS/navegador, mobile × desktop e PWA instalado × navegador.
+  - [x] **Versão exata** de iOS/Android (parse do `user_agent`, ex.: "iOS 14", "Android 10") e **celular × computador**.
+  - [ ] **PWA instalado × navegador** (precisa de sinal do cliente — `display-mode: standalone`; fica p/ próximo lote).
 
 
 ## 🟢 Qualidade e robustez
