@@ -587,4 +587,56 @@ export interface UsoResponse {
   maisAtivos: TopUsuarioUso[];
   dormentes: TopUsuarioUso[];
   dispositivos: ContagemUso[];
+  // D) Uso por funcionalidade
+  featuresMaisUsadas: ContagemUso[];
+  acoesNotaveis: ContagemUso[];
+  // F) Professores / gestão
+  professoresMaisAtivos: TopUsuarioUso[];
+  chamadaPrazo: ChamadaPrazoUso;
+  coberturaTurmas: CoberturaTurmaUso[];
+  // A) Tempo real (lote 3)
+  picoHoje: number;
+  pico30d: number;
+  aoVivoNaAula: number;
+  aoVivoData: string;
+  // C) Funil + coorte (lote 3)
+  funil: EtapaFunilUso[];
+  coortes: CoorteUso[];
+  // E) Engajamento do aluno (lote 3)
+  streaks: StreakUso[];
+  pctForaDoDomingo: number;
+  // G) Técnico (lote 3)
+  plataformas: ContagemUso[];
+  versoesSistema: ContagemUso[];
+}
+
+export interface EtapaFunilUso {
+  rotulo: string;
+  quantidade: number;
+}
+
+export interface CoorteUso {
+  rotulo: string;
+  cadastrados: number;
+  ativados: number;
+  ativos: number;
+}
+
+export interface StreakUso {
+  username: string;
+  papel: string;
+  semanas: number;
+}
+
+export interface ChamadaPrazoUso {
+  noPrazo: number;
+  atrasadas: number;
+  semData: number;
+  pctNoPrazo: number;
+}
+
+export interface CoberturaTurmaUso {
+  turma: string;
+  cobriu: boolean;
+  aulaData: string | null;
 }

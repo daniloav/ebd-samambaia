@@ -28,7 +28,26 @@ public record UsoResponse(
         List<TopUsuario> maisAtivos,     // top 10 por nº de acessos (30 dias)
         List<TopUsuario> dormentes,      // com login, mas sem acesso há 14+ dias
         // G) Dispositivos
-        List<Contagem> dispositivos) {
+        List<Contagem> dispositivos,
+        // D) Uso por funcionalidade (lote 2)
+        List<Contagem> featuresMaisUsadas,   // telas mais abertas (30 dias)
+        List<Contagem> acoesNotaveis,        // cliques instrumentados (30 dias)
+        // F) Professores / gestão (lote 2)
+        List<TopUsuario> professoresMaisAtivos, // por nº de ações na auditoria (30 dias)
+        ChamadaPrazo chamadaPrazo,              // chamadas no prazo × atrasadas
+        List<CoberturaTurma> coberturaTurmas,   // turmas com/sem chamada na semana atual
+        // A) Tempo real (lote 3)
+        long picoHoje, long pico30d,            // máx. atividade simultânea (janela de 15 min)
+        long aoVivoNaAula, LocalDate aoVivoData, // ativos no horário da EBD do último domingo
+        // C) Funil + coorte (lote 3)
+        List<EtapaFunil> funil,                 // cadastrado → 1º acesso → trocou senha → usou função
+        List<Coorte> coortes,                   // por mês de cadastro (últimos 6)
+        // E) Engajamento do aluno (lote 3)
+        List<StreakUsuario> streaks,            // semanas seguidas com atividade (top alunos)
+        double pctForaDoDomingo,                // % da atividade (30d) fora do domingo
+        // G) Técnico (lote 3)
+        List<Contagem> plataformas,             // celular × computador (30 dias)
+        List<Contagem> versoesSistema) {        // versão de SO/navegador (30 dias)
 
     public record UsuarioAtivo(String username, String papel, LocalDateTime ultimoAcesso) {}
 
@@ -37,4 +56,19 @@ public record UsoResponse(
     public record TopUsuario(String username, String papel, long acessos, LocalDateTime ultimoAcesso) {}
 
     public record Contagem(String rotulo, long quantidade) {}
+
+    /** Chamadas lançadas no prazo (no dia da aula) × atrasadas × sem data (histórico sem carimbo). */
+    public record ChamadaPrazo(long noPrazo, long atrasadas, long semData, double pctNoPrazo) {}
+
+    /** Cobertura de uma turma na semana corrente: se já teve chamada e em qual aula. */
+    public record CoberturaTurma(String turma, boolean cobriu, LocalDate aulaData) {}
+
+    /** Uma etapa do funil de ativação (rótulo + quantos usuários chegaram nela). */
+    public record EtapaFunil(String rotulo, long quantidade) {}
+
+    /** Coorte por mês de cadastro: quantos entraram, quantos ativaram e quantos seguem ativos (30d). */
+    public record Coorte(String rotulo, long cadastrados, long ativados, long ativos) {}
+
+    /** Sequência de semanas seguidas com atividade de um aluno (engajamento contínuo). */
+    public record StreakUsuario(String username, String papel, int semanas) {}
 }

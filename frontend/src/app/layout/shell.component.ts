@@ -1,6 +1,7 @@
 import { Perfil } from '../core/models';
 import { Component, OnInit, OnDestroy, effect, inject, signal } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
 import { ApiService } from '../core/api.service';
@@ -8,6 +9,7 @@ import { ClasseContextService } from '../core/classe-context.service';
 import { APP_VERSION } from '../version';
 import { ConfirmDialogComponent } from '../core/confirm-dialog.component';
 import { TemaService } from '../core/tema.service';
+import { TelemetriaService } from '../core/telemetria.service';
 
 @Component({
   selector: 'app-shell',
@@ -186,6 +188,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   classeCtx = inject(ClasseContextService);
   private router = inject(Router);
   private api = inject(ApiService);
+  private telemetria = inject(TelemetriaService);
   private pingId?: ReturnType<typeof setInterval>;
   menuAberto = signal(false);
   versao = APP_VERSION;
@@ -204,6 +207,17 @@ export class ShellComponent implements OnInit, OnDestroy {
     // Heartbeat de presença (base do "online agora" no painel de uso).
     this.enviarPing();
     this.pingId = setInterval(() => this.enviarPing(), 60_000);
+    // Instrumentação de uso por funcionalidade (item D do painel /uso): 1 page view por navegação.
+    this.telemetria.pagina(this.recursoDaRota(this.router.url));
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => this.telemetria.pagina(this.recursoDaRota(e.urlAfterRedirects)));
+  }
+
+  /** Deriva a chave do recurso (1º segmento da rota) para a telemetria; ignora ids e query. */
+  private recursoDaRota(url: string): string {
+    const seg = (url || '').split('?')[0].split('#')[0].split('/').filter(Boolean);
+    return seg.length ? seg[0] : 'painel';
   }
 
   ngOnDestroy(): void {

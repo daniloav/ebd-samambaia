@@ -1,7 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { BoletimResponse } from '../../core/models';
 import { exportarBoletimPdf } from '../../core/export.util';
+import { TelemetriaService } from '../../core/telemetria.service';
 
 /** Renderização compartilhada do boletim (usada pela tela do aluno e a do professor/admin). */
 @Component({
@@ -82,9 +83,11 @@ import { exportarBoletimPdf } from '../../core/export.util';
   `,
 })
 export class BoletimViewComponent {
+  private telemetria = inject(TelemetriaService);
   @Input({ required: true }) b!: BoletimResponse;
 
   baixarPdf(): void {
+    this.telemetria.clique('export-pdf-boletim');
     exportarBoletimPdf(this.b);
   }
 }

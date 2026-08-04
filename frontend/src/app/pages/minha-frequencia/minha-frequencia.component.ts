@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../core/api.service';
+import { TelemetriaService } from '../../core/telemetria.service';
 import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { Aniversariante, MinhaFrequenciaResponse } from '../../core/models';
@@ -36,7 +37,7 @@ import { Aniversariante, MinhaFrequenciaResponse } from '../../core/models';
             @if (a.hoje) { <span class="aniv-hoje">Hoje 🎂</span> }
             @else { <span class="aniv-data">{{ a.dia }}/{{ a.mes }}</span> }
             @if (a.whatsapp) {
-              <a class="btn-zap" [href]="linkWhatsapp(a)" target="_blank" rel="noopener">💬 Parabenizar no WhatsApp</a>
+              <a class="btn-zap" [href]="linkWhatsapp(a)" target="_blank" rel="noopener" (click)="telemetria.clique('whatsapp-parabenizar')">💬 Parabenizar no WhatsApp</a>
             }
           </div>
         }
@@ -109,6 +110,7 @@ import { Aniversariante, MinhaFrequenciaResponse } from '../../core/models';
 })
 export class MinhaFrequenciaComponent {
   private api = inject(ApiService);
+  telemetria = inject(TelemetriaService);
   private toast = inject(ToastService);
   auth = inject(AuthService);
 
