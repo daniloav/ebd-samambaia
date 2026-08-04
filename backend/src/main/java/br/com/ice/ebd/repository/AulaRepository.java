@@ -43,7 +43,7 @@ public class AulaRepository implements PanacheRepository<Aula> {
     public Set<Long> alunoIdsDeProfessoresComAulaEm(LocalDate data) {
         return getEntityManager().createQuery(
                         "select distinct prof.aluno.id from Aula a join a.professor prof "
-                                + "where a.data = :data and prof.aluno.id is not null", Long.class)
+                                + "where a.adiada = false and a.data = :data and prof.aluno.id is not null", Long.class)
                 .setParameter("data", data)
                 .getResultStream().collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }

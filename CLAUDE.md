@@ -223,6 +223,18 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   em `/meu-ranking`. Validado: `mvn package` (novo `rankingPorTurmaUsaMediaPorAluno` em `DesafiosServiceTest`)
   e `ng build`. Branch `feature/ranking-por-turma`.
 - 🔁 **Aula complementar + empurrão da agenda (2026-07-29)** — para quando uma lição não termina no domingo e precisa continuar no domingo seguinte (que já está ocupado na agenda pré-montada). Botão **"Desdobrar"** por linha em /aulas: cria a continuação em `origem + 7 dias` (tema herdado com sufixo "(continuação)", mesmo professor — ambos editáveis) e **empurra +7 dias toda a agenda seguinte da turma**. O empurrão desloca as aulas afetadas em **ordem decrescente de data com flush por iteração** — a mais recente vai ao slot vazio e cada anterior ocupa o recém-liberado, sem nunca violar `uq_aula_classe_data` (não-deferrable). **Sem migration.** Backend: `AulaService.complementar` + `AulaRepository.listarPorClasseDesde`, DTOs `AulaComplementarRequest/Response`, endpoint `POST /api/aulas/{id}/complementar` (ADMIN/PROFESSOR, respeita escopo). Front: modal com prévia ("N aulas serão movidas") na tela Aulas. Validado: `mvn package` (novo `AulaComplementarServiceTest`, 2 casos: empurra 3 e origem-última não move nada) e `ng build`. Branch `feature/aula-complementar-empurra-agenda`.
+- 🚫 **Adiar aula (encontro cancelado) (2026-08-02)** — para quando o domingo é cancelado por evento
+  da igreja. Botão **"Adiar"** por linha em /aulas: marca a aula com a flag **`adiada`** (migration
+  **V26**), que a **remove de toda pontuação e retrospecto** (chamada bloqueada, rankings individual e
+  por turma, relatório de presenças, relatório geral do dia, dashboard, boletim, minha-frequência,
+  inativação por faltas seguidas e promoção de visitante — todas as queries ganharam `adiada = false`).
+  Reusa a mecânica do Desdobrar: **empurra +7 dias a agenda seguinte** da turma e cria uma aula de
+  **reposição** no domingo liberado (herda tema/professor), para a lição não se perder. Backend:
+  `AulaService.adiar` + helper `empurrarAgenda` (extraído de `complementar`), DTO `AulaAdiarResponse`,
+  endpoint `POST /api/aulas/{id}/adiar` (ADMIN/PROFESSOR, respeita escopo). Front: botão + modal com
+  prévia ("N aulas serão movidas") e selo **Adiada** na lista (aula adiada só permite editar/excluir).
+  Validado: `mvn test` (novo `AulaAdiarServiceTest`, 3 casos — **62** testes verdes) e `ng build`.
+  Branch `feature/adiar-aula`.
 - 🎂 **Aniversariantes na tela do aluno + WhatsApp (2026-07-29)** — na home do aluno
   (`/minha-frequencia`) um card lista os aniversariantes da escola de **hoje + próximos 7 dias**
   (todos os ativos, qualquer turma; o próprio aluno é excluído), com selo **"Hoje 🎂"** e botão

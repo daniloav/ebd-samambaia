@@ -58,6 +58,7 @@ export interface Aula {
   professorId?: number | null;
   professorNome?: string | null;
   professorAlunoId?: number | null;
+  adiada?: boolean;
 }
 
 export interface Professor {
@@ -534,6 +535,12 @@ export interface AulaComplementarRequest {
 
 export interface AulaComplementarResponse {
   aula: Aula;
+  aulasMovidas: number;
+}
+
+export interface AulaAdiarResponse {
+  aulaAdiada: Aula;
+  reposicao: Aula;
   aulasMovidas: number;
 }
 

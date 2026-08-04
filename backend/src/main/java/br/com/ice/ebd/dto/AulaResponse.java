@@ -11,7 +11,8 @@ public record AulaResponse(
         String classeNome,
         Long professorId,
         String professorNome,
-        Long professorAlunoId) {
+        Long professorAlunoId,
+        boolean adiada) {
 
     public static AulaResponse de(Aula a) {
         var prof = a.getProfessor();
@@ -20,6 +21,6 @@ public record AulaResponse(
         String profNome = prof == null ? null
                 : (prof.getAluno() != null ? prof.getAluno().getNome() : prof.getUsername());
         return new AulaResponse(a.getId(), a.getData(), a.getTema(),
-                a.getClasse().getId(), a.getClasse().getNome(), profId, profNome, profAlunoId);
+                a.getClasse().getId(), a.getClasse().getNome(), profId, profNome, profAlunoId, a.isAdiada());
     }
 }
