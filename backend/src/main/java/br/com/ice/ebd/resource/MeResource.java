@@ -5,6 +5,8 @@ import br.com.ice.ebd.dto.BoletimResponse;
 import br.com.ice.ebd.dto.MinhaFrequenciaResponse;
 import br.com.ice.ebd.dto.QuizAlunoDto;
 import br.com.ice.ebd.dto.TrocarSenhaRequest;
+import br.com.ice.ebd.dto.UsoEventoRequest;
+import br.com.ice.ebd.model.UsoEvento;
 import br.com.ice.ebd.service.AcessoService;
 import br.com.ice.ebd.service.AniversariantesService;
 import br.com.ice.ebd.service.BoletimService;
@@ -158,5 +160,24 @@ public class MeResource {
     public Response ping() {
         acessoService.ping(identity.getPrincipal().getName());
         return Response.noContent().build();
+    }
+
+    /** Instrumentação de uso (item D do painel /uso): registra a abertura de uma tela ou um clique notável. */
+    @POST
+    @Path("/evento")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Authenticated
+    public Response evento(UsoEventoRequest req) {
+        if (req != null) {
+            acessoService.registrarEvento(identity.getPrincipal().getName(), req.recurso(), parseAcao(req.acao()));
+        }
+        return Response.noContent().build();
+    }
+
+    private static UsoEvento.Acao parseAcao(String acao) {
+        if (acao != null && "CLICAR".equalsIgnoreCase(acao.trim())) {
+            return UsoEvento.Acao.CLICAR;
+        }
+        return UsoEvento.Acao.ABRIR;
     }
 }
