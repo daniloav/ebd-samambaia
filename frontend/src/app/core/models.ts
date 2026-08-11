@@ -488,6 +488,8 @@ export interface RankingTurmasResponse {
 export type StatusRequisicao = 'ABERTA' | 'APROVADA' | 'NEGADA' | 'FINALIZADA' | 'CANCELADA';
 export type FormaRepasse = 'DINHEIRO' | 'PIX';
 export type TipoChavePix = 'CPF' | 'EMAIL' | 'TELEFONE';
+/** De quem é a chave PIX: do solicitante ou de um terceiro beneficiado (oferta de amor). */
+export type TitularChavePix = 'PROPRIO' | 'TERCEIRO';
 export type CategoriaAnexo = 'NOTA_FISCAL' | 'COMPROVANTE' | 'TROCO';
 export interface RequisicaoAnexoResumo { id: number; nome?: string | null; tipo: string; categoria: CategoriaAnexo; }
 export interface Requisicao {
@@ -514,6 +516,9 @@ export interface Requisicao {
   formaRepasse: FormaRepasse;
   pixTipo?: TipoChavePix | null;
   pixChave?: string | null;
+  pixTitular?: TitularChavePix | null;
+  pixBeneficiarioNome?: string | null;
+  pixBeneficiarioObs?: string | null;
   anexos: RequisicaoAnexoResumo[];
 }
 export interface RequisicaoRequest {
@@ -526,6 +531,9 @@ export interface RequisicaoRequest {
   formaRepasse?: FormaRepasse;
   pixTipo?: TipoChavePix | null;
   pixChave?: string | null;
+  pixTitular?: TitularChavePix | null;
+  pixBeneficiarioNome?: string | null;
+  pixBeneficiarioObs?: string | null;
 }
 
 export interface AulaComplementarRequest {

@@ -42,8 +42,11 @@ cria a view **`vw_requisicoes_integracao`**, com uma linha por requisição:
 | `solicitante`, `solicitante_email` | quem pediu (nome do aluno se houver, senão o login) |
 | `avaliado_por`, `parecer_tesoureiro`, `observacao_final` | avaliação e prestação de contas |
 | `qtd_anexos`, `possui_nota_fiscal` | quantas notas foram anexadas / se já tem nota |
-| `forma_repasse`, `pix_tipo`, `pix_chave` | como o recurso será repassado (DINHEIRO/PIX) e a chave PIX (do próprio solicitante) |
+| `forma_repasse`, `pix_tipo`, `pix_chave` | como o recurso será repassado (DINHEIRO/PIX) e a chave PIX |
 | `possui_comprovante` | se o tesoureiro já anexou o comprovante de transferência |
+| `possui_comprovante_troco` | se o comprovante da devolução do troco foi anexado |
+| `pix_titular` | `PROPRIO` (chave do solicitante) ou `TERCEIRO` (**oferta de amor** — o PIX vai para a conta do beneficiado) |
+| `pix_beneficiario_nome`, `pix_beneficiario_obs` | quem recebe o PIX e o contexto, quando `pix_titular = 'TERCEIRO'` (nulos nos demais casos) |
 
 **Nunca é exposto:** `senha_hash`, o **conteúdo binário** das notas fiscais (`bytea`),
 nem qualquer outra tabela. A view roda com a permissão do **dono** (`ebd`), então o usuário

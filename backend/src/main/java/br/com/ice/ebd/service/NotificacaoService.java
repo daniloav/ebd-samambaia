@@ -213,6 +213,23 @@ public class NotificacaoService {
         if (v == null) return "—";
         return "R$ " + v.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString().replace('.', ',');
     }
+    /** Em oferta de amor (PIX de terceiro) não há nota fiscal: o documento é o comprovante. */
+    private static String docPrestacao(RequisicaoTesouraria r) {
+        return r.isPixParaTerceiro() ? "comprovante da transferência" : "nota fiscal";
+    }
+
+    /** Bloco com o beneficiário, quando o PIX vai para a conta de um terceiro. */
+    private String blocoBeneficiario(RequisicaoTesouraria r) {
+        if (!r.isPixParaTerceiro()) {
+            return "";
+        }
+        return "<p style=\"margin:0 0 6px;\"><b>Beneficiário (oferta de amor):</b> " + esc(r.getPixBeneficiarioNome())
+                + " · PIX " + esc(r.getPixTipo() != null ? r.getPixTipo().name().toLowerCase() : "")
+                + ": " + esc(r.getPixChave()) + "</p>"
+                + (r.getPixBeneficiarioObs() != null && !r.getPixBeneficiarioObs().isBlank()
+                    ? "<p style=\"margin:0 0 6px;\">" + esc(r.getPixBeneficiarioObs()) + "</p>" : "");
+    }
+
     private String nomeSolicitante(RequisicaoTesouraria r) {
         var u = r.getSolicitante();
         return esc(u.getAluno() != null ? u.getAluno().getNome() : u.getUsername());
@@ -225,8 +242,9 @@ public class NotificacaoService {
                 + "<p style=\"margin:0 0 6px;\"><b>" + nomeSolicitante(r) + "</b> (" + esc(r.getMinisterio())
                 + ") solicitou <b>" + moeda(r.getValorSolicitado()) + "</b>.</p>"
                 + "<p style=\"margin:0 0 6px;\"><b>Destinação:</b> " + esc(r.getDestinacao()) + "</p>"
-                + "<p style=\"margin:0 0 16px;\"><b>Motivo:</b> " + esc(r.getMotivo()) + "</p>"
-                + "<p style=\"margin:0;\">Acesse o app para aprovar ou negar. <a href=\"" + SITE + "\">Abrir</a></p>";
+                + "<p style=\"margin:0 0 6px;\"><b>Motivo:</b> " + esc(r.getMotivo()) + "</p>"
+                + blocoBeneficiario(r)
+                + "<p style=\"margin:12px 0 0;\">Acesse o app para aprovar ou negar. <a href=\"" + SITE + "\">Abrir</a></p>";
         String texto = "Nova requisição " + r.getNumero() + " de " + r.getSolicitante().getUsername()
                 + " (" + r.getMinisterio() + "): " + moeda(r.getValorSolicitado()) + ". Acesse o app para avaliar.";
         for (String em : emailsTesoureiros) {
@@ -251,13 +269,13 @@ public class NotificacaoService {
                 + (aprovada
                     ? "<p style=\"margin:0 0 8px;\">Sua requisição foi <b>aprovada</b> no valor de <b>"
                         + moeda(r.getValorAprovado() != null ? r.getValorAprovado() : r.getValorSolicitado()) + "</b>.</p>"
-                        + "<p style=\"margin:0 0 16px;\">Após usar o recurso, <b>finalize anexando a nota fiscal</b> no app. "
-                        + "Enquanto não anexar, você receberá lembretes diários.</p>"
+                        + "<p style=\"margin:0 0 16px;\">Após usar o recurso, <b>finalize anexando a "
+                        + docPrestacao(r) + "</b> no app. Enquanto não finalizar, você receberá lembretes diários.</p>"
                     : "<p style=\"margin:0 0 16px;\">Sua requisição foi <b>negada</b>.</p>")
                 + (r.getParecerTesoureiro() != null && !r.getParecerTesoureiro().isBlank()
                     ? "<p style=\"margin:0 0 16px;\"><b>Observação do tesoureiro:</b> " + esc(r.getParecerTesoureiro()) + "</p>" : "")
                 + "<p style=\"margin:0;\"><a href=\"" + SITE + "\">Abrir o app</a></p>";
-        String texto = "Requisição " + r.getNumero() + (aprovada ? " APROVADA (" + moeda(r.getValorAprovado()) + "). Anexe a nota fiscal após usar." : " negada.")
+        String texto = "Requisição " + r.getNumero() + (aprovada ? " APROVADA (" + moeda(r.getValorAprovado()) + "). Anexe a " + docPrestacao(r) + " após usar." : " negada.")
                 + (r.getParecerTesoureiro() != null ? " Obs.: " + r.getParecerTesoureiro() : "");
         try { dispatcher.enfileirar(Mail.withHtml(u.getEmail(), assunto, shell(TES, corpo)).setText(texto)); }
         catch (Exception e) { LOG.warnf("Falha ao avisar solicitante %s: %s", u.getEmail(), e.getMessage()); }
@@ -267,7 +285,9 @@ public class NotificacaoService {
     public void avisarRequisicaoFinalizada(RequisicaoTesouraria r, List<String> emailsTesoureiros) {
         if (!habilitado || emailsTesoureiros == null || emailsTesoureiros.isEmpty()) return;
         String corpo = "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Requisição " + esc(r.getNumero()) + " finalizada</h1>"
-                + "<p style=\"margin:0 0 6px;\"><b>" + nomeSolicitante(r) + "</b> anexou a nota fiscal e finalizou a prestação de contas.</p>"
+                + "<p style=\"margin:0 0 6px;\"><b>" + nomeSolicitante(r) + "</b> anexou a " + docPrestacao(r)
+                + " e finalizou a prestação de contas.</p>"
+                + blocoBeneficiario(r)
                 + "<p style=\"margin:0 0 16px;\"><b>Valor gasto:</b> " + moeda(r.getValorGasto())
                 + " · <b>Aprovado:</b> " + moeda(r.getValorAprovado()) + "</p>"
                 + "<p style=\"margin:0;\"><a href=\"" + SITE + "\">Ver no app</a></p>";
@@ -283,14 +303,15 @@ public class NotificacaoService {
     public boolean cobrarNotaFiscal(RequisicaoTesouraria r) {
         var u = r.getSolicitante();
         if (!habilitado || u.getEmail() == null || u.getEmail().isBlank()) return false;
-        String corpo = "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Pendência: nota fiscal da " + esc(r.getNumero()) + "</h1>"
+        String doc = docPrestacao(r);
+        String corpo = "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Pendência: " + doc + " da " + esc(r.getNumero()) + "</h1>"
                 + "<p style=\"margin:0 0 8px;\">A requisição <b>" + esc(r.getNumero()) + "</b> (" + esc(r.getMinisterio())
-                + ", aprovada em " + moeda(r.getValorAprovado()) + ") ainda está <b>aguardando a nota fiscal</b>.</p>"
-                + "<p style=\"margin:0 0 16px;\">Por favor, finalize a prestação de contas anexando a(s) nota(s) no app.</p>"
+                + ", aprovada em " + moeda(r.getValorAprovado()) + ") ainda está <b>aguardando a " + doc + "</b>.</p>"
+                + "<p style=\"margin:0 0 16px;\">Por favor, finalize a prestação de contas no app.</p>"
                 + "<p style=\"margin:0;\"><a href=\"" + SITE + "\">Anexar agora</a></p>";
-        String texto = "Pendência: anexe a nota fiscal da requisição " + r.getNumero() + " no app.";
+        String texto = "Pendência: anexe a " + doc + " da requisição " + r.getNumero() + " no app.";
         try {
-            dispatcher.enfileirar(Mail.withHtml(u.getEmail(), "Tesouraria — pendência de nota fiscal (" + r.getNumero() + ")", shell(TES, corpo)).setText(texto));
+            dispatcher.enfileirar(Mail.withHtml(u.getEmail(), "Tesouraria — pendência de " + doc + " (" + r.getNumero() + ")", shell(TES, corpo)).setText(texto));
             return true;
         } catch (Exception e) { LOG.warnf("Falha ao cobrar nota de %s: %s", u.getEmail(), e.getMessage()); return false; }
     }

@@ -37,7 +37,7 @@ class RequisicaoFluxoTest {
 
         RequisicaoResponse aberta = service.criar(new RequisicaoRequest(
                 "Louvor", "Culto de Natal", "Compra de cordas", "Instrumento quebrou",
-                new BigDecimal("300.00"), LocalDate.now().plusDays(10), "DINHEIRO", null, null));
+                new BigDecimal("300.00"), LocalDate.now().plusDays(10), "DINHEIRO", null, null, null, null, null));
         assertTrue(aberta.numero().startsWith("REQ-"), "deve gerar número REQ-...");
         assertEquals("ABERTA", aberta.status());
 
@@ -64,7 +64,7 @@ class RequisicaoFluxoTest {
     void cobrancaDeNotaNaoRepeteNoMesmoDia() {
         fx.usuario("lider2", Role.ADMIN, "lider2@ebd.test");
         RequisicaoResponse a = service.criar(new RequisicaoRequest(
-                "Infantil", null, "Material", "Aula", new BigDecimal("50.00"), null, null, null, null));
+                "Infantil", null, "Material", "Aula", new BigDecimal("50.00"), null, null, null, null, null, null, null));
         service.aprovar(a.id(), null, null, null); // valorAprovado = solicitado
 
         assertEquals(1, cobranca.enviarPendentes()); // 1ª cobrança
@@ -77,16 +77,16 @@ class RequisicaoFluxoTest {
         fx.usuario("lider.teste", Role.ADMIN, "lider@ebd.test");
         // e-mail do próprio solicitante -> OK
         RequisicaoResponse ok = service.criar(new RequisicaoRequest(
-                "Louvor", null, "Cabos", "Motivo", new BigDecimal("100.00"), null, "PIX", "EMAIL", "lider@ebd.test"));
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("100.00"), null, "PIX", "EMAIL", "lider@ebd.test", null, null, null));
         assertEquals("PIX", ok.formaRepasse());
         assertEquals("EMAIL", ok.pixTipo());
         // e-mail de terceiro -> 400
         WebApplicationException e1 = assertThrows(WebApplicationException.class, () -> service.criar(new RequisicaoRequest(
-                "Louvor", null, "Cabos", "Motivo", new BigDecimal("100.00"), null, "PIX", "EMAIL", "outro@ex.com")));
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("100.00"), null, "PIX", "EMAIL", "outro@ex.com", null, null, null)));
         assertEquals(400, e1.getResponse().getStatus());
         // chave aleatória -> 400
         WebApplicationException e2 = assertThrows(WebApplicationException.class, () -> service.criar(new RequisicaoRequest(
-                "Louvor", null, "Cabos", "Motivo", new BigDecimal("100.00"), null, "PIX", "ALEATORIA", "abc-123")));
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("100.00"), null, "PIX", "ALEATORIA", "abc-123", null, null, null)));
         assertEquals(400, e2.getResponse().getStatus());
     }
 
@@ -96,7 +96,7 @@ class RequisicaoFluxoTest {
     void aprovarComComprovanteGuardaAnexoComprovante() {
         fx.usuario("tes", Role.ADMIN, "tes@ebd.test");
         RequisicaoResponse aberta = service.criar(new RequisicaoRequest(
-                "Infantil", null, "Material", "Aula", new BigDecimal("50.00"), null, "DINHEIRO", null, null));
+                "Infantil", null, "Material", "Aula", new BigDecimal("50.00"), null, "DINHEIRO", null, null, null, null, null));
         var comprovante = new RequisicaoService.AnexoData("comp.pdf", "application/pdf",
                 "x".getBytes(), CategoriaAnexo.COMPROVANTE);
         RequisicaoResponse ap = service.aprovar(aberta.id(), new BigDecimal("50.00"), "ok", comprovante);
@@ -116,7 +116,7 @@ class RequisicaoFluxoTest {
     void finalizarComTrocoExigeComprovanteDeDevolucao() {
         fx.usuario("lider.troco", Role.ADMIN, "lider.troco@ebd.test");
         RequisicaoResponse aberta = service.criar(new RequisicaoRequest(
-                "Louvor", null, "Cabos", "Motivo", new BigDecimal("300.00"), null, "DINHEIRO", null, null));
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("300.00"), null, "DINHEIRO", null, null, null, null, null));
         service.aprovar(aberta.id(), new BigDecimal("250.00"), "ok", null); // aprovado 250
 
         var nota = new RequisicaoService.AnexoData("nota.pdf", "application/pdf", "n".getBytes(), CategoriaAnexo.NOTA_FISCAL);
@@ -133,5 +133,57 @@ class RequisicaoFluxoTest {
         assertEquals(2, fim.anexos().size());
         assertTrue(fim.anexos().stream().anyMatch(a -> a.categoria().equals("TROCO")),
                 "deve guardar o comprovante do troco");
+    }
+
+    @Test
+    @TestSecurity(user = "lider.oferta", roles = "ADMIN")
+    @TestTransaction
+    void pixDeTerceiroExigeNomeDoBeneficiarioEDispensaOwnership() {
+        fx.usuario("lider.oferta", Role.ADMIN, "lider.oferta@ebd.test");
+        // chave de outra pessoa, declarada como TERCEIRO + nome -> OK (oferta de amor)
+        RequisicaoResponse ok = service.criar(new RequisicaoRequest(
+                "Ação Social", null, "Oferta de amor", "Irmão desempregado", new BigDecimal("400.00"), null,
+                "PIX", "EMAIL", "irmao@ex.com", "TERCEIRO", "Irmão Beneficiado", "Membro em necessidade"));
+        assertEquals("TERCEIRO", ok.pixTitular());
+        assertEquals("Irmão Beneficiado", ok.pixBeneficiarioNome());
+        assertEquals("irmao@ex.com", ok.pixChave());
+
+        // TERCEIRO sem o nome do beneficiário -> 400
+        WebApplicationException semNome = assertThrows(WebApplicationException.class, () -> service.criar(new RequisicaoRequest(
+                "Ação Social", null, "Oferta de amor", "Motivo", new BigDecimal("400.00"), null,
+                "PIX", "EMAIL", "irmao@ex.com", "TERCEIRO", "  ", null)));
+        assertEquals(400, semNome.getResponse().getStatus());
+
+        // formato da chave continua valendo (CPF precisa dos 11 dígitos) e aleatória segue proibida
+        WebApplicationException cpfRuim = assertThrows(WebApplicationException.class, () -> service.criar(new RequisicaoRequest(
+                "Ação Social", null, "Oferta de amor", "Motivo", new BigDecimal("400.00"), null,
+                "PIX", "CPF", "123", "TERCEIRO", "Irmão Beneficiado", null)));
+        assertEquals(400, cpfRuim.getResponse().getStatus());
+        WebApplicationException aleatoria = assertThrows(WebApplicationException.class, () -> service.criar(new RequisicaoRequest(
+                "Ação Social", null, "Oferta de amor", "Motivo", new BigDecimal("400.00"), null,
+                "PIX", "ALEATORIA", "abc-123", "TERCEIRO", "Irmão Beneficiado", null)));
+        assertEquals(400, aleatoria.getResponse().getStatus());
+    }
+
+    @Test
+    @TestSecurity(user = "lider.oferta2", roles = "ADMIN")
+    @TestTransaction
+    void ofertaDeAmorFinalizaComComprovanteNoLugarDaNotaFiscal() {
+        fx.usuario("lider.oferta2", Role.ADMIN, "lider.oferta2@ebd.test");
+        RequisicaoResponse aberta = service.criar(new RequisicaoRequest(
+                "Ação Social", null, "Oferta de amor", "Irmã doente", new BigDecimal("200.00"), null,
+                "PIX", "TELEFONE", "(61) 99999-1234", "TERCEIRO", "Irmã Beneficiada", null));
+        service.aprovar(aberta.id(), new BigDecimal("200.00"), "ok", null);
+
+        // sem nenhum comprovante (nem do tesoureiro, nem agora) -> 400
+        WebApplicationException ex = assertThrows(WebApplicationException.class,
+                () -> service.finalizar(aberta.id(), new BigDecimal("200.00"), null, List.of(), null));
+        assertEquals(400, ex.getResponse().getStatus());
+
+        // o líder anexa o comprovante da transferência -> guardado como COMPROVANTE, FINALIZADA
+        var comp = new RequisicaoService.AnexoData("pix.pdf", "application/pdf", "c".getBytes(), CategoriaAnexo.NOTA_FISCAL);
+        RequisicaoResponse fim = service.finalizar(aberta.id(), new BigDecimal("200.00"), "Transferido", List.of(comp), null);
+        assertEquals("FINALIZADA", fim.status());
+        assertEquals("COMPROVANTE", fim.anexos().get(0).categoria());
     }
 }

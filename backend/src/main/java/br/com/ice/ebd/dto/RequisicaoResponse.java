@@ -32,6 +32,10 @@ public record RequisicaoResponse(
         String formaRepasse,
         String pixTipo,
         String pixChave,
+        /** PROPRIO | TERCEIRO (chave do beneficiado — oferta de amor). */
+        String pixTitular,
+        String pixBeneficiarioNome,
+        String pixBeneficiarioObs,
         boolean possuiComprovante,
         List<AnexoResumo> anexos) {
 
@@ -67,6 +71,9 @@ public record RequisicaoResponse(
                 r.getFormaRepasse().name(),
                 r.getPixTipo() != null ? r.getPixTipo().name() : null,
                 r.getPixChave(),
+                r.getPixTitular() != null ? r.getPixTitular().name() : null,
+                r.getPixBeneficiarioNome(),
+                r.getPixBeneficiarioObs(),
                 possuiComprovante,
                 as);
     }
