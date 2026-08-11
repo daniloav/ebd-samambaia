@@ -32,7 +32,7 @@ class ExclusaoUsuarioTest {
         Usuario u = fx.usuario("lid.abriu", Role.PROFESSOR, "l@ex.com");
         // a requisição fica com solicitante = usuário logado (lid.abriu)
         requisicaoService.criar(new RequisicaoRequest(
-                "Louvor", null, "Cabos", "Motivo", new BigDecimal("10.00"), null, "DINHEIRO", null, null));
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("10.00"), null, "DINHEIRO", null, null, null, null, null));
 
         WebApplicationException e = assertThrows(WebApplicationException.class,
                 () -> usuarioService.deletar(u.getId()));

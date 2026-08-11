@@ -8,6 +8,7 @@ import br.com.ice.ebd.model.FormaRepasse;
 import br.com.ice.ebd.model.RequisicaoAnexo;
 import br.com.ice.ebd.model.RequisicaoTesouraria;
 import br.com.ice.ebd.model.TipoChavePix;
+import br.com.ice.ebd.model.TitularChavePix;
 import br.com.ice.ebd.model.StatusRequisicao;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.RequisicaoAnexoRepository;
@@ -121,8 +122,16 @@ public class RequisicaoService {
         RequisicaoTesouraria r = obter(id);
         assertDonoOuAdmin(r);
         exigirStatus(r, StatusRequisicao.APROVADA, "Só é possível finalizar uma requisição aprovada.");
+        // Oferta de amor (PIX para terceiro): não há nota fiscal — a prestação de contas é o
+        // comprovante da transferência, que pode já ter sido anexado pelo tesoureiro ao aprovar.
+        boolean semNotaFiscal = r.isPixParaTerceiro();
         if (anexos == null || anexos.isEmpty()) {
-            throw bad("Anexe ao menos a nota fiscal para finalizar.");
+            if (!semNotaFiscal) {
+                throw bad("Anexe ao menos a nota fiscal para finalizar.");
+            }
+            if (anexoRepository.idsComComprovante(List.of(r.getId())).isEmpty()) {
+                throw bad("Anexe o comprovante da transferência ao beneficiário para finalizar.");
+            }
         }
         // Gastou menos que o aprovado? O troco volta ao PIX da igreja e o comprovante
         // dessa devolução é obrigatório para finalizar.
@@ -131,8 +140,13 @@ public class RequisicaoService {
             throw bad("Há troco de R$ " + troco.toPlainString().replace('.', ',')
                     + " a devolver — anexe o comprovante da transferência do troco ao PIX da igreja.");
         }
-        for (AnexoData ad : anexos) {
-            persistAnexo(r, ad);
+        if (anexos != null) {
+            for (AnexoData ad : anexos) {
+                // sem nota fiscal, o que o líder anexa aqui é o comprovante da transferência
+                persistAnexo(r, semNotaFiscal
+                        ? new AnexoData(ad.nome(), ad.tipo(), ad.conteudo(), CategoriaAnexo.COMPROVANTE)
+                        : ad);
+            }
         }
         if (comprovanteTroco != null) {
             persistAnexo(r, comprovanteTroco);
@@ -187,7 +201,12 @@ public class RequisicaoService {
         anexoRepository.persist(a);
     }
 
-    /** Forma de repasse + validação da chave PIX (tipo válido e titularidade do próprio solicitante). */
+    /**
+     * Forma de repasse + validação da chave PIX. A chave é do próprio solicitante (conferida
+     * contra o cadastro) ou de um <b>terceiro beneficiado</b> — oferta de amor, em que o recurso
+     * vai direto para a conta de quem está sendo ajudado; aí só se valida o formato da chave e
+     * exige-se o nome do beneficiário, que o tesoureiro confere no comprovante do banco.
+     */
     private void aplicarRepasse(RequisicaoTesouraria r, RequisicaoRequest req, Usuario dono) {
         FormaRepasse forma = FormaRepasse.DINHEIRO;
         if (req.formaRepasse() != null && !req.formaRepasse().isBlank()) {
@@ -201,6 +220,9 @@ public class RequisicaoService {
         if (forma != FormaRepasse.PIX) {
             r.setPixTipo(null);
             r.setPixChave(null);
+            r.setPixTitular(TitularChavePix.PROPRIO);
+            r.setPixBeneficiarioNome(null);
+            r.setPixBeneficiarioObs(null);
             return;
         }
         TipoChavePix tipo = parseTipoPix(req.pixTipo());
@@ -208,9 +230,35 @@ public class RequisicaoService {
         if (chave.isBlank()) {
             throw bad("Informe a chave PIX.");
         }
-        validarChaveDoDono(tipo, chave, dono);
+        TitularChavePix titular = parseTitularPix(req.pixTitular());
+        if (titular == TitularChavePix.TERCEIRO) {
+            String nome = req.pixBeneficiarioNome() != null ? req.pixBeneficiarioNome().trim() : "";
+            if (nome.isBlank()) {
+                throw bad("Informe o nome do beneficiário — a chave PIX não é sua.");
+            }
+            validarFormatoDaChave(tipo, chave);
+            r.setPixBeneficiarioNome(nome);
+            String obs = req.pixBeneficiarioObs() != null ? req.pixBeneficiarioObs().trim() : "";
+            r.setPixBeneficiarioObs(obs.isBlank() ? null : obs);
+        } else {
+            validarChaveDoDono(tipo, chave, dono);
+            r.setPixBeneficiarioNome(null);
+            r.setPixBeneficiarioObs(null);
+        }
+        r.setPixTitular(titular);
         r.setPixTipo(tipo);
         r.setPixChave(chave);
+    }
+
+    private TitularChavePix parseTitularPix(String s) {
+        if (s == null || s.isBlank()) {
+            return TitularChavePix.PROPRIO;
+        }
+        try {
+            return TitularChavePix.valueOf(s.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw bad("Titular da chave PIX inválido — use PROPRIO ou TERCEIRO.");
+        }
     }
 
     private TipoChavePix parseTipoPix(String s) {
@@ -253,6 +301,31 @@ public class RequisicaoService {
             case CPF -> {
                 // Não guardamos CPF, então não há como cross-validar a titularidade aqui;
                 // exige-se ao menos um CPF bem formado e o tesoureiro confere no comprovante.
+                if (digitos(chave).length() != 11) {
+                    throw bad("CPF inválido — informe os 11 dígitos.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Chave de terceiro: não há como conferir a titularidade no nosso cadastro, então validamos
+     * só o formato (o tesoureiro confere o nome do beneficiário no comprovante do banco).
+     */
+    private void validarFormatoDaChave(TipoChavePix tipo, String chave) {
+        switch (tipo) {
+            case EMAIL -> {
+                if (!chave.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]{2,}")) {
+                    throw bad("E-mail inválido para a chave PIX.");
+                }
+            }
+            case TELEFONE -> {
+                String d = digitos(chave);
+                if (d.length() < 10 || d.length() > 13) {
+                    throw bad("Telefone inválido — informe com DDD.");
+                }
+            }
+            case CPF -> {
                 if (digitos(chave).length() != 11) {
                     throw bad("CPF inválido — informe os 11 dígitos.");
                 }
