@@ -27,6 +27,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
     .b-negada { background: #fee2e2; color: #991b1b; } .b-finalizada { background: #dcfce7; color: #166534; }
     .b-cancelada { background: #e7ebf1; color: #5b6b80; }
     .ff { margin-bottom: .7rem; } .ff label { display:block; font-size:.82rem; color:var(--cinza-texto); margin-bottom:.2rem; }
+    .ff small { display: block; margin-top: .25rem; }
     .det dt { font-size:.75rem; color:var(--cinza-texto); text-transform:uppercase; letter-spacing:.04em; margin-top:.6rem; }
     .det dd { margin:.1rem 0 0; color:var(--texto); }
     .anexo { display:inline-flex; align-items:center; gap:.35rem; border:1px solid var(--cinza-borda); border-radius:8px;
@@ -64,6 +65,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               <span class="num">{{ r.numero }}</span>
               <span class="badge" [class]="classe(r.status)">{{ rotulo(r.status) }}</span>
               @if (r.possuiComprovante) { <span class="badge b-aprovada" title="Comprovante de transferência anexado — abra os Detalhes para ver">🧾 Comprovante</span> }
+              @if (ehOferta(r)) { <span class="badge b-finalizada" title="PIX para a conta do beneficiado">❤️ Oferta de amor</span> }
               <span class="val">{{ brl(r.valorSolicitado) }}</span>
             </div>
             <div class="meta">
@@ -76,7 +78,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
                 <button class="btn btn-verde btn-sm" (click)="abrirAvaliar(r)">Avaliar</button>
               }
               @if (souDono(r) && r.status === 'APROVADA') {
-                <button class="btn btn-dourado btn-sm" (click)="abrirFinalizar(r)">Anexar nota / finalizar</button>
+                <button class="btn btn-dourado btn-sm" (click)="abrirFinalizar(r)">{{ ehOferta(r) ? 'Anexar comprovante / finalizar' : 'Anexar nota / finalizar' }}</button>
               }
               @if (souDono(r) && r.status === 'ABERTA') {
                 <button class="btn btn-outline btn-sm" (click)="cancelar(r)">Cancelar</button>
@@ -106,6 +108,12 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               </select>
             </div>
             @if (form.formaRepasse === 'PIX') {
+              <div class="ff"><label>De quem é a chave PIX? *</label>
+                <select aria-label="Titular da chave PIX" [(ngModel)]="form.pixTitular">
+                  <option value="PROPRIO">Minha (do solicitante)</option>
+                  <option value="TERCEIRO">De outra pessoa (oferta de amor / beneficiado)</option>
+                </select>
+              </div>
               <div class="ff"><label>Tipo da chave PIX *</label>
                 <select aria-label="Tipo de chave PIX" [(ngModel)]="form.pixTipo">
                   <option [ngValue]="null">— selecione —</option>
@@ -113,9 +121,22 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
                   <option value="EMAIL">E-mail</option>
                   <option value="TELEFONE">Telefone</option>
                 </select>
-                <small class="muted">A chave deve ser sua (do solicitante). Chave aleatória não é aceita.</small>
+                <small class="muted">Chave aleatória não é aceita (não identifica o titular).</small>
               </div>
-              <div class="ff"><label>Chave PIX *</label><input type="text" [(ngModel)]="form.pixChave" maxlength="140" placeholder="Seu CPF, e-mail ou telefone" /></div>
+              <div class="ff"><label>Chave PIX *</label>
+                <input type="text" [(ngModel)]="form.pixChave" maxlength="140"
+                  [placeholder]="form.pixTitular === 'TERCEIRO' ? 'CPF, e-mail ou telefone de quem vai receber' : 'Seu CPF, e-mail ou telefone'" />
+              </div>
+              @if (form.pixTitular === 'TERCEIRO') {
+                <div class="ff"><label>Nome do beneficiário *</label>
+                  <input type="text" [(ngModel)]="form.pixBeneficiarioNome" maxlength="160" placeholder="Quem vai receber o PIX" />
+                  <small class="muted">O tesoureiro confere este nome no comprovante do banco.</small>
+                </div>
+                <div class="ff"><label>Sobre o beneficiário</label>
+                  <textarea rows="2" [(ngModel)]="form.pixBeneficiarioObs" maxlength="300"
+                    placeholder="Quem é e por que está sendo ajudado (opcional)"></textarea>
+                </div>
+              }
             }
           </div>
           <div class="modal-footer">
@@ -137,7 +158,11 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
             <div class="ff"><label>Parecer / observação</label><textarea rows="2" [(ngModel)]="parecer" placeholder="Opcional"></textarea></div>
             @if (r.formaRepasse === 'PIX') {
               <div class="ff" style="font-size:.85rem">
-                <label>Chave PIX ({{ rotuloPix(r.pixTipo) }}) — para transferir</label>
+                @if (ehOferta(r)) {
+                  <label style="color:var(--titulo);font-weight:700">❤️ Oferta de amor — o PIX vai para {{ r.pixBeneficiarioNome }}</label>
+                  @if (r.pixBeneficiarioObs) { <small class="muted">{{ r.pixBeneficiarioObs }}</small> }
+                }
+                <label>Chave PIX ({{ rotuloPix(r.pixTipo) }}) — para transferir@if (ehOferta(r)) { ao beneficiário }</label>
                 <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
                   <b style="word-break:break-all">{{ r.pixChave }}</b>
                   <button type="button" class="anexo" (click)="copiarPix(r.pixChave)">📋 Copiar chave</button>
@@ -163,12 +188,18 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header"><h3>Finalizar {{ r.numero }}</h3></div>
           <div class="modal-body">
-            <p class="muted" style="margin-top:0">Anexe a nota fiscal e informe o valor gasto para prestar contas.</p>
-            <div class="ff"><label>Valor gasto (R$)</label><input type="number" min="0" step="0.01" [(ngModel)]="valorGasto" /></div>
+            <p class="muted" style="margin-top:0">
+              {{ ehOferta(r)
+                ? 'Nesta requisição o recurso foi transferido ao beneficiário — anexe o comprovante da transferência e informe o valor repassado.'
+                : 'Anexe a nota fiscal e informe o valor gasto para prestar contas.' }}
+            </p>
+            <div class="ff"><label>{{ ehOferta(r) ? 'Valor repassado (R$)' : 'Valor gasto (R$)' }}</label><input type="number" min="0" step="0.01" [(ngModel)]="valorGasto" /></div>
             <div class="ff"><label>Observação</label><textarea rows="2" [(ngModel)]="obsFinal"></textarea></div>
-            <div class="ff"><label>Nota(s) fiscal(is) * — PDF ou imagem</label>
+            <div class="ff">
+              <label>{{ ehOferta(r) ? 'Comprovante da transferência' : 'Nota(s) fiscal(is)' }}{{ anexoOpcional(r) ? '' : ' *' }} — PDF ou imagem</label>
               <input type="file" multiple accept=".pdf,image/*" (change)="onFiles($event)" />
               @if (arquivos.length) { <small class="muted">{{ arquivos.length }} arquivo(s) selecionado(s)</small> }
+              @else if (anexoOpcional(r)) { <small class="muted">O tesoureiro já anexou o comprovante da transferência — anexar outro é opcional.</small> }
             </div>
             @if (trocoFinalizar(r) > 0) {
               <div class="ff" style="border-top:1px solid var(--cinza-borda);padding-top:.7rem">
@@ -205,6 +236,10 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               <dt>Solicitante</dt><dd>{{ r.solicitanteNome }} · {{ r.criadoEm | date:'dd/MM/yyyy HH:mm' }}</dd>
               <dt>Forma de repasse</dt>
               <dd>{{ r.formaRepasse === 'PIX' ? 'PIX' : 'Dinheiro' }}@if (r.formaRepasse === 'PIX') { — {{ rotuloPix(r.pixTipo) }}: <b>{{ r.pixChave }}</b> <button type="button" class="anexo" (click)="copiarPix(r.pixChave)">📋 Copiar</button> }</dd>
+              @if (ehOferta(r)) {
+                <dt>Beneficiário (oferta de amor)</dt>
+                <dd>❤️ {{ r.pixBeneficiarioNome }}@if (r.pixBeneficiarioObs) { <br>{{ r.pixBeneficiarioObs }} }</dd>
+              }
               @if (r.avaliadoPorNome) {
                 <dt>Avaliação</dt>
                 <dd>{{ r.status === 'NEGADA' ? 'Negada' : 'Aprovada' }} por {{ r.avaliadoPorNome }}
@@ -261,12 +296,17 @@ export class RequisicoesComponent {
   constructor() { this.carregar(); }
 
   ehTesoureiro(): boolean { return this.auth.isTesoureiro() || this.auth.isAdmin(); }
+  /** Oferta de amor: PIX para a conta de um terceiro beneficiado (não há nota fiscal). */
+  ehOferta(r: Requisicao): boolean { return r.formaRepasse === 'PIX' && r.pixTitular === 'TERCEIRO'; }
+  /** Em oferta de amor, se o tesoureiro já anexou o comprovante, o líder pode finalizar sem anexo. */
+  anexoOpcional(r: Requisicao): boolean { return this.ehOferta(r) && !!r.possuiComprovante; }
   podeAbrir(): boolean { return this.auth.isLider() || this.auth.isAdmin(); }
   // O líder só recebe as próprias requisições na lista; ADMIN é superusuário. Backend valida o dono.
   souDono(_r: Requisicao): boolean { return this.auth.isLider() || this.auth.isAdmin(); }
 
   private vazio(): RequisicaoRequest {
-    return { ministerio: '', nomeEvento: '', destinacao: '', motivo: '', valorSolicitado: 0, dataNecessidade: null, formaRepasse: 'DINHEIRO', pixTipo: null, pixChave: null };
+    return { ministerio: '', nomeEvento: '', destinacao: '', motivo: '', valorSolicitado: 0, dataNecessidade: null,
+      formaRepasse: 'DINHEIRO', pixTipo: null, pixChave: null, pixTitular: 'PROPRIO', pixBeneficiarioNome: null, pixBeneficiarioObs: null };
   }
 
   carregar(): void {
@@ -285,6 +325,9 @@ export class RequisicoesComponent {
     if (!this.form.valorSolicitado || this.form.valorSolicitado <= 0) { this.toast.erro('Informe um valor válido.'); return; }
     if (this.form.formaRepasse === 'PIX' && (!this.form.pixTipo || !this.form.pixChave?.trim())) {
       this.toast.erro('Para PIX, informe o tipo e a chave.'); return;
+    }
+    if (this.form.formaRepasse === 'PIX' && this.form.pixTitular === 'TERCEIRO' && !this.form.pixBeneficiarioNome?.trim()) {
+      this.toast.erro('Informe o nome do beneficiário — a chave PIX não é sua.'); return;
     }
     this.salvando.set(true);
     this.api.criarRequisicao({ ...this.form, dataNecessidade: this.form.dataNecessidade || null }).subscribe({
@@ -340,7 +383,9 @@ export class RequisicoesComponent {
     return troco > 0 ? troco : 0;
   }
   enviarFinalizacao(r: Requisicao): void {
-    if (!this.arquivos.length) { this.toast.erro('Anexe ao menos a nota fiscal.'); return; }
+    if (!this.arquivos.length && !this.anexoOpcional(r)) {
+      this.toast.erro(this.ehOferta(r) ? 'Anexe o comprovante da transferência ao beneficiário.' : 'Anexe ao menos a nota fiscal.'); return;
+    }
     if (this.trocoFinalizar(r) > 0 && !this.comprovanteTroco) {
       this.toast.erro('Há troco a devolver — anexe o comprovante da transferência do troco ao PIX da igreja.'); return;
     }

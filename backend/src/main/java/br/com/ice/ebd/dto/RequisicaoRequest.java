@@ -22,5 +22,11 @@ public record RequisicaoRequest(
         String formaRepasse,
         /** CPF | EMAIL | TELEFONE (só quando PIX; nunca aleatória). */
         String pixTipo,
-        String pixChave) {
+        String pixChave,
+        /** PROPRIO (padrão) | TERCEIRO — chave do beneficiado, no caso de oferta de amor. */
+        String pixTitular,
+        /** Quem recebe o PIX quando a chave é de terceiro (obrigatório nesse caso). */
+        @Size(max = 160) String pixBeneficiarioNome,
+        /** Contexto do beneficiário para a tesouraria (quem é, por que está sendo ajudado). */
+        @Size(max = 300) String pixBeneficiarioObs) {
 }

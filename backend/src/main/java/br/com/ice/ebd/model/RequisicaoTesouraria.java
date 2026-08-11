@@ -61,6 +61,22 @@ public class RequisicaoTesouraria {
     @Column(name = "pix_chave", length = 140)
     private String pixChave;
 
+    /**
+     * De quem é a chave: do próprio solicitante (padrão) ou de um terceiro beneficiado
+     * (oferta de amor — o recurso vai direto para a conta da pessoa ajudada).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pix_titular", nullable = false, length = 10)
+    private TitularChavePix pixTitular = TitularChavePix.PROPRIO;
+
+    /** Nome de quem recebe o PIX quando a chave é de terceiro (obrigatório nesse caso). */
+    @Column(name = "pix_beneficiario_nome", length = 160)
+    private String pixBeneficiarioNome;
+
+    /** Contexto do beneficiário para a tesouraria (quem é, por que está sendo ajudado). */
+    @Column(name = "pix_beneficiario_obs", length = 300)
+    private String pixBeneficiarioObs;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 12)
     private StatusRequisicao status = StatusRequisicao.ABERTA;
@@ -121,6 +137,20 @@ public class RequisicaoTesouraria {
 
     public String getPixChave() { return pixChave; }
     public void setPixChave(String pixChave) { this.pixChave = pixChave; }
+
+    public TitularChavePix getPixTitular() { return pixTitular; }
+    public void setPixTitular(TitularChavePix pixTitular) { this.pixTitular = pixTitular; }
+
+    public String getPixBeneficiarioNome() { return pixBeneficiarioNome; }
+    public void setPixBeneficiarioNome(String pixBeneficiarioNome) { this.pixBeneficiarioNome = pixBeneficiarioNome; }
+
+    public String getPixBeneficiarioObs() { return pixBeneficiarioObs; }
+    public void setPixBeneficiarioObs(String pixBeneficiarioObs) { this.pixBeneficiarioObs = pixBeneficiarioObs; }
+
+    /** true quando o recurso é repassado por PIX para a conta de um terceiro beneficiado. */
+    public boolean isPixParaTerceiro() {
+        return formaRepasse == FormaRepasse.PIX && pixTitular == TitularChavePix.TERCEIRO;
+    }
     public StatusRequisicao getStatus() { return status; }
     public void setStatus(StatusRequisicao status) { this.status = status; }
     public BigDecimal getValorAprovado() { return valorAprovado; }

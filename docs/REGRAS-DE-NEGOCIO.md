@@ -346,7 +346,8 @@ ABERTA ──aprovar──▶ APROVADA ──finalizar──▶ FINALIZADA
 - **Negar** (só de ABERTA): parecer opcional. → NEGADA.
 - **Cancelar** (só o dono/ADMIN, só de ABERTA). → CANCELADA.
 - **Finalizar** (só o dono/ADMIN, só de APROVADA): exige **ao menos 1 anexo de nota fiscal** +
-  valor gasto. → FINALIZADA.
+  valor gasto. → FINALIZADA. *Exceção*: em **oferta de amor** (PIX de terceiro, 14.3) não há nota
+  fiscal — a prestação de contas é o **comprovante da transferência**.
 
 ### 14.2 Troco (devolução)
 
@@ -357,18 +358,31 @@ ABERTA ──aprovar──▶ APROVADA ──finalizar──▶ FINALIZADA
 ### 14.3 Forma de repasse e chave PIX
 
 - Forma: **DINHEIRO** (default) ou **PIX**.
-- Chave PIX só **CPF, e-mail ou telefone** — **aleatória é recusada**.
-- A chave precisa ser **do próprio solicitante**:
+- Chave PIX só **CPF, e-mail ou telefone** — **aleatória é recusada** (não identifica o titular),
+  seja a chave de quem for.
+- Na abertura o líder declara **de quem é a chave** (`pixTitular`): **PROPRIO** (default) ou
+  **TERCEIRO**.
+- **PROPRIO** — a chave precisa ser **do próprio solicitante**:
   - **E-mail** → deve bater com o e-mail cadastrado do solicitante.
   - **Telefone** → deve bater (só dígitos) com o telefone do aluno vinculado.
   - **CPF** → como o sistema não guarda CPF, valida apenas 11 dígitos; o tesoureiro confere no
     comprovante.
+- **TERCEIRO (oferta de amor)** — quando a igreja ajuda um irmão em necessidade, o recurso vai
+  direto para a conta do beneficiado, então a chave **não é do solicitante**:
+  - exige o **nome do beneficiário** (`pixBeneficiarioNome`); a observação
+    (`pixBeneficiarioObs` — quem é / por quê) é opcional;
+  - a titularidade **não é conferida** contra o cadastro (não temos como) — valida-se só o
+    **formato** da chave (CPF com 11 dígitos, e-mail bem formado, telefone com DDD) e o
+    **tesoureiro confere o nome no comprovante do banco**;
+  - a requisição aparece marcada como **oferta de amor** na lista, na avaliação e no detalhe.
 
 ### 14.4 Visibilidade e anexos
 
 - **ADMIN e TESOUREIRO** veem todas as requisições; o **líder** vê só as próprias.
-- Anexos têm categoria **NOTA_FISCAL** ou **COMPROVANTE**, guardados como binário (`bytea`);
-  download valida o acesso.
+- Anexos têm categoria **NOTA_FISCAL**, **COMPROVANTE** ou **TROCO**, guardados como binário
+  (`bytea`); download valida o acesso. Em oferta de amor o que o líder anexa ao finalizar é
+  gravado como **COMPROVANTE** (não há nota fiscal); se o tesoureiro já anexou o comprovante na
+  aprovação, o líder pode finalizar **sem anexar nada**.
 - Cada transição dispara e-mail: nova → tesoureiros; avaliação → solicitante; finalização →
   tesoureiros.
 
@@ -376,7 +390,7 @@ ABERTA ──aprovar──▶ APROVADA ──finalizar──▶ FINALIZADA
 
 - Rotina diária (`CobrancaNotaService`, seção 16): cobra por e-mail o solicitante de cada
   requisição **APROVADA sem nota**. **Dedup por dia** (`notaCobradaEm`): no máx. 1 e-mail por
-  requisição por dia.
+  requisição por dia. Em oferta de amor o e-mail cobra o **comprovante da transferência**.
 
 ---
 

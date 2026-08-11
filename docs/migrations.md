@@ -25,6 +25,7 @@ O schema do banco é **versionado e gerenciado pelo Flyway**. As migrations fica
 | **V20** | `V20__requisicao_forma_repasse.sql` | Requisição ganha `forma_repasse` (dinheiro/pix) + `pix_tipo`/`pix_chave`; anexo ganha `categoria` (nota fiscal x comprovante); view de integração atualizada (append-only) com forma/pix + `possui_comprovante`. |
 | **V24** | `V24__falta_justificada.sql` | Falta justificada: `justificada`/`justificativa_motivo`/`justificada_em` em `presenca`. O aluno justifica a própria falta (vale 0,3 no ranking); base das regras de inativação por faltas seguidas e de promoção de visitante. |
 | **V26** | `V26__aula_adiada.sql` | Aula adiada/cancelada: coluna `adiada` (boolean) em `aula`. Aula adiada sai de toda pontuação e retrospecto (chamada, rankings, relatórios, boletim, dashboard, frequência, inativação por faltas e promoção de visitante). |
+| **V28** | `V28__pix_beneficiario_terceiro.sql` | Chave PIX de **terceiro** na requisição (oferta de amor): `pix_titular` (PROPRIO/TERCEIRO), `pix_beneficiario_nome` e `pix_beneficiario_obs` em `requisicao_tesouraria`; view `vw_requisicoes_integracao` estendida com essas 3 colunas (CREATE OR REPLACE append-only, preserva o GRANT do usuário read-only). |
 
 ## Regras de ouro
 
