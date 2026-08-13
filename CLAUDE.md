@@ -164,6 +164,16 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 🐞 **Fix: abrir requisição estourava 500 em produção (2026-08-13)** — o sequencial do número
+  (`REQ-<ano>-<seq4>`) vinha da **contagem** de requisições do ano. Depois da limpeza de dados de
+  teste em prod (o runbook [`docs/consolidacao-contas.md`](docs/consolidacao-contas.md) §2a apaga as
+  requisições do usuário `lid`), a contagem ficou **menor que o maior número já emitido**, então toda
+  nova requisição reemitia um número existente → `duplicate key ... requisicao_tesouraria_numero_key`
+  → HTTP 500 e o toast genérico "Erro ao enviar" na tela. Agora `RequisicaoRepository.maiorSequenciaComPrefixo`
+  usa **MAX** do sequencial (não a contagem), então buracos na numeração não colidem — e a produção
+  volta a funcionar **sem SQL manual**, só com o deploy. Sem migration. Validado: reprodução do 500
+  contra Postgres real + `mvn test` (**72** testes, novo `numeroNaoSeRepeteDepoisDeApagarUmaRequisicao`).
+
 - 🏗️ **Topologia de 2 VMs + GHCR (2026-07)** — Postgres separado na `ebd-db` (backend com folga de RAM);
   imagens buildadas no CI e publicadas no GHCR privado, a VM só faz `pull` (deploy ~2 min); e-mail **assíncrono** para todas as notificações (EventBus — ver bullet abaixo); backup diário na `ebd-db` + offsite no Object Storage. Ver [`docs/topologia.md`](docs/topologia.md).
 - ✅ MVP completo (backend + frontend + infra + scripts + docs).
