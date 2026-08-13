@@ -27,9 +27,20 @@ public class RequisicaoRepository implements PanacheRepository<RequisicaoTesoura
         return list("status", StatusRequisicao.APROVADA);
     }
 
-    /** Quantidade de requisições cujo número começa com o prefixo (para gerar o sequencial do ano). */
-    public long contarComPrefixo(String prefixo) {
-        return count("numero like ?1", prefixo + "%");
+    /**
+     * Maior sequencial já usado no prefixo do ano (0 se não houver nenhum) — base para o próximo
+     * número. É o <b>máximo</b>, e não a contagem: se alguma requisição for apagada (ex.: limpeza
+     * de dados de teste), a contagem encolhe e voltaria a gerar um número já existente, estourando
+     * a unique de {@code numero}.
+     */
+    public long maiorSequenciaComPrefixo(String prefixo) {
+        Integer max = getEntityManager().createQuery(
+                "select max(cast(substring(r.numero, :corte) as integer)) from RequisicaoTesouraria r "
+                + "where r.numero like :prefixo", Integer.class)
+                .setParameter("corte", prefixo.length() + 1)
+                .setParameter("prefixo", prefixo + "%")
+                .getSingleResult();
+        return max == null ? 0L : max;
     }
 
     /** Quantas requisições este usuário abriu (solicitante) — bloqueia a exclusão do usuário. */
