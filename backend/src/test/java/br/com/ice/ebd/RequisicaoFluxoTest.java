@@ -4,6 +4,7 @@ import br.com.ice.ebd.dto.RequisicaoRequest;
 import br.com.ice.ebd.dto.RequisicaoResponse;
 import br.com.ice.ebd.model.CategoriaAnexo;
 import br.com.ice.ebd.model.Role;
+import br.com.ice.ebd.repository.RequisicaoRepository;
 import br.com.ice.ebd.service.CobrancaNotaService;
 import br.com.ice.ebd.service.RequisicaoService;
 import io.quarkus.test.TestTransaction;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,6 +28,7 @@ class RequisicaoFluxoTest {
 
     @Inject RequisicaoService service;
     @Inject CobrancaNotaService cobranca;
+    @Inject RequisicaoRepository repository;
     @Inject Fixtures fx;
 
     @Test
@@ -185,5 +188,34 @@ class RequisicaoFluxoTest {
         RequisicaoResponse fim = service.finalizar(aberta.id(), new BigDecimal("200.00"), "Transferido", List.of(comp), null);
         assertEquals("FINALIZADA", fim.status());
         assertEquals("COMPROVANTE", fim.anexos().get(0).categoria());
+    }
+
+    /**
+     * O sequencial do número vem do maior já usado, não da contagem: apagar uma requisição
+     * (limpeza de dados de teste em produção) não pode fazer a próxima reemitir um número
+     * existente — a unique de {@code numero} estouraria e a abertura pararia de funcionar.
+     */
+    @Test
+    @TestSecurity(user = "lider.numero", roles = "ADMIN")
+    @TestTransaction
+    void numeroNaoSeRepeteDepoisDeApagarUmaRequisicao() {
+        fx.usuario("lider.numero", Role.ADMIN, "lider.numero@ebd.test");
+        RequisicaoResponse primeira = service.criar(new RequisicaoRequest(
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("10.00"), null, null, null, null, null, null, null));
+        RequisicaoResponse segunda = service.criar(new RequisicaoRequest(
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("10.00"), null, null, null, null, null, null, null));
+        assertEquals(sequencia(primeira) + 1, sequencia(segunda));
+
+        repository.deleteById(primeira.id());
+
+        RequisicaoResponse terceira = service.criar(new RequisicaoRequest(
+                "Louvor", null, "Cabos", "Motivo", new BigDecimal("10.00"), null, null, null, null, null, null, null));
+        assertNotEquals(segunda.numero(), terceira.numero());
+        assertEquals(sequencia(segunda) + 1, sequencia(terceira));
+    }
+
+    /** Parte numérica de REQ-&lt;ano&gt;-&lt;seq&gt;. */
+    private static int sequencia(RequisicaoResponse r) {
+        return Integer.parseInt(r.numero().substring(r.numero().lastIndexOf('-') + 1));
     }
 }

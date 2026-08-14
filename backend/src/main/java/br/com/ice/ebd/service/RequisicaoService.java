@@ -337,9 +337,15 @@ public class RequisicaoService {
         return s == null ? "" : s.replaceAll("\\D", "");
     }
 
+    /**
+     * Próximo número do ano: {@code REQ-<ano>-<seq4>}. O sequencial vem do <b>maior já usado</b>
+     * (não da contagem) — se alguma requisição for apagada, a contagem encolhe e reemitiria um
+     * número existente, quebrando a unique de {@code numero} e derrubando a abertura de novas
+     * requisições.
+     */
     private String gerarNumero() {
         String prefixo = "REQ-" + Year.now().getValue() + "-";
-        long seq = repository.contarComPrefixo(prefixo) + 1;
+        long seq = repository.maiorSequenciaComPrefixo(prefixo) + 1;
         return prefixo + String.format("%04d", seq);
     }
 
