@@ -37,7 +37,8 @@ class ChamadaNotificacaoAcolhimentoTest {
 
     @BeforeEach
     void limpaCaixa() {
-        mailbox.clear();
+        // Descarta tambem os e-mails assincronos atrasados de testes anteriores.
+        CaixaDeEmail.limpar(mailbox);
     }
 
     @Test

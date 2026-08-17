@@ -29,6 +29,7 @@
 15. [Campanhas (e-mail em massa)](#15-campanhas-e-mail-em-massa)
 16. [Rotinas automáticas (agendadas)](#16-rotinas-automáticas-agendadas)
 17. [Notificações por e-mail](#17-notificações-por-e-mail)
+18. [Relatório de presença por mês](#18-relatório-de-presença-por-mês)
 
 ---
 
@@ -464,3 +465,22 @@ Eventos que geram e-mail: chamada salva (alunos), chamada pendente (professor, d
 dia da aula), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
 a aluno, nota lançada/quiz corrigido, aniversário, requisição (nova/avaliada/finalizada/cobrança),
 campanhas, recuperação de senha.
+
+---
+
+## 18. Relatório de presença por mês
+
+Fonte: `RelatorioMensalService`. Consolida a presença de um **mês** (ou do **ano inteiro**) para
+**uma, várias ou todas as turmas** escolhidas.
+
+- **Escopo**: ADMIN vê todas as turmas ativas; **professor só as dele** — pedir uma turma fora do
+  escopo devolve **403**. Sem turmas escolhidas, o relatório assume **todas as permitidas**.
+- **Aula adiada não entra** (nem nos totais, nem no gráfico), coerente com o resto do sistema.
+- **`% presença` = presenças ÷ (presenças + faltas)**, isto é, a base são os **registros da chamada**.
+  Uma aula ainda sem chamada não derruba o índice da turma: ela aparece na diferença entre
+  **aulas** e **aulas com chamada**.
+- **Visitantes** vêm do cadastro de visitantes da aula; **faltas justificadas** são o subconjunto
+  das faltas marcadas pelo professor (ver [§3](#3-faltas-justificadas)).
+- **Série do gráfico**: um ponto por **domingo** quando o filtro é um mês; um ponto por **mês**
+  quando é o ano inteiro. Cada ponto traz o consolidado e o valor de cada turma (barras agrupadas).
+- Só leitura — não altera nada. Tela: `/relatorio-mensal` (com export PDF/Excel).

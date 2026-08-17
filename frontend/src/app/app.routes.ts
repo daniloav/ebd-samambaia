@@ -98,6 +98,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/desafios/desafios.component').then((m) => m.DesafiosComponent),
       },
       {
+        path: 'relatorio-mensal',
+        canActivate: [naoAlunoGuard],
+        loadComponent: () =>
+          import('./pages/relatorio-mensal/relatorio-mensal.component').then((m) => m.RelatorioMensalComponent),
+      },
+      {
         path: 'relatorio-visitantes',
         canActivate: [naoAlunoGuard],
         loadComponent: () =>

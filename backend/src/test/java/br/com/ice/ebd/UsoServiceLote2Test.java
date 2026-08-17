@@ -112,23 +112,51 @@ class UsoServiceLote2Test {
         assertEquals(50.0, cp.pctNoPrazo()); // 1 de 2 com data
     }
 
-    // ---------- F) Cobertura de turmas na semana ----------
+    // ---------- F) Cobertura da chamada por turma ----------
 
     @Test
     @TestTransaction
-    void coberturaMarcaTurmaComChamadaNaSemana() {
+    void coberturaOlhaAUltimaAulaPrevistaDaTurma() {
         Classe comChamada = fx.classe("Turma Coberta");
-        fx.classe("Turma Pendente");
+        Classe semChamada = fx.classe("Turma Pendente");
+        Classe semAgenda = fx.classe("Turma Sem Agenda");
         Aluno a = fx.aluno("Sicrano", comChamada, null, false);
+        Aluno b = fx.aluno("Beltrano", semChamada, null, false);
+        LocalDate domingoPassado = LocalDate.now().minusDays(7);
 
-        // Aula nesta semana (hoje) com presença -> turma coberta.
-        Aula aula = fx.aula(comChamada, LocalDate.now());
+        // Última aula com chamada lançada -> FEITA (mesmo tendo sido na semana passada).
+        Aula aula = fx.aula(comChamada, domingoPassado);
         fx.presente(aula, a);
+        // Aula anterior com chamada, mas a última (mais recente) ficou sem -> PENDENTE.
+        fx.presente(fx.aula(semChamada, domingoPassado.minusDays(7)), b);
+        fx.aula(semChamada, domingoPassado);
+        // Turma sem nenhuma aula até hoje -> SEM_AULA (não é pendência).
         presencaRepo.flush();
 
-        Map<String, Boolean> cobertura = usoService.gerar().coberturaTurmas().stream()
-                .collect(Collectors.toMap(UsoResponse.CoberturaTurma::turma, UsoResponse.CoberturaTurma::cobriu));
-        assertEquals(Boolean.TRUE, cobertura.get("Turma Coberta"));
-        assertEquals(Boolean.FALSE, cobertura.get("Turma Pendente"));
+        Map<String, UsoResponse.SituacaoCobertura> cobertura = usoService.gerar().coberturaTurmas().stream()
+                .collect(Collectors.toMap(UsoResponse.CoberturaTurma::turma, UsoResponse.CoberturaTurma::situacao));
+        assertEquals(UsoResponse.SituacaoCobertura.FEITA, cobertura.get("Turma Coberta"));
+        assertEquals(UsoResponse.SituacaoCobertura.PENDENTE, cobertura.get("Turma Pendente"));
+        assertEquals(UsoResponse.SituacaoCobertura.SEM_AULA, cobertura.get("Turma Sem Agenda"));
+    }
+
+    @Test
+    @TestTransaction
+    void coberturaIgnoraAulaAdiadaEAulaFutura() {
+        Classe turma = fx.classe("Turma Adiada");
+        Aluno a = fx.aluno("Ciclano", turma, null, false);
+        LocalDate hoje = LocalDate.now();
+
+        // A última aula "real" (com chamada) foi há 7 dias; hoje foi adiada e há uma futura.
+        fx.presente(fx.aula(turma, hoje.minusDays(7)), a);
+        Aula adiada = fx.aula(turma, hoje);
+        adiada.setAdiada(true);
+        fx.aula(turma, hoje.plusDays(7));
+        presencaRepo.flush();
+
+        UsoResponse.CoberturaTurma ct = usoService.gerar().coberturaTurmas().stream()
+                .filter(x -> x.turma().equals("Turma Adiada")).findFirst().orElseThrow();
+        assertEquals(UsoResponse.SituacaoCobertura.FEITA, ct.situacao());
+        assertEquals(hoje.minusDays(7), ct.aulaData());
     }
 }

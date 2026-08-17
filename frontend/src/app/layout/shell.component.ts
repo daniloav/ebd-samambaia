@@ -143,6 +143,7 @@ import { TelemetriaService } from '../core/telemetria.service';
             <a routerLink="/aulas" routerLinkActive="ativo"><span class="ico">📅</span> Aulas</a>
             <a routerLink="/alunos" routerLinkActive="ativo"><span class="ico">👥</span> Alunos</a>
             <a routerLink="/relatorio" routerLinkActive="ativo"><span class="ico">📊</span> Relatório</a>
+            <a routerLink="/relatorio-mensal" routerLinkActive="ativo"><span class="ico">📈</span> Presença por mês</a>
             <a routerLink="/relatorio-visitantes" routerLinkActive="ativo"><span class="ico">🧑‍🤝‍🧑</span> Visitantes</a>
             <a routerLink="/relatorio-inativados" routerLinkActive="ativo"><span class="ico">🚪</span> Inativados</a>
             <div class="grupo">Desafios</div>

@@ -245,7 +245,7 @@ import { UsoResponse } from '../../core/models';
         <div class="kpi verde"><div class="n">{{ u.chamadaPrazo.noPrazo }}</div><div class="l">Chamadas no prazo (no dia da aula)</div></div>
         <div class="kpi laranja"><div class="n">{{ u.chamadaPrazo.atrasadas }}</div><div class="l">Chamadas atrasadas</div></div>
         <div class="kpi roxo"><div class="n">{{ u.chamadaPrazo.pctNoPrazo | number:'1.0-0' }}%</div><div class="l">No prazo</div></div>
-        <div class="kpi"><div class="n">{{ turmasCobertas() }}/{{ u.coberturaTurmas.length }}</div><div class="l">Turmas com chamada nesta semana</div></div>
+        <div class="kpi"><div class="n">{{ turmasCobertas() }}/{{ turmasComAula() }}</div><div class="l">Turmas com a última chamada lançada</div></div>
       </div>
 
       <div class="grid2">
@@ -268,9 +268,9 @@ import { UsoResponse } from '../../core/models';
           }
         </div>
 
-        <!-- Cobertura de turmas na semana -->
+        <!-- Cobertura da chamada por turma (última aula prevista) -->
         <div class="card">
-          <p class="subt">Cobertura de turmas (semana atual)</p>
+          <p class="subt">Cobertura da chamada por turma</p>
           @if (u.coberturaTurmas.length === 0) {
             <p class="vazio">Nenhuma turma ativa.</p>
           } @else {
@@ -278,15 +278,22 @@ import { UsoResponse } from '../../core/models';
               @for (ct of u.coberturaTurmas; track ct.turma) {
                 <div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center">
                   <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ct.turma }}</span>
-                  @if (ct.cobriu) {
-                    <span class="pill" style="background:#dcfce7;color:#166534">✓ {{ ct.aulaData | date:'dd/MM' }}</span>
-                  } @else {
-                    <span class="pill" style="background:#fee2e2;color:#991b1b">pendente</span>
+                  @switch (ct.situacao) {
+                    @case ('FEITA') {
+                      <span class="pill" style="background:#dcfce7;color:#166534">✓ {{ ct.aulaData | date:'dd/MM' }}</span>
+                    }
+                    @case ('PENDENTE') {
+                      <span class="pill" style="background:#fee2e2;color:#991b1b">pendente ({{ ct.aulaData | date:'dd/MM' }})</span>
+                    }
+                    @default {
+                      <span class="pill" style="background:#e5e7eb;color:#374151">sem aula prevista</span>
+                    }
                   }
                 </div>
               }
             </div>
           }
+          <p class="muted" style="font-size:.75rem;margin-top:.6rem">Olha a última aula prevista de cada turma (não adiada, até hoje): se a chamada dela já foi lançada.</p>
         </div>
       </div>
 
@@ -424,7 +431,10 @@ export class UsoComponent implements OnInit {
   maxProf = computed(() =>
     Math.max(1, ...((this.d()?.professoresMaisAtivos ?? []).map((x) => x.acessos))));
   turmasCobertas = computed(() =>
-    (this.d()?.coberturaTurmas ?? []).filter((x) => x.cobriu).length);
+    (this.d()?.coberturaTurmas ?? []).filter((x) => x.situacao === 'FEITA').length);
+  /** Denominador do KPI: só as turmas que têm uma aula prevista para cobrar. */
+  turmasComAula = computed(() =>
+    (this.d()?.coberturaTurmas ?? []).filter((x) => x.situacao !== 'SEM_AULA').length);
   maxFunil = computed(() =>
     Math.max(1, ...((this.d()?.funil ?? []).map((x) => x.quantidade))));
   maxStreak = computed(() =>
