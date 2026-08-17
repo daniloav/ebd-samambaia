@@ -47,4 +47,20 @@ public class AulaRepository implements PanacheRepository<Aula> {
                 .setParameter("data", data)
                 .getResultStream().collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
+
+    /**
+     * Aulas de uma data cuja <b>chamada ainda não foi feita</b>: não adiadas, sem nenhuma
+     * presença registrada e com ao menos um aluno ativo na turma (turma vazia não gera cobrança).
+     * Base do lembrete horário ao professor.
+     */
+    public List<Aula> semChamadaEm(LocalDate data) {
+        return getEntityManager().createQuery(
+                        "select a from Aula a join fetch a.classe left join fetch a.professor "
+                                + "where a.data = :data and a.adiada = false "
+                                + "and not exists (select 1 from Presenca p where p.aula = a) "
+                                + "and exists (select 1 from Aluno al where al.classe = a.classe and al.ativo = true) "
+                                + "order by a.id", Aula.class)
+                .setParameter("data", data)
+                .getResultList();
+    }
 }
