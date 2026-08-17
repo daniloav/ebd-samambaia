@@ -164,6 +164,19 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- ⏰ **Lembrete de chamada pendente (2026-08-16)** — no **dia da aula**, se ela é válida (não
+  adiada) e a chamada ainda **não foi feita**, o professor recebe um e-mail **de hora em hora a
+  partir das 12h** (BRT, até as 21h) até registrar a presença. Migration **V29**
+  (`aula.chamada_cobrada_em`, dedup: no máx. 1 e-mail por aula por hora, protege reexecução do
+  scheduler). Backend: `LembreteChamadaService` (`@Scheduled` cron `0 0 12-21 * * ?`, configurável
+  em `ebd.lembrete-chamada.cron` — `off` no perfil de teste), `AulaRepository.semChamadaEm` (aulas
+  do dia, não adiadas, sem nenhuma presença e com ao menos 1 aluno ativo na turma — turma vazia não
+  cobra) e `NotificacaoService.lembrarChamadaPendente` (CTA para `/chamada`). Destinatário: o
+  **professor da aula**; sem professor definido, os **professores ativos da turma**. Disparo manual
+  p/ teste: `POST /api/admin/lembretes-chamada/executar` (ADMIN). Sem mudança no front. Validado:
+  `mvn test` (**75** testes, novo `LembreteChamadaTest` com 3 casos — cobra + dedup na mesma hora,
+  chamada feita/aula adiada não cobram, aula de outro dia não cobra) e `mvn package`.
+
 - 🐞 **Fix: abrir requisição estourava 500 em produção (2026-08-13)** — o sequencial do número
   (`REQ-<ano>-<seq4>`) vinha da **contagem** de requisições do ano. Depois da limpeza de dados de
   teste em prod (o runbook [`docs/consolidacao-contas.md`](docs/consolidacao-contas.md) §2a apaga as

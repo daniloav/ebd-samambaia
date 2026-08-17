@@ -427,6 +427,49 @@ public class NotificacaoService {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
+    // ---------- Lembrete de chamada pendente ----------
+
+    /**
+     * Lembra o(s) professor(es) de que a chamada da aula de hoje ainda não foi feita.
+     * Disparado de hora em hora a partir das 12h enquanto a chamada não for salva.
+     * Retorna quantos e-mails foram enfileirados; nunca lança exceção para o chamador.
+     */
+    public int lembrarChamadaPendente(Aula aula, List<String> emails) {
+        if (!habilitado || emails == null || emails.isEmpty()) {
+            return 0;
+        }
+        String turma = nomeTurma(aula);
+        String quando = aula.getData().format(DATA);
+        String assunto = "EBD — a chamada de hoje (" + turma + ") ainda não foi feita 📋";
+        String corpo = ""
+                + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Chamada pendente 📋</h1>"
+                + "<p style=\"margin:0 0 16px;\">A aula de <b>" + quando + "</b> da turma <b>" + esc(turma) + "</b>"
+                + temaHtml(aula) + " ainda está <b>sem chamada registrada</b>.</p>"
+                + "<p style=\"margin:0 0 16px;\">Registre a presença da turma para que o ranking, os relatórios "
+                + "e a frequência dos alunos fiquem em dia.</p>"
+                + "<p style=\"margin:22px 0;text-align:center;\">"
+                + "<a href=\"" + SITE + "/chamada\" style=\"background:#c9a24b;color:#ffffff;text-decoration:none;"
+                + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">Fazer a chamada agora</a></p>"
+                + "<p style=\"margin:0;color:#8a94a6;font-size:13px;\">Você continuará recebendo este lembrete "
+                + "de hora em hora até a chamada ser registrada.</p>";
+        String texto = "A chamada da aula de " + quando + " (" + turma + ") ainda não foi feita.\n"
+                + "Registre a presença no app: " + SITE + "/chamada\n\n"
+                + "Escola Bíblica Dominical — ICE Samambaia";
+        int enviados = 0;
+        for (String em : emails) {
+            if (em == null || em.isBlank()) {
+                continue;
+            }
+            try {
+                dispatcher.enfileirar(Mail.withHtml(em, assunto, shell(turma, corpo)).setText(texto));
+                enviados++;
+            } catch (Exception e) {
+                LOG.warnf("Falha ao lembrar %s da chamada da aula %d: %s", em, aula.getId(), e.getMessage());
+            }
+        }
+        return enviados;
+    }
+
     /** Boas-vindas ao visitante (se tiver e-mail). Nunca lança exceção. */
     public void enviarBoasVindasVisitante(Visitante v) {
         if (!habilitado || v.getEmail() == null || v.getEmail().isBlank()) {

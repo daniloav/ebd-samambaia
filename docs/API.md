@@ -145,6 +145,10 @@ Trimestre 1..4 (Jan-Mar, Abr-Jun, Jul-Set, Out-Dez). Resposta:
 Dispara na hora o envio de parabéns dos aniversariantes de hoje (o mesmo do agendamento das 12:00 BRT).
 Resposta: `{ "total": 1, "enviados": 1, "nomes": ["Ana Souza"] }`.
 
+### POST `/admin/lembretes-chamada/executar` — A
+Dispara na hora o lembrete das chamadas pendentes de hoje (o mesmo do agendamento de hora em hora,
+12h–21h BRT). Resposta: `{ "aulasPendentes": 1, "enviados": 1, "turmas": ["Adultos"] }`.
+
 ## Desafios
 
 ### GET `/desafios/rankings` — A, P
