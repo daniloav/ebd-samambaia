@@ -164,6 +164,17 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 💛 **E-mail acolhedor para falta justificada (2026-08-16)** — quem faltava recebia sempre o mesmo
+  e-mail de engajamento ("sentimos sua falta, te esperamos no próximo domingo"), inclusive quem tinha
+  a falta **justificada** pelo professor (muitas vezes doença, luto ou trabalho) — soava como cobrança.
+  Agora a chamada tem **3 ramificações** de conteúdo (`NotificacaoService`): presente, ausente **com**
+  justificativa e ausente **sem** justificativa. Na justificada o assunto é *"tudo bem por aí? Você faz
+  falta e está em nossas orações 💛"* e o corpo reconhece o aviso, **repete o motivo registrado** (quando
+  houver), não cobra presença e oferece ajuda da classe (oração, conversa, resumo da lição). A assinatura
+  de dedup passou de `"A"` para `"A"`/`"AJ"`, então justificar a falta **depois** de a chamada já ter sido
+  notificada dispara o e-mail acolhedor (e nada é reenviado se nada mudar). Sem migration, sem mudança de
+  API/front. Validado: `mvn test` (**73** testes, novo `ChamadaNotificacaoAcolhimentoTest`).
+
 - 🐞 **Fix: abrir requisição estourava 500 em produção (2026-08-13)** — o sequencial do número
   (`REQ-<ano>-<seq4>`) vinha da **contagem** de requisições do ano. Depois da limpeza de dados de
   teste em prod (o runbook [`docs/consolidacao-contas.md`](docs/consolidacao-contas.md) §2a apaga as
