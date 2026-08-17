@@ -119,7 +119,7 @@ class UsoServiceLote2Test {
     void coberturaOlhaAUltimaAulaPrevistaDaTurma() {
         Classe comChamada = fx.classe("Turma Coberta");
         Classe semChamada = fx.classe("Turma Pendente");
-        Classe semAgenda = fx.classe("Turma Sem Agenda");
+        fx.classe("Turma Sem Agenda");
         Aluno a = fx.aluno("Sicrano", comChamada, null, false);
         Aluno b = fx.aluno("Beltrano", semChamada, null, false);
         LocalDate domingoPassado = LocalDate.now().minusDays(7);
