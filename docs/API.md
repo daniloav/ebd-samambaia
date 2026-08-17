@@ -63,9 +63,10 @@ não mexe no que já existe. Trocar a referência zera o texto em cache e o cari
 }
 ```
 
-`diaSemana` ∈ `DOMINGO|SEGUNDA|TERCA|QUARTA|QUINTA|SEXTA|SABADO`. Na resposta cada leitura traz
-`dataLeitura` — o dia em que ela é enviada, sempre na **semana que antecede** a aula (aula de
-23/08 → segunda 17/08, sábado 22/08) — e `enviadoEm`.
+`diaSemana` ∈ `SEGUNDA|TERCA|QUARTA|QUINTA|SEXTA|SABADO|DOMINGO` (a semana começa na segunda).
+Na resposta cada leitura traz `dataLeitura` — o dia em que ela é enviada, na **semana da lição**,
+que vai de segunda até o **dia da aula** (aula de domingo 23/08 → segunda 17/08, sábado 22/08,
+domingo 23/08) — e `enviadoEm`.
 
 ## Chamada
 
@@ -212,7 +213,7 @@ Dispara na hora o lembrete das chamadas pendentes de hoje (o mesmo do agendament
 12h–21h BRT). Resposta: `{ "aulasPendentes": 1, "enviados": 1, "turmas": ["Adultos"] }`.
 
 ### POST `/admin/leituras-diarias/executar` — A
-Dispara na hora o envio das leituras bíblicas do dia (o mesmo do agendamento das 12:00 BRT).
+Dispara na hora o envio das leituras bíblicas do dia (o mesmo do agendamento das 08:00 BRT).
 Resposta: `{ "leituras": 1, "enviados": 2, "referencias": ["Sl 1.1-6"] }`.
 
 ## Desafios

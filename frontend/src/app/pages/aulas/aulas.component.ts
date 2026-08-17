@@ -89,8 +89,9 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
               <label>Leituras diárias da lição <span class="muted">(opcional)</span></label>
               <small class="muted" style="display:block;margin-bottom:.5rem">
                 Uma referência por dia (ex.: <b>Sl 1.1-6</b>; use <b>;</b> para mais de uma no mesmo dia).
-                Cada leitura é enviada por e-mail <b>às 12h</b> aos alunos da turma que aceitam receber avisos,
-                na semana que <b>antecede</b> esta aula. O texto bíblico vai junto no e-mail (Almeida).
+                Cada leitura é enviada por e-mail <b>às 8h</b> aos alunos da turma que aceitam receber avisos,
+                na semana da lição — de <b>segunda</b> até o <b>dia da aula</b>. O texto bíblico vai junto
+                no e-mail (Almeida).
               </small>
               <div class="leituras">
                 @for (l of leituras; track l.dia) {
@@ -236,29 +237,29 @@ export class AulasComponent {
 
   private vazio(): AulaRequest { return { data: '', tema: '', professorId: null }; }
 
-  private static readonly DIAS: { dia: DiaSemanaLeitura; rotulo: string }[] = [
-    { dia: 'DOMINGO', rotulo: 'Domingo' },
-    { dia: 'SEGUNDA', rotulo: 'Segunda-feira' },
-    { dia: 'TERCA', rotulo: 'Terça-feira' },
-    { dia: 'QUARTA', rotulo: 'Quarta-feira' },
-    { dia: 'QUINTA', rotulo: 'Quinta-feira' },
-    { dia: 'SEXTA', rotulo: 'Sexta-feira' },
-    { dia: 'SABADO', rotulo: 'Sábado' },
+  /** A semana começa na segunda e fecha no domingo da aula (`js` = índice do Date.getDay()). */
+  private static readonly DIAS: { dia: DiaSemanaLeitura; rotulo: string; js: number }[] = [
+    { dia: 'SEGUNDA', rotulo: 'Segunda-feira', js: 1 },
+    { dia: 'TERCA', rotulo: 'Terça-feira', js: 2 },
+    { dia: 'QUARTA', rotulo: 'Quarta-feira', js: 3 },
+    { dia: 'QUINTA', rotulo: 'Quinta-feira', js: 4 },
+    { dia: 'SEXTA', rotulo: 'Sexta-feira', js: 5 },
+    { dia: 'SABADO', rotulo: 'Sábado', js: 6 },
+    { dia: 'DOMINGO', rotulo: 'Domingo', js: 0 },
   ];
 
   private leiturasVazias(): { dia: DiaSemanaLeitura; rotulo: string; referencia: string }[] {
-    return AulasComponent.DIAS.map((d) => ({ ...d, referencia: '' }));
+    return AulasComponent.DIAS.map((d) => ({ dia: d.dia, rotulo: d.rotulo, referencia: '' }));
   }
 
   /**
-   * Data em que a leitura desse dia é enviada: a última ocorrência do dia da semana
-   * ANTES da data da aula (as leituras preparam a lição).
+   * Data em que a leitura desse dia é enviada: a ocorrência do dia da semana na janela de
+   * 7 dias que TERMINA na aula (segunda anterior → dia da aula).
    */
   dataLeitura(dia: DiaSemanaLeitura): Date | null {
     if (!this.form.data) { return null; }
-    const alvo = AulasComponent.DIAS.findIndex((d) => d.dia === dia);
+    const alvo = AulasComponent.DIAS.find((d) => d.dia === dia)?.js ?? 0;
     const d = new Date(this.form.data + 'T00:00:00');
-    d.setDate(d.getDate() - 1);
     while (d.getDay() !== alvo) { d.setDate(d.getDate() - 1); }
     return d;
   }

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 
 /**
  * Leitura bíblica diária de uma lição: uma referência (ex.: "Salmos 1.1-6") para um dia da
- * semana da <b>semana que antecede</b> a aula. O cadastro é opcional — a aula pode ter de
+ * <b>semana da lição</b> — de segunda até o dia da aula. O cadastro é opcional — a aula pode ter de
  * zero a sete leituras, no máximo uma por dia da semana.
  *
  * <p>{@link #textoCache} guarda o texto bíblico buscado na internet, para não consultar a API
@@ -73,8 +73,8 @@ public class TextoBiblicoAula {
     public LocalDate getEnviadoEm() { return enviadoEm; }
     public void setEnviadoEm(LocalDate enviadoEm) { this.enviadoEm = enviadoEm; }
 
-    /** Data em que esta leitura deve ser enviada (dia da semana anterior à aula). */
+    /** Data em que esta leitura deve ser enviada (dia da semana na janela que fecha na aula). */
     public LocalDate dataDaLeitura() {
-        return diaSemana.dataAntesDe(aula.getData());
+        return diaSemana.dataParaAula(aula.getData());
     }
 }

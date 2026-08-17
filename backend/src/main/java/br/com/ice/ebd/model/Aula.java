@@ -14,7 +14,9 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 @Entity
 @Table(name = "aula")
@@ -82,8 +84,22 @@ public class Aula {
     public LocalDateTime getChamadaCobradaEm() { return chamadaCobradaEm; }
     public void setChamadaCobradaEm(LocalDateTime chamadaCobradaEm) { this.chamadaCobradaEm = chamadaCobradaEm; }
 
-    public List<TextoBiblicoAula> getTextos() { return new ArrayList<>(textos); }
-    public void setTextos(List<TextoBiblicoAula> textos) {
-        this.textos = (textos == null) ? new ArrayList<>() : new ArrayList<>(textos);
+    /**
+     * Leituras em <b>somente leitura</b> — a lista interna não é exposta (nem como cópia, que
+     * daria a falsa impressão de que dá para alterá-la por aqui). Para mexer no cadastro use
+     * {@link #adicionarTexto} / {@link #removerTextosSe}, que mantêm a coleção gerenciada pelo
+     * Hibernate (o mapeamento é por campo, então o getter não interfere na persistência).
+     */
+    public List<TextoBiblicoAula> getTextos() { return Collections.unmodifiableList(textos); }
+
+    /** Inclui a leitura na aula, já com o vínculo dos dois lados. */
+    public void adicionarTexto(TextoBiblicoAula texto) {
+        texto.setAula(this);
+        textos.add(texto);
+    }
+
+    /** Remove as leituras que casam com o filtro (com {@code orphanRemoval}, somem do banco). */
+    public void removerTextosSe(Predicate<TextoBiblicoAula> filtro) {
+        textos.removeIf(filtro);
     }
 }
