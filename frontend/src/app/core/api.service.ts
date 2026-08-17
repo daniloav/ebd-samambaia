@@ -6,7 +6,8 @@ import {
   Aluno, Aniversariante, AlunoRequest, Aula, AulaRequest, AulaAdiarResponse, AulaComplementarRequest, AulaComplementarResponse, Campanha, ChamadaResponse,
   Classe, ClasseRequest, DesafiosResponse, MinhaFrequenciaResponse, NotasProvaResponse, Professor, Prova, ProvaRequest,
   QuizQuestaoEdit, MinhaProva, QuizParaResponder, RespostaIn, ResultadoProva,
-  DashboardResponse, RelatorioGeralResponse, RelatorioPresencaResponse, RelatorioVisitantesResponse,
+  DashboardResponse, RelatorioGeralResponse, RelatorioInativadosResponse, RelatorioMensalResponse,
+  RelatorioPresencaResponse, RelatorioVisitantesResponse,
   BoletimResponse, Auditoria, MeuRanking, RankingTurmasResponse, Requisicao, RequisicaoRequest, Usuario, UsuarioRequest,
   Visitante, VisitanteRequest, UsoResponse,
 } from './models';
@@ -202,6 +203,26 @@ export class ApiService {
     if (fim) params = params.set('fim', fim);
     if (classeId) params = params.set('classeId', classeId);
     return this.http.get<RelatorioVisitantesResponse>(`${this.api}/relatorios/visitantes`, { params });
+  }
+
+  // ---------- Relatório de alunos inativados ----------
+  relatorioInativados(inicio?: string, fim?: string, classeId?: number | null,
+                      incluirReativados = false): Observable<RelatorioInativadosResponse> {
+    let params = new HttpParams();
+    if (inicio) params = params.set('inicio', inicio);
+    if (fim) params = params.set('fim', fim);
+    if (classeId) params = params.set('classeId', classeId);
+    if (incluirReativados) params = params.set('incluirReativados', true);
+    return this.http.get<RelatorioInativadosResponse>(`${this.api}/relatorios/inativados`, { params });
+  }
+
+  // ---------- Relatório mensal de presença (multi-turma) ----------
+  /** classeIds vazio = todas as turmas que o usuário pode ver; mes nulo = ano inteiro. */
+  relatorioMensal(ano: number, mes: number | null, classeIds: number[]): Observable<RelatorioMensalResponse> {
+    let params = new HttpParams().set('ano', ano);
+    if (mes) params = params.set('mes', mes);
+    for (const id of classeIds) { params = params.append('classeIds', id); }
+    return this.http.get<RelatorioMensalResponse>(`${this.api}/relatorios/mensal`, { params });
   }
 
   // ---------- Boletim ----------

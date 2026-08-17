@@ -368,6 +368,59 @@ export interface RelatorioGeralResponse {
   turmas: RelatorioGeralLinha[];
 }
 
+/** Relatório geral de presença por mês (uma, várias ou todas as turmas). */
+export interface RelatorioMensalTotais {
+  aulas: number;
+  aulasComChamada: number;
+  alunosAtivos: number;
+  presencas: number;
+  faltas: number;
+  faltasJustificadas: number;
+  percentualPresenca: number;
+  biblias: number;
+  revistas: number;
+  licoes: number;
+  visitantes: number;
+}
+
+export interface RelatorioMensalTurma {
+  classeId: number;
+  classeNome: string;
+}
+
+export interface RelatorioMensalLinhaTurma {
+  classeId: number;
+  classeNome: string;
+  totais: RelatorioMensalTotais;
+}
+
+export interface RelatorioMensalValorTurma {
+  classeId: number;
+  classeNome: string;
+  presencas: number;
+  faltas: number;
+  percentualPresenca: number;
+}
+
+export interface RelatorioMensalPonto {
+  rotulo: string;
+  data: string;
+  totais: RelatorioMensalTotais;
+  porTurma: RelatorioMensalValorTurma[];
+}
+
+export interface RelatorioMensalResponse {
+  ano: number;
+  mes: number | null;
+  inicio: string;
+  fim: string;
+  periodoLabel: string;
+  turmas: RelatorioMensalTurma[];
+  totais: RelatorioMensalTotais;
+  porTurma: RelatorioMensalLinhaTurma[];
+  serie: RelatorioMensalPonto[];
+}
+
 export interface RelatorioVisitantesItem {
   id: number;
   nome: string;
@@ -384,6 +437,36 @@ export interface RelatorioVisitantesResponse {
   classeNome: string | null;
   total: number;
   itens: RelatorioVisitantesItem[];
+}
+
+export interface RelatorioInativadosItem {
+  alunoId: number;
+  nome: string;
+  turma: string;
+  email: string | null;
+  telefone: string | null;
+  /** Nulo no histórico anterior ao registro de inativações (V30). */
+  inativadoEm: string | null;
+  motivo: 'FALTAS_SEGUIDAS' | 'MANUAL' | 'NAO_REGISTRADO';
+  faltasSeguidas: number | null;
+  inativadoPor: string | null;
+  ultimaPresenca: string | null;
+  /** Preenchido quando o aluno voltou (episódio fechado). */
+  reativadoEm: string | null;
+}
+export interface RelatorioInativadosResponse {
+  inicio: string;
+  fim: string;
+  periodoAberto: boolean;
+  classeId: number | null;
+  classeNome: string | null;
+  total: number;
+  aindaInativos: number;
+  reativados: number;
+  porFaltasSeguidas: number;
+  manuais: number;
+  semDataRegistrada: number;
+  itens: RelatorioInativadosItem[];
 }
 
 export interface BoletimProvaItem {
@@ -645,6 +728,7 @@ export interface ChamadaPrazoUso {
 
 export interface CoberturaTurmaUso {
   turma: string;
-  cobriu: boolean;
+  /** FEITA = chamada lançada; PENDENTE = aula já ocorreu e ninguém lançou; SEM_AULA = sem aula prevista. */
+  situacao: 'FEITA' | 'PENDENTE' | 'SEM_AULA';
   aulaData: string | null;
 }

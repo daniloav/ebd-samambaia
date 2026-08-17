@@ -52,7 +52,7 @@ import { Aniversariante, MinhaFrequenciaResponse } from '../../core/models';
           <div class="card text-center"><div class="muted">Aulas</div><strong style="font-size:1.6rem">{{ d.totalAulas }}</strong></div>
           <div class="card text-center"><div class="muted">Presenças</div><strong style="font-size:1.6rem;color:#2f855a">{{ d.presencas }}</strong></div>
           <div class="card text-center"><div class="muted">Faltas</div><strong style="font-size:1.6rem;color:#c53030">{{ d.faltas }}</strong></div>
-          <div class="card text-center"><div class="muted">Justificadas</div><strong style="font-size:1.6rem;color:#b7791f">{{ d.faltasJustificadas }}</strong></div>
+          <div class="card text-center"><div class="muted">Justificadas</div><strong style="font-size:1.6rem;color:var(--alerta)">{{ d.faltasJustificadas }}</strong></div>
           <div class="card text-center"><div class="muted">Presença</div><strong style="font-size:1.6rem">{{ d.percentualPresenca }}%</strong></div>
         </div>
 

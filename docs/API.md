@@ -85,6 +85,25 @@ Sem parâmetros = todo o histórico. Resposta:
 }
 ```
 
+### GET `/relatorios/inativados?inicio=&fim=&classeId=&incluirReativados=` — A, P
+Alunos **inativados** (histórico `aluno_inativacao`): uma linha por episódio de saída. Sem
+`inicio`/`fim` entram todos, inclusive os episódios **sem data** (histórico anterior à V30);
+com período, só os datados — `semDataRegistrada` diz quantos ficaram de fora. `incluirReativados=true`
+traz também quem já voltou (`reativadoEm` preenchido). Sem `classeId` = geral (**só ADMIN**).
+```json
+{
+  "inicio": "2000-01-01", "fim": "2026-08-16", "periodoAberto": true,
+  "classeId": null, "classeNome": null,
+  "total": 2, "aindaInativos": 2, "reativados": 0,
+  "porFaltasSeguidas": 1, "manuais": 0, "semDataRegistrada": 1,
+  "itens": [
+    { "alunoId": 21, "nome": "Fulano", "turma": "Adultos", "email": null, "telefone": "619...",
+      "inativadoEm": "2026-07-17T23:36:28", "motivo": "FALTAS_SEGUIDAS", "faltasSeguidas": 5,
+      "inativadoPor": "professor", "ultimaPresenca": "2026-06-07", "reativadoEm": null }
+  ]
+}
+```
+
 ### GET `/relatorios/visitantes?inicio=&fim=&classeId=` — A, P
 Visitantes do período. Sem `classeId` = geral (todas as turmas, **só ADMIN**); com `classeId` =
 restrito à turma (professor precisa da turma no seu escopo). Resposta:
@@ -138,6 +157,31 @@ Trimestre 1..4 (Jan-Mar, Abr-Jun, Jul-Set, Out-Dez). Resposta:
   "visitantesTrazidos": 1, "situacao": "Aprovado"
 }
 ```
+
+### GET `/relatorios/mensal?ano=2026&mes=8&classeIds=1&classeIds=2` — A, P
+Relatório geral de presença do mês, consolidando as turmas escolhidas. `mes` vazio = **ano inteiro**;
+`classeIds` vazio = **todas as turmas** que o usuário pode ver (professor só gera das dele — turma fora
+do escopo devolve 403). Aulas **adiadas** ficam de fora.
+
+```json
+{
+  "ano": 2026, "mes": 8, "inicio": "2026-08-01", "fim": "2026-08-31",
+  "periodoLabel": "Agosto de 2026",
+  "turmas": [ { "classeId": 1, "classeNome": "Adultos" } ],
+  "totais": { "aulas": 4, "aulasComChamada": 3, "alunosAtivos": 7, "presencas": 17, "faltas": 11,
+              "faltasJustificadas": 2, "percentualPresenca": 60.71,
+              "biblias": 16, "revistas": 3, "licoes": 4, "visitantes": 1 },
+  "porTurma": [ { "classeId": 1, "classeNome": "Adultos", "totais": { "...": "mesma estrutura" } } ],
+  "serie": [ { "rotulo": "02/08", "data": "2026-08-02",
+               "totais": { "...": "" },
+               "porTurma": [ { "classeId": 1, "classeNome": "Adultos",
+                               "presencas": 5, "faltas": 2, "percentualPresenca": 71.43 } ] } ]
+}
+```
+
+`percentualPresenca` = presenças ÷ (presenças + faltas), ou seja, a base são os registros da chamada.
+`serie` alimenta o gráfico da tela: um ponto por **domingo** quando `mes` vem preenchido, um ponto por
+**mês** quando o relatório é do ano.
 
 ## Administração
 

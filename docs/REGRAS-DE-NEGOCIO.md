@@ -29,6 +29,7 @@
 15. [Campanhas (e-mail em massa)](#15-campanhas-e-mail-em-massa)
 16. [Rotinas automáticas (agendadas)](#16-rotinas-automáticas-agendadas)
 17. [Notificações por e-mail](#17-notificações-por-e-mail)
+18. [Relatório de presença por mês](#18-relatório-de-presença-por-mês)
 
 ---
 
@@ -63,9 +64,23 @@ Fonte: `ChamadaService.inativarPorFaltasSeguidas`.
 - **Uma presença OU uma falta justificada zera a sequência** (quebra a contagem).
 - A verificação só roda para quem **faltou nesta aula** (apenas a falta mais recente pode fechar
   uma sequência).
-- Ao inativar: grava **auditoria**, envia **e-mail** ao aluno (best-effort, respeita o toggle) e
+- Ao inativar: grava **auditoria**, abre um **episódio no histórico** (`aluno_inativacao`, motivo
+  `FALTAS_SEGUIDAS` + nº de faltas), envia **e-mail** ao aluno (best-effort, respeita o toggle) e
   mostra um **alerta no toast** para quem salvou a chamada.
-- Reativar o aluno é manual (edição do cadastro).
+- Reativar o aluno é manual (edição do cadastro) — e **fecha** o episódio aberto (`reativado_em`).
+
+### 2.1 Histórico de inativação (relatório de inativados)
+
+Fonte: `InativacaoService` + `RelatorioInativadosService`.
+
+- Cada saída do aluno vira um **episódio** em `aluno_inativacao`, aberto na inativação e fechado
+  na reativação. Quem sai e volta várias vezes tem várias linhas.
+- Motivos: `FALTAS_SEGUIDAS` (automático), `MANUAL` (marcaram/desmarcaram "ativo" no cadastro) e
+  `NAO_REGISTRADO` (histórico anterior à V30 — sem data).
+- Abrir é **idempotente**: com um episódio já aberto, nada é criado (protege reprocessamento).
+- O relatório (`GET /api/relatorios/inativados`, tela `/relatorio-inativados`) lista os episódios
+  com turma, contato, data, motivo, quem inativou e a **última presença** — sem período entram
+  também os episódios sem data; `incluirReativados` traz quem já voltou.
 
 ---
 
@@ -450,3 +465,22 @@ Eventos que geram e-mail: chamada salva (alunos), chamada pendente (professor, d
 dia da aula), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
 a aluno, nota lançada/quiz corrigido, aniversário, requisição (nova/avaliada/finalizada/cobrança),
 campanhas, recuperação de senha.
+
+---
+
+## 18. Relatório de presença por mês
+
+Fonte: `RelatorioMensalService`. Consolida a presença de um **mês** (ou do **ano inteiro**) para
+**uma, várias ou todas as turmas** escolhidas.
+
+- **Escopo**: ADMIN vê todas as turmas ativas; **professor só as dele** — pedir uma turma fora do
+  escopo devolve **403**. Sem turmas escolhidas, o relatório assume **todas as permitidas**.
+- **Aula adiada não entra** (nem nos totais, nem no gráfico), coerente com o resto do sistema.
+- **`% presença` = presenças ÷ (presenças + faltas)**, isto é, a base são os **registros da chamada**.
+  Uma aula ainda sem chamada não derruba o índice da turma: ela aparece na diferença entre
+  **aulas** e **aulas com chamada**.
+- **Visitantes** vêm do cadastro de visitantes da aula; **faltas justificadas** são o subconjunto
+  das faltas marcadas pelo professor (ver [§3](#3-faltas-justificadas)).
+- **Série do gráfico**: um ponto por **domingo** quando o filtro é um mês; um ponto por **mês**
+  quando é o ano inteiro. Cada ponto traz o consolidado e o valor de cada turma (barras agrupadas).
+- Só leitura — não altera nada. Tela: `/relatorio-mensal` (com export PDF/Excel).

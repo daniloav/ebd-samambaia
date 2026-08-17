@@ -40,7 +40,7 @@ import { exportarExcel, exportarPdf } from '../../core/export.util';
           <div class="card text-center"><div class="muted">Bíblias</div><strong style="font-size:1.6rem">{{ d.totais.biblias }}</strong></div>
           <div class="card text-center"><div class="muted">Revistas</div><strong style="font-size:1.6rem">{{ d.totais.revistas }}</strong></div>
           <div class="card text-center"><div class="muted">Lições</div><strong style="font-size:1.6rem">{{ d.totais.licoes }}</strong></div>
-          <div class="card text-center"><div class="muted">Visitantes</div><strong style="font-size:1.6rem;color:#c9a24b">{{ d.totais.visitantes }}</strong></div>
+          <div class="card text-center"><div class="muted">Visitantes</div><strong style="font-size:1.6rem;color:var(--alerta)">{{ d.totais.visitantes }}</strong></div>
         </div>
 
         <div class="card">

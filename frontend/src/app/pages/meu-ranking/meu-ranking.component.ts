@@ -34,7 +34,7 @@ import { MeuRanking, RankingResumoItem, RankingTurmasResponse } from '../../core
     .turmas .t-pos { width: 34px; text-align: center; font-weight: 800; font-size: 1.15rem; }
     .turmas .t-nome { flex: 1; font-weight: 700; color: var(--titulo); }
     .turmas .t-nome small { display: block; color: var(--cinza-texto); font-size: .78rem; font-weight: 500; }
-    .turmas .t-val { font-weight: 800; color: var(--dourado); text-align: right; }
+    .turmas .t-val { font-weight: 800; color: var(--alerta); text-align: right; }
     .turmas .t-val small { display: block; font-size: .68rem; color: var(--cinza-texto); font-weight: 600; }
     .sua-tag { display: inline-block; font-size: .66rem; font-weight: 800; color: #fff; background: var(--azul);
       border-radius: 999px; padding: .05rem .45rem; margin-left: .4rem; }
@@ -68,7 +68,7 @@ import { MeuRanking, RankingResumoItem, RankingTurmasResponse } from '../../core
           <div class="info">
             <b>{{ m.eu ? 'Você' : m.nome }} · {{ m.valor }} pts</b>
             <span>{{ m.detalhe }}</span>
-            @if (m.posicao <= 3) { <span style="color:var(--dourado);font-weight:700">🎉 Você está no pódio!</span> }
+            @if (m.posicao <= 3) { <span style="color:var(--alerta);font-weight:700">🎉 Você está no pódio!</span> }
           </div>
         </div>
       } @else {
