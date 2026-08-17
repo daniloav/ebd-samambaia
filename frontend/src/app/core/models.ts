@@ -368,6 +368,59 @@ export interface RelatorioGeralResponse {
   turmas: RelatorioGeralLinha[];
 }
 
+/** Relatório geral de presença por mês (uma, várias ou todas as turmas). */
+export interface RelatorioMensalTotais {
+  aulas: number;
+  aulasComChamada: number;
+  alunosAtivos: number;
+  presencas: number;
+  faltas: number;
+  faltasJustificadas: number;
+  percentualPresenca: number;
+  biblias: number;
+  revistas: number;
+  licoes: number;
+  visitantes: number;
+}
+
+export interface RelatorioMensalTurma {
+  classeId: number;
+  classeNome: string;
+}
+
+export interface RelatorioMensalLinhaTurma {
+  classeId: number;
+  classeNome: string;
+  totais: RelatorioMensalTotais;
+}
+
+export interface RelatorioMensalValorTurma {
+  classeId: number;
+  classeNome: string;
+  presencas: number;
+  faltas: number;
+  percentualPresenca: number;
+}
+
+export interface RelatorioMensalPonto {
+  rotulo: string;
+  data: string;
+  totais: RelatorioMensalTotais;
+  porTurma: RelatorioMensalValorTurma[];
+}
+
+export interface RelatorioMensalResponse {
+  ano: number;
+  mes: number | null;
+  inicio: string;
+  fim: string;
+  periodoLabel: string;
+  turmas: RelatorioMensalTurma[];
+  totais: RelatorioMensalTotais;
+  porTurma: RelatorioMensalLinhaTurma[];
+  serie: RelatorioMensalPonto[];
+}
+
 export interface RelatorioVisitantesItem {
   id: number;
   nome: string;
