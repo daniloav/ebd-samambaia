@@ -325,6 +325,18 @@ Fonte: `AulaService`.
 - O **professor** da aula, se informado, precisa ser um usuário com `ehProfessor` (senão 400).
 - Excluir a aula remove as presenças em cascata.
 
+**Lembrete de chamada pendente** (`LembreteChamadaService`):
+
+- **No dia da aula**, se a aula é **válida** (não adiada) e ainda **não tem chamada registrada**
+  (nenhuma presença gravada), o professor recebe um **e-mail de hora em hora a partir das 12h**
+  (BRT, até as 21h) — e para assim que a chamada for salva.
+- **Destinatário**: o **professor da aula**; se a aula não tem professor definido, todos os
+  **professores ativos da turma** (com e-mail).
+- Turma **sem aluno ativo** não gera cobrança; **aula adiada** também não (ela sai de tudo).
+- **Dedup**: `aula.chamada_cobrada_em` guarda o último disparo — no máximo **1 e-mail por aula
+  por hora**, mesmo que o batch rode duas vezes. Sem recuperação de "misfire": se a VM estiver
+  fora do ar numa hora, aquele lembrete não é reenviado (o da hora seguinte sai normalmente).
+
 ---
 
 ## 14. Requisições da tesouraria
@@ -434,6 +446,7 @@ Fonte: `NotificacaoService` + `EmailDispatcher`.
 - Todo envio é **best-effort**: falha de e-mail nunca quebra a operação de negócio (salvar
   chamada, cadastrar visitante etc.).
 
-Eventos que geram e-mail: chamada salva (alunos), aluno inativado, visitante (boas-vindas + aviso
-aos professores), visitante promovido a aluno, nota lançada/quiz corrigido, aniversário,
-requisição (nova/avaliada/finalizada/cobrança), campanhas, recuperação de senha.
+Eventos que geram e-mail: chamada salva (alunos), chamada pendente (professor, de hora em hora no
+dia da aula), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
+a aluno, nota lançada/quiz corrigido, aniversário, requisição (nova/avaliada/finalizada/cobrança),
+campanhas, recuperação de senha.

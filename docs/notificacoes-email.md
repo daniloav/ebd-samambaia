@@ -14,6 +14,12 @@ traz a presença e os itens da aula (Bíblia, revista, lição, visitante).
   alunos ativos com e-mail** (ignora o opt-in). Teste: `POST /api/admin/aniversarios/executar`.
 - **Desempenho na prova** — botão "Lançar e notificar" na tela de notas → nota/aproveitamento ao
   aluno (respeita opt-in). `POST /api/provas/{id}/notas/notificar`.
+- **Chamada pendente** — rotina `LembreteChamadaService` (`@Scheduled`, de hora em hora das **12h às
+  21h** BRT): no dia da aula, se a aula é válida (**não adiada**) e ainda **não tem chamada
+  registrada**, cobra o **professor da aula** (ou, se ela não tem professor definido, os professores
+  ativos da turma). Repete a cada hora até a chamada ser salva; dedup por `aula.chamada_cobrada_em`
+  (1 e-mail por aula por hora). Turma sem aluno ativo não gera cobrança. Teste:
+  `POST /api/admin/lembretes-chamada/executar`. Cron configurável em `ebd.lembrete-chamada.cron`.
 - **Opt-in por aluno:** no cadastro do aluno há o campo *e-mail* e a opção
   *"Receber alertas de chamada por e-mail"* (LGPD — só enviamos a quem consentiu).
 - **Migration:** `V4__aluno_email_notificacoes.sql` (colunas `email` e `recebe_notificacoes`).
