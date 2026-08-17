@@ -82,6 +82,8 @@ public class Aula {
     public LocalDateTime getChamadaCobradaEm() { return chamadaCobradaEm; }
     public void setChamadaCobradaEm(LocalDateTime chamadaCobradaEm) { this.chamadaCobradaEm = chamadaCobradaEm; }
 
-    public List<TextoBiblicoAula> getTextos() { return textos; }
-    public void setTextos(List<TextoBiblicoAula> textos) { this.textos = textos; }
+    public List<TextoBiblicoAula> getTextos() { return new ArrayList<>(textos); }
+    public void setTextos(List<TextoBiblicoAula> textos) {
+        this.textos = (textos == null) ? new ArrayList<>() : new ArrayList<>(textos);
+    }
 }
