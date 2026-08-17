@@ -356,12 +356,13 @@ Fonte: `AulaService`.
 
 - Cada aula pode ter, **opcionalmente**, uma referência bíblica por **dia da semana** (no máximo
   uma por dia; unique `(aula_id, dia_semana)`). Cadastro no próprio formulário da aula.
-- As leituras são de **preparação**: pertencem à **semana que antecede** a aula. A data de uma
-  leitura é a **última ocorrência daquele dia da semana antes da aula** — para a aula de domingo
-  23/08, segunda = 17/08 e sábado = 22/08 (o "domingo" da leitura é o domingo anterior, 16/08).
-- **Todo dia às 12h (BRT)** sai a leitura do dia para os **alunos da turma** com opt-in e e-mail
-  (`recebeNotificacoes`). **Aula adiada não envia**; aulas fora da janela dos próximos 7 dias
-  também não.
+- A **semana começa na segunda e termina no domingo**. As leituras são de **preparação**: a semana
+  da lição são os **7 dias que terminam no dia da aula**. Para a aula de domingo 23/08, segunda =
+  17/08, sábado = 22/08 e domingo = **23/08, o próprio dia da aula** (o e-mail das 8h chega antes
+  da classe).
+- **Todo dia às 8h (BRT)** sai a leitura do dia para os **alunos da turma** com opt-in e e-mail
+  (`recebeNotificacoes`). **Aula adiada não envia**; aulas cuja semana de lição ainda não começou
+  (data > hoje + 6) também não.
 - **Texto bíblico no e-mail**: o texto é buscado em **bible-api.com** (tradução *João Ferreira de
   Almeida*, domínio público, sem chave) e fica em **cache** na própria leitura. A busca é
   best-effort: se a API falhar ou não reconhecer a referência, o e-mail sai **só com a referência**.
@@ -464,7 +465,7 @@ estiver fora do ar no horário, aquele disparo não é reenviado).
 | **Aniversário** (`AniversarioService`) | **12:00** BRT | e-mail de feliz aniversário aos alunos com e-mail que fazem aniversário no dia | — |
 | **Cobrança de nota** (`CobrancaNotaService`) | **09:00** BRT | cobra nota fiscal de requisições APROVADAS sem nota | por dia (`notaCobradaEm`) |
 | **Lembrete de chamada** (`LembreteChamadaService`) | **12:00–21:00** BRT, de hora em hora | cobra do professor a chamada do dia ainda não registrada | por hora (`chamadaCobradaEm`) |
-| **Leitura diária** (`LeituraDiariaService`) | **12:00** BRT | envia aos alunos da turma a leitura bíblica do dia (com o texto, quando a busca online responde) | por dia (`enviadoEm`) |
+| **Leitura diária** (`LeituraDiariaService`) | **08:00** BRT | envia aos alunos da turma a leitura bíblica do dia (com o texto, quando a busca online responde) | por dia (`enviadoEm`) |
 
 Todos os cron são configuráveis (`ebd.aniversario.cron`, `ebd.cobranca-nota.cron`,
 `ebd.lembrete-chamada.cron`, `ebd.leitura-diaria.cron`; `off` desliga). A busca do texto bíblico
@@ -487,7 +488,7 @@ Fonte: `NotificacaoService` + `EmailDispatcher`.
   chamada, cadastrar visitante etc.).
 
 Eventos que geram e-mail: chamada salva (alunos), chamada pendente (professor, de hora em hora no
-dia da aula), leitura bíblica do dia (alunos, 12h), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
+dia da aula), leitura bíblica do dia (alunos, 8h), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
 a aluno, nota lançada/quiz corrigido, aniversário, requisição (nova/avaliada/finalizada/cobrança),
 campanhas, recuperação de senha.
 

@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Leitura bíblica diária: às 12h sai o texto do dia da semana corrente, referente às aulas
- * da <b>semana seguinte</b> (as leituras antecedem a lição).
+ * Leitura bíblica diária: às 8h sai o texto do dia da semana corrente, referente às aulas cuja
+ * semana de lição (segunda → dia da aula) contém hoje.
  *
  * <p>Como o batch varre o banco inteiro, cada caso usa uma referência única e as asserções
  * olham só para ela. As datas usam o fuso do serviço (BRT), não o do sistema — o CI roda em UTC.
@@ -54,7 +54,7 @@ class LeituraDiariaTest {
         Classe c = fx.classe("Turma Leitura A");
         fx.aluno("Aluno Opt-in A", c, "leitura.a@ebd.test", true);
         fx.aluno("Aluno sem opt-in A", c, "leitura.sem@ebd.test", false);
-        // Aula daqui a 3 dias: a leitura de hoje pertence à semana que a antecede.
+        // Aula daqui a 3 dias: hoje está dentro da semana da lição dela.
         Aula aula = fx.aula(c, hoje().plusDays(3));
         TextoBiblicoAula leitura = fx.leitura(aula, diaDeHoje(), "Salmos 1.1-6 [teste A]");
 
@@ -79,7 +79,7 @@ class LeituraDiariaTest {
         aulaAdiada.setAdiada(true);
         TextoBiblicoAula leituraAdiada = fx.leitura(aulaAdiada, diaDeHoje(), "João 3.16 [teste B adiada]");
 
-        // aula fora da janela de 7 dias — a leitura ainda não é desta semana
+        // aula fora da janela (a semana da lição dela ainda não começou)
         Classe longe = fx.classe("Turma Leitura C");
         fx.aluno("Aluno C", longe, "leitura.c@ebd.test", true);
         Aula aulaLonge = fx.aula(longe, hoje().plusDays(10));
@@ -102,12 +102,18 @@ class LeituraDiariaTest {
     }
 
     @Test
-    void dataDaLeituraEhODiaDaSemanaQueAntecedeAAula() {
+    void semanaDaLicaoVaiDeSegundaAteODiaDaAula() {
         LocalDate domingo = LocalDate.of(2026, 8, 23); // domingo
-        assertEquals(LocalDate.of(2026, 8, 17), DiaSemanaLeitura.SEGUNDA.dataAntesDe(domingo));
-        assertEquals(LocalDate.of(2026, 8, 22), DiaSemanaLeitura.SABADO.dataAntesDe(domingo));
-        assertEquals(LocalDate.of(2026, 8, 16), DiaSemanaLeitura.DOMINGO.dataAntesDe(domingo),
-                "domingo da leitura é o domingo anterior, nunca o dia da própria aula");
+        assertEquals(LocalDate.of(2026, 8, 17), DiaSemanaLeitura.SEGUNDA.dataParaAula(domingo));
+        assertEquals(LocalDate.of(2026, 8, 22), DiaSemanaLeitura.SABADO.dataParaAula(domingo));
+        assertEquals(domingo, DiaSemanaLeitura.DOMINGO.dataParaAula(domingo),
+                "a semana fecha no domingo da própria aula");
+
+        // Aula fora de domingo: a janela continua sendo os 7 dias que terminam nela.
+        LocalDate quarta = LocalDate.of(2026, 8, 19);
+        assertEquals(quarta, DiaSemanaLeitura.QUARTA.dataParaAula(quarta));
+        assertEquals(LocalDate.of(2026, 8, 17), DiaSemanaLeitura.SEGUNDA.dataParaAula(quarta));
+        assertEquals(LocalDate.of(2026, 8, 16), DiaSemanaLeitura.DOMINGO.dataParaAula(quarta));
     }
 
     @Test

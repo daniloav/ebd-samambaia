@@ -16,11 +16,11 @@ import java.util.List;
 import org.jboss.logging.Logger;
 
 /**
- * Leitura bíblica do dia: todo dia às <b>12h (BRT)</b>, cada leitura cadastrada para o dia da
+ * Leitura bíblica do dia: todo dia às <b>8h (BRT)</b>, cada leitura cadastrada para o dia da
  * semana de hoje é enviada por e-mail aos alunos da turma (ativos, com e-mail e opt-in).
  *
- * <p>As leituras são da <b>semana que antecede</b> a aula, então hoje saem as leituras das aulas
- * dos próximos 7 dias — ver {@link br.com.ice.ebd.repository.TextoBiblicoAulaRepository#paraEnviarEm}.
+ * <p>A semana da lição vai de <b>segunda até o dia da aula</b>, então hoje saem as leituras das
+ * aulas de hoje até daqui a 6 dias — ver {@link br.com.ice.ebd.repository.TextoBiblicoAulaRepository#paraEnviarEm}.
  * Aula adiada não envia nada. O texto bíblico vem do {@link BibliaOnlineService} e fica em cache
  * na própria leitura; se a busca falhar, o e-mail sai só com a referência.
  *
@@ -38,8 +38,8 @@ public class LeituraDiariaService {
     @Inject BibliaOnlineService biblia;
     @Inject NotificacaoService notificacao;
 
-    /** Disparo automático diário, às 12:00 (BRT). */
-    @Scheduled(cron = "${ebd.leitura-diaria.cron:0 0 12 * * ?}", timeZone = "America/Sao_Paulo")
+    /** Disparo automático diário, às 08:00 (BRT). */
+    @Scheduled(cron = "${ebd.leitura-diaria.cron:0 0 8 * * ?}", timeZone = "America/Sao_Paulo")
     void agendado() {
         Resultado r = enviarDoDia();
         if (r.leituras() > 0) {
