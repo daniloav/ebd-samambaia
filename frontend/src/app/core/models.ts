@@ -698,6 +698,7 @@ export interface ChamadaPrazoUso {
 
 export interface CoberturaTurmaUso {
   turma: string;
-  cobriu: boolean;
+  /** FEITA = chamada lançada; PENDENTE = aula já ocorreu e ninguém lançou; SEM_AULA = sem aula prevista. */
+  situacao: 'FEITA' | 'PENDENTE' | 'SEM_AULA';
   aulaData: string | null;
 }
