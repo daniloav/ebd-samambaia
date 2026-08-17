@@ -110,6 +110,12 @@ export const routes: Routes = [
           import('./pages/relatorio-visitantes/relatorio-visitantes.component').then((m) => m.RelatorioVisitantesComponent),
       },
       {
+        path: 'relatorio-inativados',
+        canActivate: [naoAlunoGuard],
+        loadComponent: () =>
+          import('./pages/relatorio-inativados/relatorio-inativados.component').then((m) => m.RelatorioInativadosComponent),
+      },
+      {
         path: 'boletim',
         canActivate: [naoAlunoGuard],
         loadComponent: () => import('./pages/boletim/boletim.component').then((m) => m.BoletimComponent),

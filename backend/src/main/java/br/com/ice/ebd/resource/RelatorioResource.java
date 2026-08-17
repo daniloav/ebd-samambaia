@@ -1,15 +1,18 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.RelatorioGeralResponse;
+import br.com.ice.ebd.dto.RelatorioInativadosResponse;
 import br.com.ice.ebd.dto.RelatorioMensalResponse;
 import br.com.ice.ebd.dto.RelatorioPresencaResponse;
 import br.com.ice.ebd.dto.RelatorioVisitantesResponse;
 import br.com.ice.ebd.service.RelatorioGeralService;
+import br.com.ice.ebd.service.RelatorioInativadosService;
 import br.com.ice.ebd.service.RelatorioMensalService;
 import br.com.ice.ebd.service.RelatorioService;
 import br.com.ice.ebd.service.RelatorioVisitantesService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -32,6 +35,9 @@ public class RelatorioResource {
     RelatorioVisitantesService visitantesService;
 
     @Inject
+    RelatorioInativadosService inativadosService;
+
+    @Inject
     RelatorioMensalService mensalService;
 
     @GET
@@ -50,6 +56,21 @@ public class RelatorioResource {
     @RolesAllowed("ADMIN")
     public RelatorioGeralResponse geral(@QueryParam("data") LocalDate data) {
         return geralService.gerarDoDia(data);
+    }
+
+    /**
+     * Relatório de alunos inativados. Sem início/fim entram todos os episódios, inclusive os
+     * sem data (histórico anterior ao registro). {@code incluirReativados} traz também quem voltou.
+     */
+    @GET
+    @Path("/inativados")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public RelatorioInativadosResponse inativados(
+            @QueryParam("inicio") LocalDate inicio,
+            @QueryParam("fim") LocalDate fim,
+            @QueryParam("classeId") Long classeId,
+            @QueryParam("incluirReativados") @DefaultValue("false") boolean incluirReativados) {
+        return inativadosService.gerar(inicio, fim, classeId, incluirReativados);
     }
 
     /**

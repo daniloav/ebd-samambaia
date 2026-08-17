@@ -5,6 +5,7 @@ import br.com.ice.ebd.dto.AlunoResponse;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.AcaoAuditoria;
 import br.com.ice.ebd.model.EntidadeAuditoria;
+import br.com.ice.ebd.model.MotivoInativacao;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -34,6 +35,9 @@ public class AlunoService {
     @Inject
     AuditoriaService auditoria;
 
+    @Inject
+    InativacaoService inativacao;
+
     public List<AlunoResponse> listar(Long classeId, boolean apenasAtivos) {
         escopo.assertClasse(classeId);
         List<Aluno> alunos;
@@ -60,6 +64,9 @@ public class AlunoService {
         repository.persist(a);
         repository.flush();               // garante o id antes de vincular o login
         acessoAluno.sincronizarAcesso(a); // todo aluno cadastrado ganha acesso (senha padrão + troca no 1º login)
+        if (!a.isAtivo()) {
+            inativacao.registrarInativacao(a, MotivoInativacao.MANUAL, null); // cadastrado já inativo
+        }
         if (req.login() != null && !req.login().isBlank()) {
             acessoAluno.definirLogin(a.getId(), req.login()); // login customizado (senão fica o automático)
         }
@@ -71,7 +78,14 @@ public class AlunoService {
     public AlunoResponse atualizar(Long id, AlunoRequest req) {
         Aluno a = obter(id);
         escopo.assertClasse(a.getClasse().getId());
+        boolean estavaAtivo = a.isAtivo();
         aplicar(a, req);
+        // Marcar/desmarcar "ativo" no cadastro abre ou fecha um episódio no histórico de inativação.
+        if (estavaAtivo && !a.isAtivo()) {
+            inativacao.registrarInativacao(a, MotivoInativacao.MANUAL, null);
+        } else if (!estavaAtivo && a.isAtivo()) {
+            inativacao.registrarReativacao(a);
+        }
         acessoAluno.sincronizarAcesso(a);
         if (req.login() != null && !req.login().isBlank()) {
             acessoAluno.definirLogin(a.getId(), req.login()); // troca o login se informado (e diferente)

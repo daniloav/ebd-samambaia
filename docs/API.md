@@ -85,6 +85,25 @@ Sem parâmetros = todo o histórico. Resposta:
 }
 ```
 
+### GET `/relatorios/inativados?inicio=&fim=&classeId=&incluirReativados=` — A, P
+Alunos **inativados** (histórico `aluno_inativacao`): uma linha por episódio de saída. Sem
+`inicio`/`fim` entram todos, inclusive os episódios **sem data** (histórico anterior à V30);
+com período, só os datados — `semDataRegistrada` diz quantos ficaram de fora. `incluirReativados=true`
+traz também quem já voltou (`reativadoEm` preenchido). Sem `classeId` = geral (**só ADMIN**).
+```json
+{
+  "inicio": "2000-01-01", "fim": "2026-08-16", "periodoAberto": true,
+  "classeId": null, "classeNome": null,
+  "total": 2, "aindaInativos": 2, "reativados": 0,
+  "porFaltasSeguidas": 1, "manuais": 0, "semDataRegistrada": 1,
+  "itens": [
+    { "alunoId": 21, "nome": "Fulano", "turma": "Adultos", "email": null, "telefone": "619...",
+      "inativadoEm": "2026-07-17T23:36:28", "motivo": "FALTAS_SEGUIDAS", "faltasSeguidas": 5,
+      "inativadoPor": "professor", "ultimaPresenca": "2026-06-07", "reativadoEm": null }
+  ]
+}
+```
+
 ### GET `/relatorios/visitantes?inicio=&fim=&classeId=` — A, P
 Visitantes do período. Sem `classeId` = geral (todas as turmas, **só ADMIN**); com `classeId` =
 restrito à turma (professor precisa da turma no seu escopo). Resposta:

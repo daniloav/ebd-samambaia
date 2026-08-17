@@ -64,9 +64,23 @@ Fonte: `ChamadaService.inativarPorFaltasSeguidas`.
 - **Uma presença OU uma falta justificada zera a sequência** (quebra a contagem).
 - A verificação só roda para quem **faltou nesta aula** (apenas a falta mais recente pode fechar
   uma sequência).
-- Ao inativar: grava **auditoria**, envia **e-mail** ao aluno (best-effort, respeita o toggle) e
+- Ao inativar: grava **auditoria**, abre um **episódio no histórico** (`aluno_inativacao`, motivo
+  `FALTAS_SEGUIDAS` + nº de faltas), envia **e-mail** ao aluno (best-effort, respeita o toggle) e
   mostra um **alerta no toast** para quem salvou a chamada.
-- Reativar o aluno é manual (edição do cadastro).
+- Reativar o aluno é manual (edição do cadastro) — e **fecha** o episódio aberto (`reativado_em`).
+
+### 2.1 Histórico de inativação (relatório de inativados)
+
+Fonte: `InativacaoService` + `RelatorioInativadosService`.
+
+- Cada saída do aluno vira um **episódio** em `aluno_inativacao`, aberto na inativação e fechado
+  na reativação. Quem sai e volta várias vezes tem várias linhas.
+- Motivos: `FALTAS_SEGUIDAS` (automático), `MANUAL` (marcaram/desmarcaram "ativo" no cadastro) e
+  `NAO_REGISTRADO` (histórico anterior à V30 — sem data).
+- Abrir é **idempotente**: com um episódio já aberto, nada é criado (protege reprocessamento).
+- O relatório (`GET /api/relatorios/inativados`, tela `/relatorio-inativados`) lista os episódios
+  com turma, contato, data, motivo, quem inativou e a **última presença** — sem período entram
+  também os episódios sem data; `incluirReativados` traz quem já voltou.
 
 ---
 
