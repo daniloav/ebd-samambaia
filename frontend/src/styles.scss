@@ -6,6 +6,10 @@
   --azul-claro: #2c5282;
   --dourado: #c9a24b;
   --dourado-claro: #e0c884;
+  /* Tons legíveis como TEXTO pequeno: as cores de marca (--dourado, --verde) só
+     alcançam o contraste AA (4,5:1) em fundo/borda ou em texto grande. */
+  --alerta: #8a5a00;
+  --verde-texto: #276749;
   --verde: #2f855a;
   --vermelho: #c53030;
   --cinza-bg: #f4f6f9;
@@ -183,6 +187,8 @@ input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color:
    Modo escuro — override das variáveis (auto pelo sistema + toggle)
    ============================================================ */
 @mixin tema-escuro {
+  --alerta: #f0b429;
+  --verde-texto: #68d391;
   --cinza-bg: #12161c;
   --superficie: #1e2530;
   --superficie-2: #262f3d;

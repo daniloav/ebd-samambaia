@@ -23,8 +23,8 @@ interface Categoria {
             border-radius: 10px; margin-bottom: 1rem; }
     .abas button { border: none; background: transparent; padding: .5rem 1.1rem; border-radius: 8px;
                    font-weight: 700; cursor: pointer; color: var(--cinza-texto); font-size: .92rem; }
-    .abas button.ativa { background: #fff; color: var(--azul); box-shadow: var(--sombra); }
-    .cat { background: #fff; border-radius: var(--raio); box-shadow: var(--sombra);
+    .abas button.ativa { background: var(--superficie); color: var(--azul); box-shadow: var(--sombra); }
+    .cat { background: var(--superficie); border-radius: var(--raio); box-shadow: var(--sombra);
            padding: 1.25rem; border-top: 3px solid var(--dourado); }
     .cat h3 { display: flex; align-items: center; gap: .5rem; font-size: 1.05rem; }
     .lista { list-style: none; margin: .75rem 0 0; padding: 0; }
@@ -38,16 +38,16 @@ interface Categoria {
     .valor { font-weight: 800; color: var(--azul); font-size: 1.1rem; }
     .vazio { color: var(--cinza-texto); font-size: .88rem; padding: .5rem 0; }
     .topo { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-    .topo .box { background: #fff; border-radius: 8px; box-shadow: var(--sombra); padding: .7rem 1.1rem; }
+    .topo .box { background: var(--superficie); border-radius: 8px; box-shadow: var(--sombra); padding: .7rem 1.1rem; }
     .topo b { color: var(--azul); }
 
     /* Classificação geral (destaque) */
-    .geral-card { background: #fff; border-radius: var(--raio); box-shadow: var(--sombra-md);
+    .geral-card { background: var(--superficie); border-radius: var(--raio); box-shadow: var(--sombra-md);
                   padding: 1.4rem 1.5rem; margin-bottom: 1.5rem; border-top: 4px solid var(--dourado); }
     .geral-card h3 { font-size: 1.25rem; margin-bottom: .1rem; display: flex; gap: .5rem; align-items: center; }
     .muted-sm { color: var(--cinza-texto); font-size: .82rem; margin: 0 0 .6rem; }
-    .lin-geral .valor { color: var(--dourado); }
-    .lin-geral.top1 { background: #fffbeb; border-radius: 8px; }
+    .lin-geral .valor { color: var(--alerta); }
+    .lin-geral.top1 { background: rgba(201, 162, 75, .14); border-radius: 8px; }
     .valor small { font-size: .7rem; color: var(--cinza-texto); font-weight: 600; }
     .subtitulo { margin: 0 0 1rem; color: var(--cinza-texto); font-size: .9rem; }
   `],
