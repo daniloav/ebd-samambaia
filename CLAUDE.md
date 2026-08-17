@@ -166,18 +166,22 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 - 📖 **Leituras bíblicas diárias da lição (2026-08-17)** — a revista traz um texto por dia da semana
   para preparar a lição, e isso não existia no sistema. Agora o cadastro da aula tem um bloco
-  **opcional** com uma referência por dia (domingo→sábado, no máximo uma por dia): migration **V31**
+  **opcional** com uma referência por dia (segunda→domingo, no máximo uma por dia): migration **V31**
   (`aula_texto_biblico`, unique `(aula_id, dia_semana)`), com `enviado_em` (dedup) e `texto_cache`.
-  As leituras são de **preparação** — pertencem à **semana que antecede** a aula (aula de domingo
-  23/08 → segunda 17/08 … sábado 22/08), e a tela mostra a data calculada ao lado de cada dia.
-  **Todo dia às 12h (BRT)** o `LeituraDiariaService` manda a leitura do dia aos alunos da turma com
-  opt-in (aula **adiada** não envia; `AulaRepository`/`TextoBiblicoAulaRepository.paraEnviarEm` casa
-  o dia da semana de hoje com as aulas dos próximos 7 dias). O e-mail leva **o texto bíblico junto**:
+  A semana **começa na segunda e fecha no domingo**: as leituras são de **preparação** e a semana da
+  lição são os 7 dias que **terminam no dia da aula** (aula de domingo 23/08 → segunda 17/08 … sábado
+  22/08 … domingo 23/08, o próprio dia da classe); a tela mostra a data calculada ao lado de cada dia.
+  **Todo dia às 8h (BRT)** o `LeituraDiariaService` manda a leitura do dia aos alunos da turma com
+  opt-in (aula **adiada** não envia; `TextoBiblicoAulaRepository.paraEnviarEm` casa o dia da semana
+  de hoje com as aulas de hoje até daqui a 6 dias). O e-mail leva **o texto bíblico junto**:
   `BibliaOnlineService` busca em **bible-api.com** (Almeida, domínio público, sem chave), normalizando
   a notação brasileira ("Sl 1.1-6" → "Salmos 1:1-6", "1Jo 4.7" → "1 João 4:7"; o acento separa **Jó**
   de **Jo**) e guardando em cache; se a API falhar, sai só a referência (best-effort, nunca quebra).
   Adiar a aula leva as leituras para a **reposição**. Disparo manual: `POST /api/admin/leituras-diarias/executar`
-  (ADMIN). Validado: `mvn test` (**89** testes, novo `LeituraDiariaTest` com 5 casos — envio + dedup,
+  (ADMIN). A coleção `Aula.textos` é exposta **só para leitura** (`getTextos` devolve view
+  imutável; quem altera usa `adicionarTexto`/`removerTextosSe`) — um autofix do CodeQL que fazia o
+  getter devolver **cópia** zerava o cadastro em silêncio, e agora há teste do caminho real da tela
+  (`AulaService.criar/atualizar`). Validado: `mvn test` (**90** testes, `LeituraDiariaTest` com 6 casos — envio + dedup,
   aula adiada/fora da semana/outro dia, cálculo da data, normalização da referência e parse da API),
   `ng build`, **e2e 37/37** (regressão + axe) e smoke ponta-a-ponta contra Postgres real (V31 migrou,
   aula criada com leituras, e-mail saiu com o Salmo 1 em Almeida, 2º disparo no dia não reenviou).

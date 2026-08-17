@@ -16,12 +16,12 @@ public class TextoBiblicoAulaRepository implements PanacheRepository<TextoBiblic
 
     /**
      * Leituras que devem ser enviadas <b>hoje</b>: as do dia da semana de hoje cujas aulas
-     * acontecem nos próximos 7 dias (a leitura pertence à semana que antecede a aula), com a
-     * aula ainda válida (não adiada) e sem envio registrado hoje (dedup).
+     * acontecem de hoje até daqui a 6 dias (a semana da lição vai de segunda até o dia da aula),
+     * com a aula ainda válida (não adiada) e sem envio registrado hoje (dedup).
      *
      * <p>Para uma data {@code hoje}, existe exatamente uma ocorrência do dia da semana de hoje
-     * na janela que antecede cada aula entre {@code hoje+1} e {@code hoje+7} — por isso o
-     * intervalo já resolve o casamento leitura ↔ dia, sem aritmética adicional.
+     * na janela de cada aula entre {@code hoje} e {@code hoje+6} — por isso o intervalo já
+     * resolve o casamento leitura ↔ dia, sem aritmética adicional.
      */
     public List<TextoBiblicoAula> paraEnviarEm(LocalDate hoje) {
         return getEntityManager().createQuery(
@@ -32,8 +32,8 @@ public class TextoBiblicoAulaRepository implements PanacheRepository<TextoBiblic
                                 + "and (t.enviadoEm is null or t.enviadoEm <> :hoje) "
                                 + "order by a.data, t.id", TextoBiblicoAula.class)
                 .setParameter("dia", DiaSemanaLeitura.de(hoje.getDayOfWeek()))
-                .setParameter("de", hoje.plusDays(1))
-                .setParameter("ate", hoje.plusDays(7))
+                .setParameter("de", hoje)
+                .setParameter("ate", hoje.plusDays(6))
                 .setParameter("hoje", hoje)
                 .getResultList();
     }

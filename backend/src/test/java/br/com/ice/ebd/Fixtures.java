@@ -65,11 +65,10 @@ public class Fixtures {
     /** Leitura bíblica diária da lição (dia da semana da semana que antecede a aula). */
     public TextoBiblicoAula leitura(Aula aula, DiaSemanaLeitura dia, String referencia) {
         TextoBiblicoAula t = new TextoBiblicoAula();
-        t.setAula(aula);
         t.setDiaSemana(dia);
         t.setReferencia(referencia);
+        aula.adicionarTexto(t);
         textoRepo.persist(t);
-        aula.getTextos().add(t);
         return t;
     }
 
