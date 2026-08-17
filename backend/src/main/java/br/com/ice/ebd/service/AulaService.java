@@ -208,17 +208,16 @@ public class AulaService {
             }
             desejados.put(t.diaSemana(), t.referencia().trim());
         }
-        a.getTextos().removeIf(existente -> !desejados.containsKey(existente.getDiaSemana()));
+        a.removerTextosSe(existente -> !desejados.containsKey(existente.getDiaSemana()));
         for (Map.Entry<DiaSemanaLeitura, String> e : desejados.entrySet()) {
             TextoBiblicoAula atual = a.getTextos().stream()
                     .filter(x -> x.getDiaSemana() == e.getKey())
                     .findFirst().orElse(null);
             if (atual == null) {
                 TextoBiblicoAula novo = new TextoBiblicoAula();
-                novo.setAula(a);
                 novo.setDiaSemana(e.getKey());
                 novo.setReferencia(e.getValue());
-                a.getTextos().add(novo);
+                a.adicionarTexto(novo);
             } else if (!e.getValue().equals(atual.getReferencia())) {
                 atual.setReferencia(e.getValue());
                 atual.setTextoCache(null);
@@ -233,12 +232,11 @@ public class AulaService {
     private void copiarTextos(Aula origem, Aula destino) {
         for (TextoBiblicoAula t : origem.getTextos()) {
             TextoBiblicoAula copia = new TextoBiblicoAula();
-            copia.setAula(destino);
             copia.setDiaSemana(t.getDiaSemana());
             copia.setReferencia(t.getReferencia());
             copia.setTextoCache(t.getTextoCache());
             copia.setTextoCacheEm(t.getTextoCacheEm());
-            destino.getTextos().add(copia);
+            destino.adicionarTexto(copia);
         }
     }
 

@@ -1,18 +1,25 @@
 package br.com.ice.ebd;
 
+import br.com.ice.ebd.dto.AulaRequest;
+import br.com.ice.ebd.dto.AulaResponse;
+import br.com.ice.ebd.dto.TextoBiblicoRequest;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.model.DiaSemanaLeitura;
 import br.com.ice.ebd.model.TextoBiblicoAula;
 import br.com.ice.ebd.service.BibliaOnlineService;
+import br.com.ice.ebd.repository.TextoBiblicoAulaRepository;
+import br.com.ice.ebd.service.AulaService;
 import br.com.ice.ebd.service.LeituraDiariaService;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -36,6 +43,8 @@ class LeituraDiariaTest {
     private static final ZoneId FUSO = ZoneId.of("America/Sao_Paulo");
 
     @Inject LeituraDiariaService leituraDiaria;
+    @Inject AulaService aulaService;
+    @Inject TextoBiblicoAulaRepository textoRepository;
     @Inject BibliaOnlineService biblia;
     @Inject Fixtures fx;
 
@@ -99,6 +108,37 @@ class LeituraDiariaTest {
         assertFalse(r.referencias().contains(leituraAmanha.getReferencia()), "só o dia de hoje é enviado");
         assertNull(leituraAdiada.getEnviadoEm());
         assertNull(leituraLonge.getEnviadoEm());
+    }
+
+    /**
+     * O caminho real do cadastro (tela → {@code AulaService}), que grava, edita e remove as
+     * leituras junto com a aula. Cobre a coleção da entidade: um getter que devolvesse cópia
+     * faria o service mexer numa lista descartada e nada seria persistido.
+     */
+    @Test
+    @TestSecurity(user = "admin", roles = "ADMIN")
+    @TestTransaction
+    void cadastroPelaAulaGravaEditaERemoveAsLeituras() {
+        Classe c = fx.classe("Turma Cadastro Leitura");
+        LocalDate domingo = LocalDate.of(2026, 9, 6);
+
+        AulaResponse criada = aulaService.criar(new AulaRequest(c.getId(), domingo, "Tema", null,
+                List.of(new TextoBiblicoRequest(DiaSemanaLeitura.SEGUNDA, "Sl 1.1-6"),
+                        new TextoBiblicoRequest(DiaSemanaLeitura.TERCA, "1Jo 4.7-8"),
+                        new TextoBiblicoRequest(DiaSemanaLeitura.QUARTA, "   "))));
+
+        assertEquals(2, criada.textos().size(), "dia em branco não vira leitura");
+        assertEquals(2, textoRepository.listarPorAula(criada.id()).size(), "as leituras têm que estar no banco");
+        assertNotNull(criada.textos().get(0).id(), "a leitura já volta com id");
+        assertEquals(LocalDate.of(2026, 8, 31), criada.textos().get(0).dataLeitura());
+
+        // Edição: troca a referência de segunda e tira a de terça.
+        AulaResponse atualizada = aulaService.atualizar(criada.id(), new AulaRequest(c.getId(), domingo, "Tema", null,
+                List.of(new TextoBiblicoRequest(DiaSemanaLeitura.SEGUNDA, "Sl 23.1-6"))));
+
+        assertEquals(1, atualizada.textos().size(), "a leitura de terça foi removida");
+        assertEquals("Sl 23.1-6", atualizada.textos().get(0).referencia());
+        assertEquals(1, textoRepository.listarPorAula(criada.id()).size());
     }
 
     @Test

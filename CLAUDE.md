@@ -178,7 +178,10 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   a notação brasileira ("Sl 1.1-6" → "Salmos 1:1-6", "1Jo 4.7" → "1 João 4:7"; o acento separa **Jó**
   de **Jo**) e guardando em cache; se a API falhar, sai só a referência (best-effort, nunca quebra).
   Adiar a aula leva as leituras para a **reposição**. Disparo manual: `POST /api/admin/leituras-diarias/executar`
-  (ADMIN). Validado: `mvn test` (**89** testes, novo `LeituraDiariaTest` com 5 casos — envio + dedup,
+  (ADMIN). A coleção `Aula.textos` é exposta **só para leitura** (`getTextos` devolve view
+  imutável; quem altera usa `adicionarTexto`/`removerTextosSe`) — um autofix do CodeQL que fazia o
+  getter devolver **cópia** zerava o cadastro em silêncio, e agora há teste do caminho real da tela
+  (`AulaService.criar/atualizar`). Validado: `mvn test` (**90** testes, `LeituraDiariaTest` com 6 casos — envio + dedup,
   aula adiada/fora da semana/outro dia, cálculo da data, normalização da referência e parse da API),
   `ng build`, **e2e 37/37** (regressão + axe) e smoke ponta-a-ponta contra Postgres real (V31 migrou,
   aula criada com leituras, e-mail saiu com o Salmo 1 em Almeida, 2º disparo no dia não reenviou).
