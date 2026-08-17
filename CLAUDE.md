@@ -164,6 +164,22 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 📊 **Relatório de presença por mês (multi-turma) + gráfico (2026-08-16)** — nova tela
+  **`/relatorio-mensal`** (menu Chamada → *Presença por mês*): escolhe-se **mês/ano** (ou *Ano inteiro*)
+  e **uma, várias ou todas as turmas** por checkbox; o relatório traz KPIs do período, a **quebra por
+  turma** (alunos, aulas, presenças, faltas, % presença, bíblias, revistas, lições, visitantes) e,
+  **abaixo, um gráfico de barras** (CSS puro, sem libs) com o **% de presença por domingo** — ou **por
+  mês**, na visão anual — com uma barra por turma e cores casando com a tabela. Export **PDF/Excel**
+  (a série do gráfico vai junto). **Sem migration.** Backend: `RelatorioMensalService` +
+  `RelatorioMensalResponse` + `GET /api/relatorios/mensal?ano&mes&classeIds` (ADMIN/PROFESSOR, repetindo
+  `classeIds`; professor só gera das turmas dele — 403 fora do escopo; vazio = todas as permitidas).
+  `% presença` = presenças ÷ (presenças + faltas) — a base são os registros da chamada, então aula sem
+  chamada não derruba o índice (aparece em "aulas × aulas com chamada"); **aula adiada fica fora**.
+  A11y: a suíte axe pegou o amarelo de atenção (`#b7791f`, 3.64:1) — virou a variável de tema
+  **`--alerta`** (claro `#8a5a00`, escuro `#f0b429`), aplicada também em `/relatorio` e
+  `/minha-frequencia`. Validado: `mvn test` (**80** testes, novo `RelatorioMensalServiceTest` com 4
+  casos), `ng build`, e2e (regressão + axe da tela nova) e smoke ponta-a-ponta contra Postgres real.
+
 - ⏰ **Lembrete de chamada pendente (2026-08-16)** — no **dia da aula**, se ela é válida (não
   adiada) e a chamada ainda **não foi feita**, o professor recebe um e-mail **de hora em hora a
   partir das 12h** (BRT, até as 21h) até registrar a presença. Migration **V29**

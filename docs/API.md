@@ -139,6 +139,31 @@ Trimestre 1..4 (Jan-Mar, Abr-Jun, Jul-Set, Out-Dez). Resposta:
 }
 ```
 
+### GET `/relatorios/mensal?ano=2026&mes=8&classeIds=1&classeIds=2` — A, P
+Relatório geral de presença do mês, consolidando as turmas escolhidas. `mes` vazio = **ano inteiro**;
+`classeIds` vazio = **todas as turmas** que o usuário pode ver (professor só gera das dele — turma fora
+do escopo devolve 403). Aulas **adiadas** ficam de fora.
+
+```json
+{
+  "ano": 2026, "mes": 8, "inicio": "2026-08-01", "fim": "2026-08-31",
+  "periodoLabel": "Agosto de 2026",
+  "turmas": [ { "classeId": 1, "classeNome": "Adultos" } ],
+  "totais": { "aulas": 4, "aulasComChamada": 3, "alunosAtivos": 7, "presencas": 17, "faltas": 11,
+              "faltasJustificadas": 2, "percentualPresenca": 60.71,
+              "biblias": 16, "revistas": 3, "licoes": 4, "visitantes": 1 },
+  "porTurma": [ { "classeId": 1, "classeNome": "Adultos", "totais": { "...": "mesma estrutura" } } ],
+  "serie": [ { "rotulo": "02/08", "data": "2026-08-02",
+               "totais": { "...": "" },
+               "porTurma": [ { "classeId": 1, "classeNome": "Adultos",
+                               "presencas": 5, "faltas": 2, "percentualPresenca": 71.43 } ] } ]
+}
+```
+
+`percentualPresenca` = presenças ÷ (presenças + faltas), ou seja, a base são os registros da chamada.
+`serie` alimenta o gráfico da tela: um ponto por **domingo** quando `mes` vem preenchido, um ponto por
+**mês** quando o relatório é do ano.
+
 ## Administração
 
 ### POST `/admin/aniversarios/executar` — A
