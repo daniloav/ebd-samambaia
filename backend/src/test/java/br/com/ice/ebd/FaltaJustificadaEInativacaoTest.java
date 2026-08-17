@@ -43,7 +43,8 @@ class FaltaJustificadaEInativacaoTest {
 
     @BeforeEach
     void limpaCaixa() {
-        mailbox.clear();
+        // Descarta tambem os e-mails assincronos atrasados de testes anteriores.
+        CaixaDeEmail.limpar(mailbox);
     }
 
     private SalvarChamadaRequest ausente(Long alunoId) {

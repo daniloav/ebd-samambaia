@@ -35,7 +35,7 @@ public record UsoResponse(
         // F) Professores / gestão (lote 2)
         List<TopUsuario> professoresMaisAtivos, // por nº de ações na auditoria (30 dias)
         ChamadaPrazo chamadaPrazo,              // chamadas no prazo × atrasadas
-        List<CoberturaTurma> coberturaTurmas,   // turmas com/sem chamada na semana atual
+        List<CoberturaTurma> coberturaTurmas,   // chamada da última aula prevista de cada turma
         // A) Tempo real (lote 3)
         long picoHoje, long pico30d,            // máx. atividade simultânea (janela de 15 min)
         long aoVivoNaAula, LocalDate aoVivoData, // ativos no horário da EBD do último domingo
@@ -60,8 +60,15 @@ public record UsoResponse(
     /** Chamadas lançadas no prazo (no dia da aula) × atrasadas × sem data (histórico sem carimbo). */
     public record ChamadaPrazo(long noPrazo, long atrasadas, long semData, double pctNoPrazo) {}
 
-    /** Cobertura de uma turma na semana corrente: se já teve chamada e em qual aula. */
-    public record CoberturaTurma(String turma, boolean cobriu, LocalDate aulaData) {}
+    /**
+     * Situação da chamada da <b>última aula prevista</b> de uma turma: já registrada (FEITA),
+     * a aula já ocorreu e ninguém lançou (PENDENTE) ou não há aula elegível (SEM_AULA — turma
+     * sem agenda até hoje, ou só com aulas adiadas; não é cobrança).
+     */
+    public enum SituacaoCobertura { FEITA, PENDENTE, SEM_AULA }
+
+    /** Cobertura da chamada de uma turma: situação e a data da aula avaliada (nula em SEM_AULA). */
+    public record CoberturaTurma(String turma, SituacaoCobertura situacao, LocalDate aulaData) {}
 
     /** Uma etapa do funil de ativação (rótulo + quantos usuários chegaram nela). */
     public record EtapaFunil(String rotulo, long quantidade) {}

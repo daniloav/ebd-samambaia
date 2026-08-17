@@ -25,6 +25,7 @@ public class UsoService {
     private static final int EBD_HORA_INI = 8;   // janela do culto/EBD de domingo (BRT)
     private static final int EBD_HORA_FIM = 12;
     private static final int SEMANAS_STREAK = 52; // janela p/ calcular streak de semanas
+    private static final java.time.ZoneId FUSO = java.time.ZoneId.of("America/Sao_Paulo");
 
     // Fluxo de atividade = logins (acesso_evento) + page views/cliques (uso_evento). Constantes literais.
     private static final String SQL_PICO =
@@ -53,6 +54,15 @@ public class UsoService {
             + " union all select usuario_id, data_hora from uso_evento where data_hora >= :desde"
             + ") t on t.usuario_id = u.id where u.eh_aluno = true and u.ativo = true"
             + " group by u.id, u.username, wk";
+
+    /** Última aula prevista (não adiada, até hoje) de cada turma ativa + se ela já tem chamada. */
+    private static final String SQL_COBERTURA_TURMAS =
+            "select c.nome, ult.data, exists (select 1 from presenca p where p.aula_id = ult.id) "
+            + "from classe c left join lateral ("
+            + "  select a.id, a.data from aula a"
+            + "  where a.classe_id = c.id and a.adiada = false and a.data <= :hoje"
+            + "  order by a.data desc limit 1"
+            + ") ult on true where c.ativo = true order by c.nome";
 
     // SQL nativo em constantes literais (sem interpolação de variável) — extract(hour|dow ...).
     private static final String SQL_ACESSOS_POR_HORA =
@@ -381,36 +391,26 @@ public class UsoService {
     }
 
     /**
-     * Cobertura da semana corrente (segunda a domingo): para cada turma ativa, se já houve
-     * chamada (aula com presença) numa aula desta semana e em qual data.
+     * Cobertura da chamada por turma: para cada turma ativa, olha a <b>última aula prevista</b>
+     * (não adiada, com data até hoje no fuso BRT) e diz se a chamada dela já foi registrada.
+     * Turma sem aula elegível fica em SEM_AULA — não conta como pendência do professor.
      */
     private List<UsoResponse.CoberturaTurma> coberturaTurmas() {
-        LocalDate hoje = LocalDate.now();
-        LocalDate inicioSemana = hoje.with(java.time.DayOfWeek.MONDAY);
-        LocalDate fimSemana = inicioSemana.plusDays(6);
-
-        // turma_id -> data da aula desta semana que já teve chamada (a mais recente)
-        Map<Long, LocalDate> cobertas = new java.util.HashMap<>();
         @SuppressWarnings("unchecked")
-        List<Object[]> linhas = em.createNativeQuery(
-                        "select a.classe_id, max(a.data) from aula a "
-                        + "where a.data between :ini and :fim "
-                        + "and exists (select 1 from presenca p where p.aula_id = a.id) "
-                        + "group by a.classe_id")
-                .setParameter("ini", inicioSemana).setParameter("fim", fimSemana).getResultList();
-        for (Object[] l : linhas) {
-            Long turmaId = ((Number) l[0]).longValue();
-            LocalDate data = ((java.sql.Date) l[1]).toLocalDate();
-            cobertas.put(turmaId, data);
-        }
-
-        List<br.com.ice.ebd.model.Classe> turmas = em.createQuery(
-                        "select c from Classe c where c.ativo = true order by c.nome", br.com.ice.ebd.model.Classe.class)
-                .getResultList();
+        List<Object[]> linhas = em.createNativeQuery(SQL_COBERTURA_TURMAS)
+                .setParameter("hoje", LocalDate.now(FUSO)).getResultList();
         List<UsoResponse.CoberturaTurma> lista = new ArrayList<>();
-        for (br.com.ice.ebd.model.Classe c : turmas) {
-            LocalDate data = cobertas.get(c.getId());
-            lista.add(new UsoResponse.CoberturaTurma(c.getNome(), data != null, data));
+        for (Object[] l : linhas) {
+            LocalDate data = l[1] == null ? null : ((java.sql.Date) l[1]).toLocalDate();
+            UsoResponse.SituacaoCobertura situacao;
+            if (data == null) {
+                situacao = UsoResponse.SituacaoCobertura.SEM_AULA;
+            } else {
+                situacao = Boolean.TRUE.equals(l[2])
+                        ? UsoResponse.SituacaoCobertura.FEITA
+                        : UsoResponse.SituacaoCobertura.PENDENTE;
+            }
+            lista.add(new UsoResponse.CoberturaTurma((String) l[0], situacao, data));
         }
         return lista;
     }

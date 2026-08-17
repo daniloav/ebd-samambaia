@@ -192,6 +192,18 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   p/ teste: `POST /api/admin/lembretes-chamada/executar` (ADMIN). Sem mudança no front. Validado:
   `mvn test` (**76** testes, novo `LembreteChamadaTest` com 3 casos — cobra + dedup na mesma hora,
   chamada feita/aula adiada não cobram, aula de outro dia não cobra) e `mvn package`.
+- 📊 **Fix: cobertura da chamada no painel /uso (2026-08-16)** — o card "Cobertura de turmas (semana
+  atual)" media a **semana civil** (segunda a domingo), e como a aula da EBD é no **domingo — último dia
+  da janela** —, de segunda a sábado nenhuma turma podia estar coberta: ficava vermelho ~6,9 dias por
+  semana. Também acusava pendência em semana **sem aula cadastrada** (recesso) e em aula **adiada** (a V26
+  bloqueia a chamada dessas), e usava o fuso do servidor (UTC em prod), virando a semana ~21h BRT de
+  domingo. Agora a métrica olha a **última aula prevista de cada turma** (`adiada = false`, `data <= hoje`
+  em BRT, via `left join lateral`) e responde se **aquela** chamada foi lançada, com 3 estados
+  (`UsoResponse.SituacaoCobertura`): **FEITA** (data da aula), **PENDENTE** (a aula já ocorreu e ninguém
+  lançou) e **SEM_AULA** (turma sem agenda até hoje — deixa de ser cobrança). O KPI virou "turmas com a
+  última chamada lançada", contando no denominador só quem tem aula prevista. Sem migration, sem novo
+  endpoint. Validado: `mvn test` (**81** testes; os 2 casos novos de cobertura cobrem última aula, turma
+  sem agenda, aula adiada e aula futura) e `ng build`.
 - 💛 **E-mail acolhedor para falta justificada (2026-08-16)** — quem faltava recebia sempre o mesmo
   e-mail de engajamento ("sentimos sua falta, te esperamos no próximo domingo"), inclusive quem tinha
   a falta **justificada** pelo professor (muitas vezes doença, luto ou trabalho) — soava como cobrança.
