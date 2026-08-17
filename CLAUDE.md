@@ -164,6 +164,45 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 📊 **Relatório de presença por mês (multi-turma) + gráfico (2026-08-16)** — nova tela
+  **`/relatorio-mensal`** (menu Chamada → *Presença por mês*): escolhe-se **mês/ano** (ou *Ano inteiro*)
+  e **uma, várias ou todas as turmas** por checkbox; o relatório traz KPIs do período, a **quebra por
+  turma** (alunos, aulas, presenças, faltas, % presença, bíblias, revistas, lições, visitantes) e,
+  **abaixo, um gráfico de barras** (CSS puro, sem libs) com o **% de presença por domingo** — ou **por
+  mês**, na visão anual — com uma barra por turma e cores casando com a tabela. Export **PDF/Excel**
+  (a série do gráfico vai junto). **Sem migration.** Backend: `RelatorioMensalService` +
+  `RelatorioMensalResponse` + `GET /api/relatorios/mensal?ano&mes&classeIds` (ADMIN/PROFESSOR, repetindo
+  `classeIds`; professor só gera das turmas dele — 403 fora do escopo; vazio = todas as permitidas).
+  `% presença` = presenças ÷ (presenças + faltas) — a base são os registros da chamada, então aula sem
+  chamada não derruba o índice (aparece em "aulas × aulas com chamada"); **aula adiada fica fora**.
+  A11y: a suíte axe pegou o amarelo de atenção (`#b7791f`, 3.64:1) — virou a variável de tema
+  **`--alerta`** (claro `#8a5a00`, escuro `#f0b429`), aplicada também em `/relatorio` e
+  `/minha-frequencia`. Validado: `mvn test` (**80** testes, novo `RelatorioMensalServiceTest` com 4
+  casos), `ng build`, e2e (regressão + axe da tela nova) e smoke ponta-a-ponta contra Postgres real.
+
+- ⏰ **Lembrete de chamada pendente (2026-08-16)** — no **dia da aula**, se ela é válida (não
+  adiada) e a chamada ainda **não foi feita**, o professor recebe um e-mail **de hora em hora a
+  partir das 12h** (BRT, até as 21h) até registrar a presença. Migration **V29**
+  (`aula.chamada_cobrada_em`, dedup: no máx. 1 e-mail por aula por hora, protege reexecução do
+  scheduler). Backend: `LembreteChamadaService` (`@Scheduled` cron `0 0 12-21 * * ?`, configurável
+  em `ebd.lembrete-chamada.cron` — `off` no perfil de teste), `AulaRepository.semChamadaEm` (aulas
+  do dia, não adiadas, sem nenhuma presença e com ao menos 1 aluno ativo na turma — turma vazia não
+  cobra) e `NotificacaoService.lembrarChamadaPendente` (CTA para `/chamada`). Destinatário: o
+  **professor da aula**; sem professor definido, os **professores ativos da turma**. Disparo manual
+  p/ teste: `POST /api/admin/lembretes-chamada/executar` (ADMIN). Sem mudança no front. Validado:
+  `mvn test` (**76** testes, novo `LembreteChamadaTest` com 3 casos — cobra + dedup na mesma hora,
+  chamada feita/aula adiada não cobram, aula de outro dia não cobra) e `mvn package`.
+- 💛 **E-mail acolhedor para falta justificada (2026-08-16)** — quem faltava recebia sempre o mesmo
+  e-mail de engajamento ("sentimos sua falta, te esperamos no próximo domingo"), inclusive quem tinha
+  a falta **justificada** pelo professor (muitas vezes doença, luto ou trabalho) — soava como cobrança.
+  Agora a chamada tem **3 ramificações** de conteúdo (`NotificacaoService`): presente, ausente **com**
+  justificativa e ausente **sem** justificativa. Na justificada o assunto é *"tudo bem por aí? Você faz
+  falta e está em nossas orações 💛"* e o corpo reconhece o aviso, **repete o motivo registrado** (quando
+  houver), não cobra presença e oferece ajuda da classe (oração, conversa, resumo da lição). A assinatura
+  de dedup passou de `"A"` para `"A"`/`"AJ"`, então justificar a falta **depois** de a chamada já ter sido
+  notificada dispara o e-mail acolhedor (e nada é reenviado se nada mudar). Sem migration, sem mudança de
+  API/front. Validado: `mvn test` (**73** testes, novo `ChamadaNotificacaoAcolhimentoTest`).
+
 - 🐞 **Fix: abrir requisição estourava 500 em produção (2026-08-13)** — o sequencial do número
   (`REQ-<ano>-<seq4>`) vinha da **contagem** de requisições do ano. Depois da limpeza de dados de
   teste em prod (o runbook [`docs/consolidacao-contas.md`](docs/consolidacao-contas.md) §2a apaga as

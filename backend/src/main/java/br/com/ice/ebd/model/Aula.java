@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "aula")
@@ -41,6 +42,13 @@ public class Aula {
     @Column(nullable = false)
     private boolean adiada = false;
 
+    /**
+     * Último lembrete de chamada pendente enviado ao professor (no dia da aula, de hora em hora
+     * a partir das 12h). Serve de dedup: no máximo um lembrete por aula por hora.
+     */
+    @Column(name = "chamada_cobrada_em")
+    private LocalDateTime chamadaCobradaEm;
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -59,4 +67,7 @@ public class Aula {
 
     public boolean isAdiada() { return adiada; }
     public void setAdiada(boolean adiada) { this.adiada = adiada; }
+
+    public LocalDateTime getChamadaCobradaEm() { return chamadaCobradaEm; }
+    public void setChamadaCobradaEm(LocalDateTime chamadaCobradaEm) { this.chamadaCobradaEm = chamadaCobradaEm; }
 }

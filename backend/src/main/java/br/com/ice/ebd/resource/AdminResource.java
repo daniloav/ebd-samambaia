@@ -1,6 +1,7 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.service.AniversarioService;
+import br.com.ice.ebd.service.LembreteChamadaService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
@@ -16,6 +17,9 @@ public class AdminResource {
     @Inject
     AniversarioService aniversarioService;
 
+    @Inject
+    LembreteChamadaService lembreteChamadaService;
+
     /**
      * Dispara na hora o envio de parabéns dos aniversariantes de hoje — para testar sem
      * esperar o agendamento das 12:00. Retorna a contagem e os nomes.
@@ -25,5 +29,16 @@ public class AdminResource {
     @RolesAllowed("ADMIN")
     public AniversarioService.Resultado executarAniversarios() {
         return aniversarioService.enviarDoDia();
+    }
+
+    /**
+     * Dispara na hora o lembrete das chamadas pendentes de hoje — para testar sem esperar
+     * a próxima hora cheia. Retorna quantas aulas estão sem chamada e quantos e-mails saíram.
+     */
+    @POST
+    @Path("/lembretes-chamada/executar")
+    @RolesAllowed("ADMIN")
+    public LembreteChamadaService.Resultado executarLembretesChamada() {
+        return lembreteChamadaService.enviarPendentes();
     }
 }

@@ -29,6 +29,7 @@
 15. [Campanhas (e-mail em massa)](#15-campanhas-e-mail-em-massa)
 16. [Rotinas automáticas (agendadas)](#16-rotinas-automáticas-agendadas)
 17. [Notificações por e-mail](#17-notificações-por-e-mail)
+18. [Relatório de presença por mês](#18-relatório-de-presença-por-mês)
 
 ---
 
@@ -325,6 +326,18 @@ Fonte: `AulaService`.
 - O **professor** da aula, se informado, precisa ser um usuário com `ehProfessor` (senão 400).
 - Excluir a aula remove as presenças em cascata.
 
+**Lembrete de chamada pendente** (`LembreteChamadaService`):
+
+- **No dia da aula**, se a aula é **válida** (não adiada) e ainda **não tem chamada registrada**
+  (nenhuma presença gravada), o professor recebe um **e-mail de hora em hora a partir das 12h**
+  (BRT, até as 21h) — e para assim que a chamada for salva.
+- **Destinatário**: o **professor da aula**; se a aula não tem professor definido, todos os
+  **professores ativos da turma** (com e-mail).
+- Turma **sem aluno ativo** não gera cobrança; **aula adiada** também não (ela sai de tudo).
+- **Dedup**: `aula.chamada_cobrada_em` guarda o último disparo — no máximo **1 e-mail por aula
+  por hora**, mesmo que o batch rode duas vezes. Sem recuperação de "misfire": se a VM estiver
+  fora do ar numa hora, aquele lembrete não é reenviado (o da hora seguinte sai normalmente).
+
 ---
 
 ## 14. Requisições da tesouraria
@@ -434,6 +447,26 @@ Fonte: `NotificacaoService` + `EmailDispatcher`.
 - Todo envio é **best-effort**: falha de e-mail nunca quebra a operação de negócio (salvar
   chamada, cadastrar visitante etc.).
 
-Eventos que geram e-mail: chamada salva (alunos), aluno inativado, visitante (boas-vindas + aviso
-aos professores), visitante promovido a aluno, nota lançada/quiz corrigido, aniversário,
-requisição (nova/avaliada/finalizada/cobrança), campanhas, recuperação de senha.
+Eventos que geram e-mail: chamada salva (alunos), chamada pendente (professor, de hora em hora no
+dia da aula), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
+a aluno, nota lançada/quiz corrigido, aniversário, requisição (nova/avaliada/finalizada/cobrança),
+campanhas, recuperação de senha.
+
+---
+
+## 18. Relatório de presença por mês
+
+Fonte: `RelatorioMensalService`. Consolida a presença de um **mês** (ou do **ano inteiro**) para
+**uma, várias ou todas as turmas** escolhidas.
+
+- **Escopo**: ADMIN vê todas as turmas ativas; **professor só as dele** — pedir uma turma fora do
+  escopo devolve **403**. Sem turmas escolhidas, o relatório assume **todas as permitidas**.
+- **Aula adiada não entra** (nem nos totais, nem no gráfico), coerente com o resto do sistema.
+- **`% presença` = presenças ÷ (presenças + faltas)**, isto é, a base são os **registros da chamada**.
+  Uma aula ainda sem chamada não derruba o índice da turma: ela aparece na diferença entre
+  **aulas** e **aulas com chamada**.
+- **Visitantes** vêm do cadastro de visitantes da aula; **faltas justificadas** são o subconjunto
+  das faltas marcadas pelo professor (ver [§3](#3-faltas-justificadas)).
+- **Série do gráfico**: um ponto por **domingo** quando o filtro é um mês; um ponto por **mês**
+  quando é o ano inteiro. Cada ponto traz o consolidado e o valor de cada turma (barras agrupadas).
+- Só leitura — não altera nada. Tela: `/relatorio-mensal` (com export PDF/Excel).

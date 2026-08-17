@@ -27,6 +27,7 @@ const TELAS_GESTAO = [
   '/chamada',
   '/aulas',
   '/relatorio',
+  '/relatorio-mensal',
   '/desafios',
   '/provas',
   '/boletim',

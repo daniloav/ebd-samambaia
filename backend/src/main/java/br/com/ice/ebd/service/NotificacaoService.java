@@ -29,7 +29,9 @@ import org.jboss.logging.Logger;
  * <p>Na chamada o conteúdo é ramificado pela presença:
  * <ul>
  *   <li><b>Presente</b> — e-mail de agradecimento + resumo dos itens da aula.</li>
- *   <li><b>Ausente</b> — e-mail de engajamento, convidando para o próximo encontro.</li>
+ *   <li><b>Ausente com falta justificada</b> — e-mail <b>acolhedor</b>: reconhece a justificativa,
+ *       não cobra e coloca a classe à disposição.</li>
+ *   <li><b>Ausente sem justificativa</b> — e-mail de engajamento, convidando para o próximo encontro.</li>
  * </ul>
  * Todos são HTML (com alternativa em texto puro para clientes sem HTML).
  */
@@ -81,15 +83,24 @@ public class NotificacaoService {
                     continue; // mesmo evento, nada mudou para este aluno — não reenvia
                 }
                 try {
-                    String assunto = p.isPresente()
-                            ? "EBD — que bom ter você na aula de " + quando + "! 🙌"
-                            : "EBD — sentimos sua falta 💛 te esperamos no próximo domingo";
-                    String html = p.isPresente()
-                            ? htmlPresente(a, aula, quando, p)
-                            : htmlAusente(a, aula, quando);
-                    String texto = p.isPresente()
-                            ? textoPresente(a, quando, tema(aula), p)
-                            : textoAusente(a, quando, tema(aula));
+                    boolean justificada = !p.isPresente() && p.isJustificada();
+                    String assunto;
+                    String html;
+                    String texto;
+                    if (p.isPresente()) {
+                        assunto = "EBD — que bom ter você na aula de " + quando + "! 🙌";
+                        html = htmlPresente(a, aula, quando, p);
+                        texto = textoPresente(a, quando, tema(aula), p);
+                    } else if (justificada) {
+                        // Falta justificada: nada de cobrança — mensagem de acolhimento.
+                        assunto = "EBD — tudo bem por aí? Você faz falta e está em nossas orações 💛";
+                        html = htmlAusenteJustificada(a, aula, quando, p);
+                        texto = textoAusenteJustificada(a, quando, tema(aula), p);
+                    } else {
+                        assunto = "EBD — sentimos sua falta 💛 te esperamos no próximo domingo";
+                        html = htmlAusente(a, aula, quando);
+                        texto = textoAusente(a, quando, tema(aula));
+                    }
                     dispatcher.enfileirar(Mail.withHtml(a.getEmail(), assunto, html).setText(texto));
                     p.setNotificadaAssinatura(assinatura); // marca o estado notificado (evita reenvio)
                     enviados++;
@@ -105,10 +116,14 @@ public class NotificacaoService {
         }
     }
 
-    /** Assinatura do e-mail que seria enviado: ausente ("A") ou presente com os itens ("P" + b/r/l). */
+    /**
+     * Assinatura do e-mail que seria enviado: ausente ("A"), ausente com falta justificada ("AJ")
+     * ou presente com os itens ("P" + b/r/l). "A" e "AJ" são conteúdos diferentes, então justificar
+     * a falta depois de já ter notificado dispara o e-mail acolhedor.
+     */
     private static String assinaturaChamada(Presenca p) {
         if (!p.isPresente()) {
-            return "A";
+            return p.isJustificada() ? "AJ" : "A";
         }
         return "P" + (p.isTrouxeBiblia() ? '1' : '0') + (p.isTrouxeRevista() ? '1' : '0')
                 + (p.isEstudouLicao() ? '1' : '0');
@@ -183,6 +198,38 @@ public class NotificacaoService {
                 + "Te esperamos no próximo domingo</a></p>"
                 + "<p style=\"margin:0;\">Com carinho, sua classe da EBD. 🙏</p>";
         return shell(nomeTurma(aula), corpo);
+    }
+
+    /**
+     * Falta <b>justificada</b>: mensagem acolhedora. Reconhece o aviso do aluno, não cobra
+     * presença nem fala em "sentimos sua falta" como cobrança, e oferece ajuda da classe.
+     */
+    private String htmlAusenteJustificada(Aluno a, Aula aula, String quando, Presenca p) {
+        String corpo = ""
+                + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Olá, " + esc(a.getNome()) + "! 💛</h1>"
+                + "<p style=\"margin:0 0 16px;\">Sua ausência na EBD de <b>" + quando + "</b>" + temaHtml(aula)
+                + " foi registrada como <b>falta justificada</b>. Está tudo certo — obrigado por nos avisar.</p>"
+                + motivoHtml(p)
+                + "<p style=\"margin:0 0 16px;\">A vida tem imprevistos, e um domingo longe da classe não muda em nada "
+                + "o seu lugar entre nós. Estamos orando por você e torcendo para que tudo se resolva bem.</p>"
+                + "<p style=\"margin:0 0 16px;\">Se precisar de alguma coisa — uma oração, uma conversa ou um resumo "
+                + "da lição que passou — é só falar com a gente. Quando puder voltar, será uma alegria te receber.</p>"
+                + "<p style=\"margin:22px 0;text-align:center;\">"
+                + "<a href=\"" + SITE + "\" style=\"background:#c9a24b;color:#ffffff;text-decoration:none;"
+                + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">"
+                + "Acompanhar a EBD pelo app</a></p>"
+                + "<p style=\"margin:0;\">Com carinho, sua classe da EBD. 🙏</p>";
+        return shell(nomeTurma(aula), corpo);
+    }
+
+    /** Repete o motivo informado na justificativa (quando houver), para o aluno ver o que ficou registrado. */
+    private String motivoHtml(Presenca p) {
+        String motivo = p.getJustificativaMotivo();
+        if (motivo == null || motivo.isBlank()) {
+            return "";
+        }
+        return "<p style=\"margin:0 0 16px;padding:12px 14px;background:#f7f7f5;border-left:3px solid #c9a24b;"
+                + "border-radius:6px;color:#556;\"><b>Motivo registrado:</b> " + esc(motivo) + "</p>";
     }
 
     private String htmlCampanha(Aluno a, String titulo, String mensagem, String turmaLabel,
@@ -393,6 +440,20 @@ public class NotificacaoService {
                 + "Continue firme — Deus abençoe!\nEscola Bíblica Dominical — ICE Samambaia";
     }
 
+    private String textoAusenteJustificada(Aluno a, String quando, String tema, Presenca p) {
+        String motivo = p.getJustificativaMotivo() != null && !p.getJustificativaMotivo().isBlank()
+                ? "Motivo registrado: " + p.getJustificativaMotivo() + "\n\n" : "";
+        return "Olá " + a.getNome() + ",\n\n"
+                + "Sua ausência na EBD de " + quando + tema + " foi registrada como falta justificada. "
+                + "Está tudo certo — obrigado por nos avisar.\n\n"
+                + motivo
+                + "A vida tem imprevistos, e um domingo longe da classe não muda em nada o seu lugar entre nós. "
+                + "Estamos orando por você.\n"
+                + "Se precisar de uma oração, de uma conversa ou de um resumo da lição, é só falar com a gente.\n"
+                + SITE + "\n\n"
+                + "Com carinho, sua classe da EBD.\nEscola Bíblica Dominical — ICE Samambaia";
+    }
+
     private String textoAusente(Aluno a, String quando, String tema) {
         return "Olá " + a.getNome() + ",\n\n"
                 + "Sentimos sua falta na EBD de " + quando + tema + ".\n"
@@ -425,6 +486,49 @@ public class NotificacaoService {
             return "";
         }
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    // ---------- Lembrete de chamada pendente ----------
+
+    /**
+     * Lembra o(s) professor(es) de que a chamada da aula de hoje ainda não foi feita.
+     * Disparado de hora em hora a partir das 12h enquanto a chamada não for salva.
+     * Retorna quantos e-mails foram enfileirados; nunca lança exceção para o chamador.
+     */
+    public int lembrarChamadaPendente(Aula aula, List<String> emails) {
+        if (!habilitado || emails == null || emails.isEmpty()) {
+            return 0;
+        }
+        String turma = nomeTurma(aula);
+        String quando = aula.getData().format(DATA);
+        String assunto = "EBD — a chamada de hoje (" + turma + ") ainda não foi feita 📋";
+        String corpo = ""
+                + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Chamada pendente 📋</h1>"
+                + "<p style=\"margin:0 0 16px;\">A aula de <b>" + quando + "</b> da turma <b>" + esc(turma) + "</b>"
+                + temaHtml(aula) + " ainda está <b>sem chamada registrada</b>.</p>"
+                + "<p style=\"margin:0 0 16px;\">Registre a presença da turma para que o ranking, os relatórios "
+                + "e a frequência dos alunos fiquem em dia.</p>"
+                + "<p style=\"margin:22px 0;text-align:center;\">"
+                + "<a href=\"" + SITE + "/chamada\" style=\"background:#c9a24b;color:#ffffff;text-decoration:none;"
+                + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">Fazer a chamada agora</a></p>"
+                + "<p style=\"margin:0;color:#8a94a6;font-size:13px;\">Você continuará recebendo este lembrete "
+                + "de hora em hora até a chamada ser registrada.</p>";
+        String texto = "A chamada da aula de " + quando + " (" + turma + ") ainda não foi feita.\n"
+                + "Registre a presença no app: " + SITE + "/chamada\n\n"
+                + "Escola Bíblica Dominical — ICE Samambaia";
+        int enviados = 0;
+        for (String em : emails) {
+            if (em == null || em.isBlank()) {
+                continue;
+            }
+            try {
+                dispatcher.enfileirar(Mail.withHtml(em, assunto, shell(turma, corpo)).setText(texto));
+                enviados++;
+            } catch (Exception e) {
+                LOG.warnf("Falha ao lembrar %s da chamada da aula %d: %s", em, aula.getId(), e.getMessage());
+            }
+        }
+        return enviados;
     }
 
     /** Boas-vindas ao visitante (se tiver e-mail). Nunca lança exceção. */

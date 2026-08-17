@@ -1,9 +1,11 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.RelatorioGeralResponse;
+import br.com.ice.ebd.dto.RelatorioMensalResponse;
 import br.com.ice.ebd.dto.RelatorioPresencaResponse;
 import br.com.ice.ebd.dto.RelatorioVisitantesResponse;
 import br.com.ice.ebd.service.RelatorioGeralService;
+import br.com.ice.ebd.service.RelatorioMensalService;
 import br.com.ice.ebd.service.RelatorioService;
 import br.com.ice.ebd.service.RelatorioVisitantesService;
 import jakarta.annotation.security.RolesAllowed;
@@ -14,6 +16,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import java.time.LocalDate;
+import java.util.List;
 
 @Path("/api/relatorios")
 @Produces(MediaType.APPLICATION_JSON)
@@ -27,6 +30,9 @@ public class RelatorioResource {
 
     @Inject
     RelatorioVisitantesService visitantesService;
+
+    @Inject
+    RelatorioMensalService mensalService;
 
     @GET
     @Path("/presencas")
@@ -44,6 +50,21 @@ public class RelatorioResource {
     @RolesAllowed("ADMIN")
     public RelatorioGeralResponse geral(@QueryParam("data") LocalDate data) {
         return geralService.gerarDoDia(data);
+    }
+
+    /**
+     * Relatório geral de presença de um mês (ou do ano inteiro, com {@code mes} vazio),
+     * consolidando as turmas escolhidas. {@code classeIds} aceita repetição
+     * (<code>?classeIds=1&classeIds=2</code>); vazio = todas as turmas que o usuário pode ver.
+     */
+    @GET
+    @Path("/mensal")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public RelatorioMensalResponse mensal(
+            @QueryParam("ano") Integer ano,
+            @QueryParam("mes") Integer mes,
+            @QueryParam("classeIds") List<Long> classeIds) {
+        return mensalService.gerar(ano, mes, classeIds);
     }
 
     /** Relatório de visitantes por período. classeId nulo = geral (todas as turmas, só ADMIN). */
