@@ -1,6 +1,7 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.service.AniversarioService;
+import br.com.ice.ebd.service.LeituraDiariaService;
 import br.com.ice.ebd.service.LembreteChamadaService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -19,6 +20,9 @@ public class AdminResource {
 
     @Inject
     LembreteChamadaService lembreteChamadaService;
+
+    @Inject
+    LeituraDiariaService leituraDiariaService;
 
     /**
      * Dispara na hora o envio de parabéns dos aniversariantes de hoje — para testar sem
@@ -40,5 +44,16 @@ public class AdminResource {
     @RolesAllowed("ADMIN")
     public LembreteChamadaService.Resultado executarLembretesChamada() {
         return lembreteChamadaService.enviarPendentes();
+    }
+
+    /**
+     * Dispara na hora o envio das leituras bíblicas do dia — para testar sem esperar as 12h.
+     * Retorna quantas leituras são de hoje e quantos e-mails saíram.
+     */
+    @POST
+    @Path("/leituras-diarias/executar")
+    @RolesAllowed("ADMIN")
+    public LeituraDiariaService.Resultado executarLeiturasDiarias() {
+        return leituraDiariaService.enviarDoDia();
     }
 }

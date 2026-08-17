@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
-import { Aula, AulaRequest, Professor } from '../../core/models';
+import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/models';
 
 @Component({
   selector: 'app-aulas',
@@ -36,6 +36,10 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
                   <td>{{ a.data | date:'dd/MM/yyyy' }}</td>
                   <td>{{ a.tema || '—' }}
                     @if (a.adiada) { <span class="badge badge-dourado" title="Aula adiada: fora de toda pontuação e retrospecto">Adiada</span> }
+                    @if (a.textos?.length) {
+                      <span class="badge badge-azul"
+                        [title]="'Leituras diárias cadastradas: ' + rotuloLeituras(a)">📖 {{ a.textos!.length }} leitura(s)</span>
+                    }
                     @if (a.professorNome) { <br><small class="muted">👩‍🏫 Professor: {{ a.professorNome }}</small> }
                   </td>
                   <td>
@@ -80,6 +84,28 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
                 @for (pr of professores(); track pr.id) { <option [ngValue]="pr.id">{{ pr.nome }}</option> }
               </select>
               <small class="muted">Quem deu a aula não é contabilizado na chamada nem no ranking desta aula.</small></div>
+
+            <div class="form-group">
+              <label>Leituras diárias da lição <span class="muted">(opcional)</span></label>
+              <small class="muted" style="display:block;margin-bottom:.5rem">
+                Uma referência por dia (ex.: <b>Sl 1.1-6</b>; use <b>;</b> para mais de uma no mesmo dia).
+                Cada leitura é enviada por e-mail <b>às 12h</b> aos alunos da turma que aceitam receber avisos,
+                na semana que <b>antecede</b> esta aula. O texto bíblico vai junto no e-mail (Almeida).
+              </small>
+              <div class="leituras">
+                @for (l of leituras; track l.dia) {
+                  <div class="leitura-linha">
+                    <span class="leitura-dia">
+                      {{ l.rotulo }}
+                      @if (dataLeitura(l.dia); as d) { <small class="muted">{{ d | date:'dd/MM' }}</small> }
+                    </span>
+                    <input type="text" [(ngModel)]="l.referencia" maxlength="200"
+                      [attr.aria-label]="'Leitura bíblica de ' + l.rotulo"
+                      placeholder="Ex.: Sl 1.1-6" />
+                  </div>
+                }
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="fechar()">Cancelar</button>
@@ -164,6 +190,15 @@ import { Aula, AulaRequest, Professor } from '../../core/models';
   styles: [`
     .linha-adiada > td { opacity: .62; }
     .linha-adiada .badge { opacity: 1; }
+    .leituras { display: flex; flex-direction: column; gap: .4rem; }
+    .leitura-linha { display: flex; align-items: center; gap: .6rem; }
+    .leitura-dia { flex: 0 0 9.5rem; font-size: .9rem; }
+    .leitura-dia small { margin-left: .3rem; }
+    .leitura-linha input { flex: 1 1 auto; }
+    @media (max-width: 640px) {
+      .leitura-linha { flex-direction: column; align-items: stretch; gap: .15rem; }
+      .leitura-dia { flex: none; }
+    }
   `],
 })
 export class AulasComponent {
@@ -180,6 +215,9 @@ export class AulasComponent {
   salvando = signal(false);
   editando = signal<Aula | null>(null);
   form: AulaRequest = this.vazio();
+
+  /** Uma linha por dia da semana, na ordem em que as leituras acontecem (domingo → sábado). */
+  leituras: { dia: DiaSemanaLeitura; rotulo: string; referencia: string }[] = this.leiturasVazias();
 
   // Desdobramento (aula complementar + empurrão da agenda)
   modalComplementarAberto = signal(false);
@@ -198,6 +236,38 @@ export class AulasComponent {
 
   private vazio(): AulaRequest { return { data: '', tema: '', professorId: null }; }
 
+  private static readonly DIAS: { dia: DiaSemanaLeitura; rotulo: string }[] = [
+    { dia: 'DOMINGO', rotulo: 'Domingo' },
+    { dia: 'SEGUNDA', rotulo: 'Segunda-feira' },
+    { dia: 'TERCA', rotulo: 'Terça-feira' },
+    { dia: 'QUARTA', rotulo: 'Quarta-feira' },
+    { dia: 'QUINTA', rotulo: 'Quinta-feira' },
+    { dia: 'SEXTA', rotulo: 'Sexta-feira' },
+    { dia: 'SABADO', rotulo: 'Sábado' },
+  ];
+
+  private leiturasVazias(): { dia: DiaSemanaLeitura; rotulo: string; referencia: string }[] {
+    return AulasComponent.DIAS.map((d) => ({ ...d, referencia: '' }));
+  }
+
+  /**
+   * Data em que a leitura desse dia é enviada: a última ocorrência do dia da semana
+   * ANTES da data da aula (as leituras preparam a lição).
+   */
+  dataLeitura(dia: DiaSemanaLeitura): Date | null {
+    if (!this.form.data) { return null; }
+    const alvo = AulasComponent.DIAS.findIndex((d) => d.dia === dia);
+    const d = new Date(this.form.data + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    while (d.getDay() !== alvo) { d.setDate(d.getDate() - 1); }
+    return d;
+  }
+
+  /** Resumo das leituras para o title do selo na listagem. */
+  rotuloLeituras(a: Aula): string {
+    return (a.textos ?? []).map((t) => `${t.diaSemanaRotulo ?? t.diaSemana}: ${t.referencia}`).join(' · ');
+  }
+
   private carregarProfessores(): void {
     const cid = this.classeCtx.selecionadaId();
     if (!cid) { this.professores.set([]); return; }
@@ -212,10 +282,20 @@ export class AulasComponent {
     });
   }
 
-  abrirNovo(): void { this.editando.set(null); this.form = this.vazio(); this.modalAberto.set(true); }
+  abrirNovo(): void {
+    this.editando.set(null);
+    this.form = this.vazio();
+    this.leituras = this.leiturasVazias();
+    this.modalAberto.set(true);
+  }
   editar(a: Aula): void {
     this.editando.set(a);
     this.form = { data: a.data, tema: a.tema ?? '', professorId: a.professorId ?? null };
+    this.leituras = this.leiturasVazias();
+    for (const t of a.textos ?? []) {
+      const linha = this.leituras.find((l) => l.dia === t.diaSemana);
+      if (linha) { linha.referencia = t.referencia; }
+    }
     this.modalAberto.set(true);
   }
   fechar(): void { this.modalAberto.set(false); }
@@ -225,7 +305,12 @@ export class AulasComponent {
     const classeId = this.classeCtx.selecionadaId();
     if (!classeId) { this.toast.erro('Selecione uma turma no menu.'); return; }
     this.salvando.set(true);
-    const payload: AulaRequest = { classeId, data: this.form.data, tema: this.form.tema || null, professorId: this.form.professorId ?? null };
+    const payload: AulaRequest = {
+      classeId, data: this.form.data, tema: this.form.tema || null,
+      professorId: this.form.professorId ?? null,
+      // Íntegra do cadastro: dia em branco significa "sem leitura" e é removido no backend.
+      textos: this.leituras.map((l) => ({ diaSemana: l.dia, referencia: l.referencia?.trim() || null })),
+    };
     const alvo = this.editando();
     const req$ = alvo ? this.api.atualizarAula(alvo.id, payload) : this.api.criarAula(payload);
     req$.subscribe({

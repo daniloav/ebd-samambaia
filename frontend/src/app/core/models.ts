@@ -59,6 +59,26 @@ export interface Aula {
   professorNome?: string | null;
   professorAlunoId?: number | null;
   adiada?: boolean;
+  /** Leituras bíblicas diárias da lição (opcional), de domingo a sábado. */
+  textos?: TextoBiblico[];
+}
+
+/** Dia da semana de uma leitura diária (da semana que antecede a aula). */
+export type DiaSemanaLeitura = 'DOMINGO' | 'SEGUNDA' | 'TERCA' | 'QUARTA' | 'QUINTA' | 'SEXTA' | 'SABADO';
+
+export interface TextoBiblico {
+  id?: number;
+  diaSemana: DiaSemanaLeitura;
+  diaSemanaRotulo?: string;
+  /** Data em que a leitura é enviada por e-mail (12h). */
+  dataLeitura?: string;
+  referencia: string;
+  enviadoEm?: string | null;
+}
+
+export interface TextoBiblicoRequest {
+  diaSemana: DiaSemanaLeitura;
+  referencia: string | null;
 }
 
 export interface Professor {
@@ -72,6 +92,8 @@ export interface AulaRequest {
   data: string;
   tema?: string | null;
   professorId?: number | null;
+  /** Íntegra das leituras diárias: dia sem referência é removido. */
+  textos?: TextoBiblicoRequest[];
 }
 
 export interface PresencaItem {

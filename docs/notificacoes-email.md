@@ -14,6 +14,14 @@ traz a presença e os itens da aula (Bíblia, revista, lição, visitante).
   alunos ativos com e-mail** (ignora o opt-in). Teste: `POST /api/admin/aniversarios/executar`.
 - **Desempenho na prova** — botão "Lançar e notificar" na tela de notas → nota/aproveitamento ao
   aluno (respeita opt-in). `POST /api/provas/{id}/notas/notificar`.
+- **Leitura bíblica do dia** — rotina `LeituraDiariaService` (`@Scheduled`, **12:00** BRT): envia aos
+  alunos da turma com opt-in a leitura cadastrada para o dia da semana de hoje, das aulas dos
+  **próximos 7 dias** (as leituras preparam a lição, então pertencem à semana que a antecede).
+  O texto bíblico vai no corpo do e-mail — `BibliaOnlineService` busca em **bible-api.com**
+  (Almeida, domínio público, sem chave; toggles `ebd.biblia.*`) e guarda em cache na leitura; se a
+  busca falhar, o e-mail sai só com a referência. **Aula adiada não envia.** Dedup por
+  `aula_texto_biblico.enviado_em` (1 e-mail por leitura por dia). Teste:
+  `POST /api/admin/leituras-diarias/executar`.
 - **Chamada pendente** — rotina `LembreteChamadaService` (`@Scheduled`, de hora em hora das **12h às
   21h** BRT): no dia da aula, se a aula é válida (**não adiada**) e ainda **não tem chamada
   registrada**, cobra o **professor da aula** (ou, se ela não tem professor definido, os professores

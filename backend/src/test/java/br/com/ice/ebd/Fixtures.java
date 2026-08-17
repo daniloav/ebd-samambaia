@@ -3,6 +3,8 @@ package br.com.ice.ebd;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Classe;
+import br.com.ice.ebd.model.DiaSemanaLeitura;
+import br.com.ice.ebd.model.TextoBiblicoAula;
 import br.com.ice.ebd.model.Presenca;
 import br.com.ice.ebd.model.Prova;
 import br.com.ice.ebd.model.Role;
@@ -12,6 +14,7 @@ import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.ClasseRepository;
 import br.com.ice.ebd.repository.PresencaRepository;
 import br.com.ice.ebd.repository.ProvaRepository;
+import br.com.ice.ebd.repository.TextoBiblicoAulaRepository;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -28,6 +31,7 @@ public class Fixtures {
     @Inject ProvaRepository provaRepo;
     @Inject UsuarioRepository usuarioRepo;
     @Inject PresencaRepository presencaRepo;
+    @Inject TextoBiblicoAulaRepository textoRepo;
 
     public Classe classe(String nome) {
         Classe c = new Classe();
@@ -56,6 +60,17 @@ public class Fixtures {
         aula.setTema("Tema de teste");
         aulaRepo.persist(aula);
         return aula;
+    }
+
+    /** Leitura bíblica diária da lição (dia da semana da semana que antecede a aula). */
+    public TextoBiblicoAula leitura(Aula aula, DiaSemanaLeitura dia, String referencia) {
+        TextoBiblicoAula t = new TextoBiblicoAula();
+        t.setAula(aula);
+        t.setDiaSemana(dia);
+        t.setReferencia(referencia);
+        textoRepo.persist(t);
+        aula.getTextos().add(t);
+        return t;
     }
 
     /** Marca o aluno como presente na aula. */

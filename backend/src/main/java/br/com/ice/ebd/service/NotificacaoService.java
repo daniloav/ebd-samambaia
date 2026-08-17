@@ -6,6 +6,7 @@ import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.Presenca;
 import br.com.ice.ebd.model.Prova;
 import br.com.ice.ebd.model.RequisicaoTesouraria;
+import br.com.ice.ebd.model.TextoBiblicoAula;
 import br.com.ice.ebd.model.Visitante;
 import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.PresencaRepository;
@@ -776,6 +777,67 @@ public class NotificacaoService {
             LOG.warnf("Falha ao enviar nota para %s: %s", a.getEmail(), e.getMessage());
             return false;
         }
+    }
+
+    // ==================== Leitura bíblica diária ====================
+
+    /**
+     * Envia a leitura bíblica do dia aos alunos da turma (preparação para a lição do próximo
+     * encontro). {@code textoBiblico} é o texto buscado na internet — quando nulo, o e-mail sai
+     * só com a referência. Nunca lança exceção; devolve quantos e-mails foram enfileirados.
+     */
+    public int enviarLeituraDiaria(TextoBiblicoAula leitura, String textoBiblico, List<Aluno> alunos) {
+        if (!habilitado || alunos == null || alunos.isEmpty()) {
+            return 0;
+        }
+        Aula aula = leitura.getAula();
+        String turma = nomeTurma(aula);
+        String referencia = leitura.getReferencia();
+        String quandoAula = aula.getData().format(DATA);
+        String assunto = "EBD — leitura de hoje: " + referencia + " 📖";
+        int enviados = 0;
+        for (Aluno a : alunos) {
+            if (a.getEmail() == null || a.getEmail().isBlank()) {
+                continue;
+            }
+            try {
+                String corpo = ""
+                        + "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Leitura de hoje 📖</h1>"
+                        + "<p style=\"margin:0 0 16px;\">Olá, " + esc(a.getNome()) + "! A leitura de hoje, "
+                        + "preparando a lição de <b>" + quandoAula + "</b>" + temaHtml(aula) + ", é:</p>"
+                        + "<p style=\"margin:0 0 14px;font-size:18px;color:#1b3a5b;font-weight:bold;\">"
+                        + esc(referencia) + "</p>"
+                        + textoBiblicoHtml(textoBiblico)
+                        + "<p style=\"margin:22px 0;text-align:center;\">"
+                        + "<a href=\"" + SITE + "\" style=\"background:#c9a24b;color:#ffffff;text-decoration:none;"
+                        + "padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;\">"
+                        + "Ver a EBD no app</a></p>"
+                        + "<p style=\"margin:0;\">Bom dia na Palavra e Deus abençoe! 🙏</p>";
+                String texto = "Olá " + a.getNome() + ",\n\n"
+                        + "Leitura de hoje (preparação para a lição de " + quandoAula + "): " + referencia + "\n\n"
+                        + (textoBiblico != null ? textoBiblico + "\n\n" : "")
+                        + "Escola Bíblica Dominical — ICE Samambaia";
+                dispatcher.enfileirar(Mail.withHtml(a.getEmail(), assunto, shell(turma, corpo)).setText(texto));
+                enviados++;
+            } catch (Exception e) {
+                LOG.warnf("Falha ao enviar a leitura %s para %s: %s",
+                        limparParaLog(referencia), limparParaLog(a.getEmail()), e.getMessage());
+            }
+        }
+        return enviados;
+    }
+
+    /** Bloco com o texto bíblico (um versículo por linha). Vazio quando não foi possível obtê-lo. */
+    private String textoBiblicoHtml(String textoBiblico) {
+        if (textoBiblico == null || textoBiblico.isBlank()) {
+            return "<p style=\"margin:0 0 16px;color:#8a94a6;font-size:13px;\">"
+                    + "Abra a sua Bíblia nesta passagem e faça a leitura de hoje.</p>";
+        }
+        String corpo = esc(textoBiblico).replace("\n", "<br>");
+        return "<div style=\"margin:0 0 16px;padding:14px 16px;background:#f7f7f5;border-left:3px solid #c9a24b;"
+                + "border-radius:6px;color:#2d3748;font-size:15px;line-height:1.7;\">" + corpo + "</div>"
+                + "<p style=\"margin:0 0 16px;color:#8a94a6;font-size:12px;\">"
+                + "Texto: João Ferreira de Almeida (domínio público).</p>";
     }
 
     /** Neutraliza quebras de linha/caracteres de controle de valores de usuário antes de logar
