@@ -14,11 +14,18 @@ import java.util.stream.Collectors;
 public class AulaRepository implements PanacheRepository<Aula> {
 
     public List<Aula> listarOrdenadoPorData() {
-        return listAll(Sort.by("data").descending());
+        return getEntityManager().createQuery(
+                        "select distinct a from Aula a join fetch a.classe left join fetch a.textos "
+                                + "order by a.data desc", Aula.class)
+                .getResultList();
     }
 
     public List<Aula> listarPorClasse(Long classeId) {
-        return list("classe.id = ?1 order by data desc", classeId);
+        return getEntityManager().createQuery(
+                        "select distinct a from Aula a join fetch a.classe left join fetch a.textos "
+                                + "where a.classe.id = :classeId order by a.data desc", Aula.class)
+                .setParameter("classeId", classeId)
+                .getResultList();
     }
 
     public Optional<Aula> findByClasseAndData(Long classeId, LocalDate data) {

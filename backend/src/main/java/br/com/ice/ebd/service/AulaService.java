@@ -5,7 +5,10 @@ import br.com.ice.ebd.dto.AulaAdiarResponse;
 import br.com.ice.ebd.dto.AulaComplementarResponse;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
+import br.com.ice.ebd.dto.TextoBiblicoRequest;
 import br.com.ice.ebd.model.Aula;
+import br.com.ice.ebd.model.DiaSemanaLeitura;
+import br.com.ice.ebd.model.TextoBiblicoAula;
 import br.com.ice.ebd.model.Usuario;
 import br.com.ice.ebd.repository.UsuarioRepository;
 import br.com.ice.ebd.model.AcaoAuditoria;
@@ -18,7 +21,9 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDate;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -61,6 +66,7 @@ public class AulaService {
         a.setTema(req.tema());
         a.setProfessor(resolverProfessor(req.professorId()));
         repository.persist(a);
+        sincronizarTextos(a, req.textos());
         auditoria.registrar(AcaoAuditoria.CRIAR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         return AulaResponse.de(a);
     }
@@ -75,6 +81,7 @@ public class AulaService {
         a.setData(req.data());
         a.setTema(req.tema());
         a.setProfessor(resolverProfessor(req.professorId()));
+        sincronizarTextos(a, req.textos());
         auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, a.getId(), rotulo(a));
         return AulaResponse.de(a);
     }
@@ -155,6 +162,7 @@ public class AulaService {
         reposicao.setProfessor(origem.getProfessor());
         validarDataUnica(classeId, novaData, null); // sanidade: já deve estar livre após o empurrão
         repository.persist(reposicao);
+        copiarTextos(origem, reposicao); // a lição foi só remarcada: as leituras diárias vão junto
 
         auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, origem.getId(),
                 "aula adiada (pontuação desabilitada) · " + rotulo(origem));
@@ -181,6 +189,57 @@ public class AulaService {
             repository.getEntityManager().flush();
         }
         return seguintes.size();
+    }
+
+    /**
+     * Sincroniza as leituras bíblicas diárias da aula com o que veio na requisição. A lista é a
+     * íntegra do cadastro: dia ausente (ou com referência em branco) é removido, dia novo é
+     * criado e referência alterada zera o cache do texto e o carimbo de envio — a leitura antiga
+     * já não vale. Lista nula significa "não mexer" (cliente que não conhece o campo).
+     */
+    private void sincronizarTextos(Aula a, List<TextoBiblicoRequest> textos) {
+        if (textos == null) {
+            return;
+        }
+        Map<DiaSemanaLeitura, String> desejados = new EnumMap<>(DiaSemanaLeitura.class);
+        for (TextoBiblicoRequest t : textos) {
+            if (t == null || t.diaSemana() == null || t.referencia() == null || t.referencia().isBlank()) {
+                continue;
+            }
+            desejados.put(t.diaSemana(), t.referencia().trim());
+        }
+        a.getTextos().removeIf(existente -> !desejados.containsKey(existente.getDiaSemana()));
+        for (Map.Entry<DiaSemanaLeitura, String> e : desejados.entrySet()) {
+            TextoBiblicoAula atual = a.getTextos().stream()
+                    .filter(x -> x.getDiaSemana() == e.getKey())
+                    .findFirst().orElse(null);
+            if (atual == null) {
+                TextoBiblicoAula novo = new TextoBiblicoAula();
+                novo.setAula(a);
+                novo.setDiaSemana(e.getKey());
+                novo.setReferencia(e.getValue());
+                a.getTextos().add(novo);
+            } else if (!e.getValue().equals(atual.getReferencia())) {
+                atual.setReferencia(e.getValue());
+                atual.setTextoCache(null);
+                atual.setTextoCacheEm(null);
+                atual.setEnviadoEm(null);
+            }
+        }
+        repository.getEntityManager().flush(); // as leituras novas já saem com id na resposta
+    }
+
+    /** Copia as leituras diárias da origem para a nova aula (envio zerado: as datas mudaram). */
+    private void copiarTextos(Aula origem, Aula destino) {
+        for (TextoBiblicoAula t : origem.getTextos()) {
+            TextoBiblicoAula copia = new TextoBiblicoAula();
+            copia.setAula(destino);
+            copia.setDiaSemana(t.getDiaSemana());
+            copia.setReferencia(t.getReferencia());
+            copia.setTextoCache(t.getTextoCache());
+            copia.setTextoCacheEm(t.getTextoCacheEm());
+            destino.getTextos().add(copia);
+        }
     }
 
     /** Tema informado, ou o da origem com sufixo "(continuação)". */
