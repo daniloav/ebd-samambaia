@@ -164,6 +164,23 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 🚪 **Relatório de alunos inativados (2026-08-16)** — só existia o booleano `aluno.ativo`: dava para
+  ver **quem** estava inativo, não **quando** saiu, **por que** saiu nem quem já voltou. Migration **V30**
+  (`aluno_inativacao`): um **episódio** por saída, aberto na inativação e fechado (`reativado_em`) na
+  reativação, com motivo (`FALTAS_SEGUIDAS` / `MANUAL` / `NAO_REGISTRADO`), nº de faltas e quem fez.
+  Os dois pontos que mexem em `ativo` gravam o histórico na mesma transação: `ChamadaService`
+  (inativação automática por 5 faltas seguidas) e `AlunoService` (marcar/desmarcar "ativo" no cadastro);
+  abrir é idempotente. A V30 faz **backfill** dos inativos de hoje — das automáticas recupera data,
+  usuário e nº de faltas do texto da `auditoria`; o resto entra como `NAO_REGISTRADO` sem data.
+  Backend: `InativacaoService`, `RelatorioInativadosService` e `GET /api/relatorios/inativados`
+  (ADMIN/PROFESSOR, respeita escopo; `incluirReativados` traz quem voltou; **sem** período entram também
+  os episódios sem data, e `semDataRegistrada` avisa quantos ficam de fora quando há filtro). Front: tela
+  **`/relatorio-inativados`** (menu *Chamada → Inativados*) com resumo, turma, contato, data, motivo,
+  **última presença** (para a busca pastoral) e export PDF/Excel. Validado: `mvn test` (**79** testes,
+  novo `RelatorioInativadosTest` com 3 casos — automática com motivo/faltas/última presença, manual +
+  reativação, episódio sem data só sem filtro de período), `ng build` e smoke ponta-a-ponta contra
+  Postgres real (backfill recuperou data e as 5 faltas da auditoria; endpoint e tela renderizaram).
+
 - ⏰ **Lembrete de chamada pendente (2026-08-16)** — no **dia da aula**, se ela é válida (não
   adiada) e a chamada ainda **não foi feita**, o professor recebe um e-mail **de hora em hora a
   partir das 12h** (BRT, até as 21h) até registrar a presença. Migration **V29**

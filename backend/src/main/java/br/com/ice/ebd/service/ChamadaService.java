@@ -7,6 +7,7 @@ import br.com.ice.ebd.model.AcaoAuditoria;
 import br.com.ice.ebd.model.Aluno;
 import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.EntidadeAuditoria;
+import br.com.ice.ebd.model.MotivoInativacao;
 import br.com.ice.ebd.model.Presenca;
 import br.com.ice.ebd.repository.AlunoRepository;
 import br.com.ice.ebd.repository.AulaRepository;
@@ -42,6 +43,7 @@ public class ChamadaService {
     @Inject AulaRepository aulaRepository;
     @Inject AulaService aulaService;
     @Inject AuditoriaService auditoria;
+    @Inject InativacaoService inativacaoService;
     @Inject NotificacaoService notificacaoService;
 
     /**
@@ -163,6 +165,7 @@ public class ChamadaService {
             int seguidas = faltasSeguidasAte(aluno, aula);
             if (seguidas > MAX_FALTAS_SEGUIDAS) {
                 aluno.setAtivo(false);
+                inativacaoService.registrarInativacao(aluno, MotivoInativacao.FALTAS_SEGUIDAS, seguidas);
                 String msg = String.format("%s foi inativado(a) automaticamente: %d faltas seguidas sem justificativa.",
                         aluno.getNome(), seguidas);
                 auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.ALUNO, aluno.getId(), msg);

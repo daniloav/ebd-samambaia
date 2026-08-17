@@ -386,6 +386,36 @@ export interface RelatorioVisitantesResponse {
   itens: RelatorioVisitantesItem[];
 }
 
+export interface RelatorioInativadosItem {
+  alunoId: number;
+  nome: string;
+  turma: string;
+  email: string | null;
+  telefone: string | null;
+  /** Nulo no histórico anterior ao registro de inativações (V30). */
+  inativadoEm: string | null;
+  motivo: 'FALTAS_SEGUIDAS' | 'MANUAL' | 'NAO_REGISTRADO';
+  faltasSeguidas: number | null;
+  inativadoPor: string | null;
+  ultimaPresenca: string | null;
+  /** Preenchido quando o aluno voltou (episódio fechado). */
+  reativadoEm: string | null;
+}
+export interface RelatorioInativadosResponse {
+  inicio: string;
+  fim: string;
+  periodoAberto: boolean;
+  classeId: number | null;
+  classeNome: string | null;
+  total: number;
+  aindaInativos: number;
+  reativados: number;
+  porFaltasSeguidas: number;
+  manuais: number;
+  semDataRegistrada: number;
+  itens: RelatorioInativadosItem[];
+}
+
 export interface BoletimProvaItem {
   titulo: string;
   data: string;
