@@ -88,7 +88,8 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
             <div class="form-group">
               <label>Leituras diárias da lição <span class="muted">(opcional)</span></label>
               <small class="muted" style="display:block;margin-bottom:.5rem">
-                Uma referência por dia (ex.: <b>Sl 1.1-6</b>; use <b>;</b> para mais de uma no mesmo dia).
+                Formato <b>livro capítulo.versículos</b> — ex.: <b>Sl 1.1-6</b>, <b>1Jo 4.7-8</b>,
+                <b>Salmos 119</b>. Use <b>;</b> para mais de uma no mesmo dia (até 3).
                 Cada leitura é enviada por e-mail <b>às 8h</b> aos alunos da turma que aceitam receber avisos,
                 na semana da lição — de <b>segunda</b> até o <b>dia da aula</b>. O texto bíblico vai junto
                 no e-mail (Almeida).
@@ -100,9 +101,18 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
                       {{ l.rotulo }}
                       @if (dataLeitura(l.dia); as d) { <small class="muted">{{ d | date:'dd/MM' }}</small> }
                     </span>
-                    <input type="text" [(ngModel)]="l.referencia" maxlength="200"
-                      [attr.aria-label]="'Leitura bíblica de ' + l.rotulo"
-                      placeholder="Ex.: Sl 1.1-6" />
+                    <div class="leitura-campo">
+                      <input type="text" [(ngModel)]="l.referencia" maxlength="200"
+                        [attr.aria-label]="'Leitura bíblica de ' + l.rotulo"
+                        [attr.aria-invalid]="erroLeitura(l) ? 'true' : null"
+                        [attr.aria-describedby]="erroLeitura(l) ? 'erro-leitura-' + l.dia : null"
+                        [class.campo-invalido]="erroLeitura(l)"
+                        (blur)="formatarLeitura(l)"
+                        placeholder="Ex.: Sl 1.1-6" />
+                      @if (erroLeitura(l); as erro) {
+                        <small class="erro-campo" [id]="'erro-leitura-' + l.dia">{{ erro }}</small>
+                      }
+                    </div>
                   </div>
                 }
               </div>
@@ -195,7 +205,10 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
     .leitura-linha { display: flex; align-items: center; gap: .6rem; }
     .leitura-dia { flex: 0 0 9.5rem; font-size: .9rem; }
     .leitura-dia small { margin-left: .3rem; }
-    .leitura-linha input { flex: 1 1 auto; }
+    .leitura-campo { flex: 1 1 auto; }
+    .leitura-campo input { width: 100%; }
+    .leitura-campo .erro-campo { display: block; margin-top: .15rem; }
+    .campo-invalido { border-color: var(--vermelho) !important; }
     @media (max-width: 640px) {
       .leitura-linha { flex-direction: column; align-items: stretch; gap: .15rem; }
       .leitura-dia { flex: none; }
@@ -264,6 +277,31 @@ export class AulasComponent {
     return d;
   }
 
+  /**
+   * Estrutura aceita numa referência: livro (abreviado ou por extenso, podendo começar por
+   * 1/2/3), capítulo e, opcionalmente, versículo ou intervalo. Espelha o `ReferenciaBiblica`
+   * do backend, que ainda confere se o livro existe — aqui o objetivo é o aviso imediato.
+   */
+  private static readonly FORMATO_REFERENCIA =
+    /^([123]\s*)?\p{L}[\p{L}.]*(\s+\p{L}[\p{L}.]*)*\s*\d{1,3}([.:,]\s*\d{1,3}(\s*-\s*\d{1,3})?)?$/u;
+
+  /** Mensagem do que está errado na leitura do dia, ou null se está tudo certo (ou vazia). */
+  erroLeitura(l: { referencia: string }): string | null {
+    const ref = (l.referencia ?? '').trim();
+    if (!ref) { return null; }
+    const partes = ref.split(';').map((p) => p.trim());
+    if (partes.filter((p) => p).length > 3) { return 'No máximo 3 referências por dia.'; }
+    if (partes.slice(0, -1).some((p) => !p)) { return 'Há um ";" sobrando.'; }
+    const invalida = partes.find((p) => p && !AulasComponent.FORMATO_REFERENCIA.test(p));
+    return invalida ? `"${invalida}" não parece uma referência (ex.: Sl 1.1-6).` : null;
+  }
+
+  /** Ao sair do campo, arruma o que é só digitação: espaços sobrando e vírgula do versículo. */
+  formatarLeitura(l: { referencia: string }): void {
+    const ref = (l.referencia ?? '').trim().replace(/\s+/g, ' ').replace(/\s*;\s*/g, '; ');
+    l.referencia = ref.replace(/(\d)\s*,\s*(\d)/g, '$1.$2').replace(/;\s*$/, '');
+  }
+
   /** Resumo das leituras para o title do selo na listagem. */
   rotuloLeituras(a: Aula): string {
     return (a.textos ?? []).map((t) => `${t.diaSemanaRotulo ?? t.diaSemana}: ${t.referencia}`).join(' · ');
@@ -305,6 +343,11 @@ export class AulasComponent {
     if (!this.form.data) { this.toast.erro('Informe a data da aula.'); return; }
     const classeId = this.classeCtx.selecionadaId();
     if (!classeId) { this.toast.erro('Selecione uma turma no menu.'); return; }
+    const comErro = this.leituras.find((l) => this.erroLeitura(l));
+    if (comErro) {
+      this.toast.erro(`Leitura de ${comErro.rotulo.toLowerCase()}: ${this.erroLeitura(comErro)}`);
+      return;
+    }
     this.salvando.set(true);
     const payload: AulaRequest = {
       classeId, data: this.form.data, tema: this.form.tema || null,

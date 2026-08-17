@@ -196,6 +196,9 @@ public class AulaService {
      * íntegra do cadastro: dia ausente (ou com referência em branco) é removido, dia novo é
      * criado e referência alterada zera o cache do texto e o carimbo de envio — a leitura antiga
      * já não vale. Lista nula significa "não mexer" (cliente que não conhece o campo).
+     *
+     * <p>Cada referência passa por {@link ReferenciaBiblica#validar}: formato errado ou livro
+     * desconhecido viram <b>400</b> nomeando o dia, em vez de virar um e-mail sem texto.
      */
     private void sincronizarTextos(Aula a, List<TextoBiblicoRequest> textos) {
         if (textos == null) {
@@ -206,7 +209,13 @@ public class AulaService {
             if (t == null || t.diaSemana() == null || t.referencia() == null || t.referencia().isBlank()) {
                 continue;
             }
-            desejados.put(t.diaSemana(), t.referencia().trim());
+            String referencia = t.referencia().trim().replaceAll("\\s+", " ");
+            ReferenciaBiblica.validar(referencia).ifPresent(erro -> {
+                throw new WebApplicationException(
+                        "Leitura de " + t.diaSemana().getRotulo().toLowerCase() + ": " + erro + ".",
+                        Response.Status.BAD_REQUEST);
+            });
+            desejados.put(t.diaSemana(), referencia);
         }
         a.removerTextosSe(existente -> !desejados.containsKey(existente.getDiaSemana()));
         for (Map.Entry<DiaSemanaLeitura, String> e : desejados.entrySet()) {

@@ -174,14 +174,18 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
   **Todo dia às 8h (BRT)** o `LeituraDiariaService` manda a leitura do dia aos alunos da turma com
   opt-in (aula **adiada** não envia; `TextoBiblicoAulaRepository.paraEnviarEm` casa o dia da semana
   de hoje com as aulas de hoje até daqui a 6 dias). O e-mail leva **o texto bíblico junto**:
-  `BibliaOnlineService` busca em **bible-api.com** (Almeida, domínio público, sem chave), normalizando
-  a notação brasileira ("Sl 1.1-6" → "Salmos 1:1-6", "1Jo 4.7" → "1 João 4:7"; o acento separa **Jó**
-  de **Jo**) e guardando em cache; se a API falhar, sai só a referência (best-effort, nunca quebra).
+  `BibliaOnlineService` busca em **bible-api.com** (Almeida, domínio público, sem chave) e guarda em
+  cache; se a API falhar, sai só a referência (best-effort, nunca quebra). O que o professor digita
+  passa por **`ReferenciaBiblica`** (fonte única dos 66 livros): valida o formato *livro
+  capítulo[.versículos]*, até 3 por dia separadas por `;`, **confere se o livro existe** ("Slm 1.1"
+  → 400 nomeando o dia) e normaliza para a API ("Sl 1.1-6" → "Salmos 1:1-6"; o acento separa **Jó**
+  de **Jo**). A tela repete a validação de estrutura enquanto se digita e arruma espaços/vírgula ao
+  sair do campo.
   Adiar a aula leva as leituras para a **reposição**. Disparo manual: `POST /api/admin/leituras-diarias/executar`
   (ADMIN). A coleção `Aula.textos` é exposta **só para leitura** (`getTextos` devolve view
   imutável; quem altera usa `adicionarTexto`/`removerTextosSe`) — um autofix do CodeQL que fazia o
   getter devolver **cópia** zerava o cadastro em silêncio, e agora há teste do caminho real da tela
-  (`AulaService.criar/atualizar`). Validado: `mvn test` (**90** testes, `LeituraDiariaTest` com 6 casos — envio + dedup,
+  (`AulaService.criar/atualizar`). Validado: `mvn test` (**92** testes, `LeituraDiariaTest` com 8 casos — envio + dedup,
   aula adiada/fora da semana/outro dia, cálculo da data, normalização da referência e parse da API),
   `ng build`, **e2e 37/37** (regressão + axe) e smoke ponta-a-ponta contra Postgres real (V31 migrou,
   aula criada com leituras, e-mail saiu com o Salmo 1 em Almeida, 2º disparo no dia não reenviou).
