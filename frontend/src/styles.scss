@@ -6,9 +6,12 @@
   --azul-claro: #2c5282;
   --dourado: #c9a24b;
   --dourado-claro: #e0c884;
+  /* Tons legíveis como TEXTO pequeno: as cores de marca (--dourado, --verde) só
+     alcançam o contraste AA (4,5:1) em fundo/borda ou em texto grande. */
+  --alerta: #8a5a00;       /* amarelo de atenção legível no fundo claro */
+  --verde-texto: #276749;
   --verde: #2f855a;
   --vermelho: #c53030;
-  --alerta: #8a5a00;        /* amarelo de atenção com contraste AA no fundo claro */
   --cinza-bg: #f4f6f9;
   --cinza-borda: #e2e8f0;
   --cinza-texto: #4a5568;
@@ -184,6 +187,8 @@ input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color:
    Modo escuro — override das variáveis (auto pelo sistema + toggle)
    ============================================================ */
 @mixin tema-escuro {
+  --alerta: #f0b429;
+  --verde-texto: #68d391;
   --cinza-bg: #12161c;
   --superficie: #1e2530;
   --superficie-2: #262f3d;
@@ -191,7 +196,6 @@ input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color:
   --cinza-borda: #2f3a4a;
   --cinza-texto: #9fb0c3;
   --texto: #e2e8f0;
-  --alerta: #f0b429;
   --titulo: #cbd5e0;
   --branco: #1e2530;
   --sombra: 0 1px 3px rgba(0, 0, 0, 0.5);

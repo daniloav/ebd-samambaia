@@ -17,7 +17,7 @@ import { TelemetriaService } from '../../core/telemetria.service';
     .filtros .form-group { margin: 0; }
     .num { text-align: center; }
     .pct { font-weight: 700; }
-    .pct.bom { color: var(--verde); }
+    .pct.bom { color: var(--verde-texto); }
     .pct.medio { color: var(--alerta); }
     .pct.ruim { color: var(--vermelho); }
     .cabecalho-rel { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }

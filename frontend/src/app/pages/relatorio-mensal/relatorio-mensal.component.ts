@@ -31,7 +31,7 @@ const MESES = [
     .kpis strong { font-size: 1.5rem; display: block; }
     .num { text-align: center; }
     .pct { font-weight: 700; }
-    .pct.bom { color: var(--verde, #2f855a); }
+    .pct.bom { color: var(--verde-texto, #276749); }
     .pct.medio { color: var(--alerta); }
     .pct.ruim { color: var(--vermelho, #c53030); }
 
@@ -117,7 +117,7 @@ const MESES = [
           <div class="card"><div class="muted">Bíblias</div><strong>{{ d.totais.biblias }}</strong></div>
           <div class="card"><div class="muted">Revistas</div><strong>{{ d.totais.revistas }}</strong></div>
           <div class="card"><div class="muted">Lições</div><strong>{{ d.totais.licoes }}</strong></div>
-          <div class="card"><div class="muted">Visitantes</div><strong style="color:#c9a24b">{{ d.totais.visitantes }}</strong></div>
+          <div class="card"><div class="muted">Visitantes</div><strong style="color:var(--alerta)">{{ d.totais.visitantes }}</strong></div>
         </div>
 
         <div class="card" style="margin-bottom:1.5rem">
