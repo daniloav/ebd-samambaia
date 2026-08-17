@@ -49,6 +49,24 @@ Só `nome` é obrigatório.
 
 Corpo: `{ "data": "2026-07-19", "tema": "A graça de Deus" }` (`data` obrigatória e única).
 
+**Leituras bíblicas diárias** (opcional) — o campo `textos` entra no mesmo corpo do POST/PUT e é a
+**íntegra** do cadastro: dia ausente (ou com `referencia` em branco) é removido; campo **nulo/ausente**
+não mexe no que já existe. Trocar a referência zera o texto em cache e o carimbo de envio.
+
+```json
+{
+  "classeId": 1, "data": "2026-08-23", "tema": "A graça de Deus",
+  "textos": [
+    { "diaSemana": "SEGUNDA", "referencia": "Sl 1.1-6" },
+    { "diaSemana": "TERCA", "referencia": "1Jo 4.7-8" }
+  ]
+}
+```
+
+`diaSemana` ∈ `DOMINGO|SEGUNDA|TERCA|QUARTA|QUINTA|SEXTA|SABADO`. Na resposta cada leitura traz
+`dataLeitura` — o dia em que ela é enviada, sempre na **semana que antecede** a aula (aula de
+23/08 → segunda 17/08, sábado 22/08) — e `enviadoEm`.
+
 ## Chamada
 
 ### GET `/aulas/{aulaId}/chamada` — A, P
@@ -192,6 +210,10 @@ Resposta: `{ "total": 1, "enviados": 1, "nomes": ["Ana Souza"] }`.
 ### POST `/admin/lembretes-chamada/executar` — A
 Dispara na hora o lembrete das chamadas pendentes de hoje (o mesmo do agendamento de hora em hora,
 12h–21h BRT). Resposta: `{ "aulasPendentes": 1, "enviados": 1, "turmas": ["Adultos"] }`.
+
+### POST `/admin/leituras-diarias/executar` — A
+Dispara na hora o envio das leituras bíblicas do dia (o mesmo do agendamento das 12:00 BRT).
+Resposta: `{ "leituras": 1, "enviados": 2, "referencias": ["Sl 1.1-6"] }`.
 
 ## Desafios
 

@@ -352,6 +352,27 @@ Fonte: `AulaService`.
   por hora**, mesmo que o batch rode duas vezes. Sem recuperação de "misfire": se a VM estiver
   fora do ar numa hora, aquele lembrete não é reenviado (o da hora seguinte sai normalmente).
 
+**Leituras bíblicas diárias da lição** (`LeituraDiariaService`, `BibliaOnlineService`):
+
+- Cada aula pode ter, **opcionalmente**, uma referência bíblica por **dia da semana** (no máximo
+  uma por dia; unique `(aula_id, dia_semana)`). Cadastro no próprio formulário da aula.
+- As leituras são de **preparação**: pertencem à **semana que antecede** a aula. A data de uma
+  leitura é a **última ocorrência daquele dia da semana antes da aula** — para a aula de domingo
+  23/08, segunda = 17/08 e sábado = 22/08 (o "domingo" da leitura é o domingo anterior, 16/08).
+- **Todo dia às 12h (BRT)** sai a leitura do dia para os **alunos da turma** com opt-in e e-mail
+  (`recebeNotificacoes`). **Aula adiada não envia**; aulas fora da janela dos próximos 7 dias
+  também não.
+- **Texto bíblico no e-mail**: o texto é buscado em **bible-api.com** (tradução *João Ferreira de
+  Almeida*, domínio público, sem chave) e fica em **cache** na própria leitura. A busca é
+  best-effort: se a API falhar ou não reconhecer a referência, o e-mail sai **só com a referência**.
+  Referências brasileiras são normalizadas ("Sl 1.1-6" → "Salmos 1:1-6"; "1Jo 4.7" → "1 João 4:7");
+  o acento distingue **Jó** de **Jo** (João). Até **3 referências** por dia, separadas por `;`, e
+  corte em 25 versículos / 3000 caracteres.
+- **Dedup**: `enviado_em` guarda o dia do envio — no máximo **1 e-mail por leitura por dia**.
+  Trocar a referência no cadastro zera o cache e o carimbo (a leitura volta a ser enviável).
+- **Adiar** a aula leva as leituras para a **reposição** (a lição foi só remarcada), com o envio
+  zerado; **desdobrar** (continuação) não copia.
+
 ---
 
 ## 14. Requisições da tesouraria
@@ -442,8 +463,12 @@ estiver fora do ar no horário, aquele disparo não é reenviado).
 |---|---|---|---|
 | **Aniversário** (`AniversarioService`) | **12:00** BRT | e-mail de feliz aniversário aos alunos com e-mail que fazem aniversário no dia | — |
 | **Cobrança de nota** (`CobrancaNotaService`) | **09:00** BRT | cobra nota fiscal de requisições APROVADAS sem nota | por dia (`notaCobradaEm`) |
+| **Lembrete de chamada** (`LembreteChamadaService`) | **12:00–21:00** BRT, de hora em hora | cobra do professor a chamada do dia ainda não registrada | por hora (`chamadaCobradaEm`) |
+| **Leitura diária** (`LeituraDiariaService`) | **12:00** BRT | envia aos alunos da turma a leitura bíblica do dia (com o texto, quando a busca online responde) | por dia (`enviadoEm`) |
 
-Ambos os cron são configuráveis (`ebd.aniversario.cron`, `ebd.cobranca-nota.cron`).
+Todos os cron são configuráveis (`ebd.aniversario.cron`, `ebd.cobranca-nota.cron`,
+`ebd.lembrete-chamada.cron`, `ebd.leitura-diaria.cron`; `off` desliga). A busca do texto bíblico
+tem os seus próprios toggles: `ebd.biblia.enabled`, `ebd.biblia.url`, `ebd.biblia.traducao`.
 
 ---
 
@@ -462,7 +487,7 @@ Fonte: `NotificacaoService` + `EmailDispatcher`.
   chamada, cadastrar visitante etc.).
 
 Eventos que geram e-mail: chamada salva (alunos), chamada pendente (professor, de hora em hora no
-dia da aula), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
+dia da aula), leitura bíblica do dia (alunos, 12h), aluno inativado, visitante (boas-vindas + aviso aos professores), visitante promovido
 a aluno, nota lançada/quiz corrigido, aniversário, requisição (nova/avaliada/finalizada/cobrança),
 campanhas, recuperação de senha.
 
