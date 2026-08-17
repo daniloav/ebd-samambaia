@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,12 +22,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Lembrete horário ao professor quando a chamada do dia ainda não foi feita.
  * Cada caso cria a sua própria turma, então o lembrete das outras turmas do banco
  * de teste não interfere nas asserções (contamos só o que é desta turma).
+ *
+ * <p>As datas usam o <b>mesmo fuso do serviço</b> (BRT), não o do sistema: o CI roda em UTC e,
+ * entre 21h e 24h BRT, "hoje" no fuso do runner já é o dia seguinte — a aula de hoje escaparia
+ * da busca e a de ontem seria cobrada.
  */
 @QuarkusTest
 class LembreteChamadaTest {
 
+    /** Mesmo fuso do {@code LembreteChamadaService} — o "hoje" do teste tem que ser o dele. */
+    private static final ZoneId FUSO = ZoneId.of("America/Sao_Paulo");
+
     @Inject LembreteChamadaService lembrete;
     @Inject Fixtures fx;
+
+    private static LocalDate hoje() {
+        return LocalDate.now(FUSO);
+    }
 
     /** Cria uma turma com 1 aluno ativo, 1 professor com e-mail e a aula de hoje. */
     private Aula aulaDeHojeCom(String sufixo, String emailProfessor) {
@@ -34,7 +46,7 @@ class LembreteChamadaTest {
         fx.aluno("Aluno " + sufixo, c, null, false);
         Usuario prof = fx.usuario("prof.lembrete." + sufixo.toLowerCase(), Role.PROFESSOR, emailProfessor);
         prof.getClasses().add(c);
-        Aula aula = fx.aula(c, LocalDate.now());
+        Aula aula = fx.aula(c, hoje());
         aula.setProfessor(prof);
         return aula;
     }
@@ -80,7 +92,7 @@ class LembreteChamadaTest {
         fx.aluno("Aluno D", c, null, false);
         Usuario prof = fx.usuario("prof.lembrete.d", Role.PROFESSOR, "prof.d@ebd.test");
         prof.getClasses().add(c);
-        Aula ontem = fx.aula(c, LocalDate.now().minusDays(1));
+        Aula ontem = fx.aula(c, hoje().minusDays(1));
         ontem.setProfessor(prof);
 
         LembreteChamadaService.Resultado r = lembrete.enviarPendentes();
