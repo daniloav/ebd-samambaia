@@ -363,6 +363,12 @@ Fonte: `AulaService`.
 - **Todo dia às 8h (BRT)** sai a leitura do dia para os **alunos da turma** com opt-in e e-mail
   (`recebeNotificacoes`). **Aula adiada não envia**; aulas cuja semana de lição ainda não começou
   (data > hoje + 6) também não.
+- **Formato da referência** (`ReferenciaBiblica.validar`, chamado no cadastro): *livro capítulo*
+  com versículo/intervalo opcional — `Sl 1.1-6`, `1Jo 4.7-8`, `Salmos 119`, `1 Coríntios 13:4-7`
+  (separador `.`, `:` ou `,`). Até **3 referências por dia**, separadas por `;`. Além do formato, o
+  **livro precisa ser conhecido**: "Slm 1.1" é recusado com **400** nomeando o dia — erro de
+  digitação viraria um e-mail sem texto. A tela valida a estrutura enquanto se digita (mesma regra)
+  e arruma espaços/vírgula ao sair do campo; o livro é conferido no backend.
 - **Texto bíblico no e-mail**: o texto é buscado em **bible-api.com** (tradução *João Ferreira de
   Almeida*, domínio público, sem chave) e fica em **cache** na própria leitura. A busca é
   best-effort: se a API falhar ou não reconhecer a referência, o e-mail sai **só com a referência**.

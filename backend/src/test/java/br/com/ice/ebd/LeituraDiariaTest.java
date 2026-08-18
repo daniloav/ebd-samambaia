@@ -8,6 +8,7 @@ import br.com.ice.ebd.model.Classe;
 import br.com.ice.ebd.model.DiaSemanaLeitura;
 import br.com.ice.ebd.model.TextoBiblicoAula;
 import br.com.ice.ebd.service.BibliaOnlineService;
+import br.com.ice.ebd.service.ReferenciaBiblica;
 import br.com.ice.ebd.repository.TextoBiblicoAulaRepository;
 import br.com.ice.ebd.service.AulaService;
 import br.com.ice.ebd.service.LeituraDiariaService;
@@ -15,6 +16,7 @@ import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -25,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -158,12 +161,46 @@ class LeituraDiariaTest {
 
     @Test
     void referenciaBrasileiraViraOFormatoDaApi() {
-        assertEquals("Salmos 1:1-6", BibliaOnlineService.normalizar("Sl 1.1-6"));
-        assertEquals("1 João 4:7-8", BibliaOnlineService.normalizar("1Jo 4.7-8"));
-        assertEquals("Provérbios 3:5-6", BibliaOnlineService.normalizar("Pv 3,5-6"));
-        assertEquals("João 3:16", BibliaOnlineService.normalizar("João 3:16"));
-        assertEquals("Jó 1:1", BibliaOnlineService.normalizar("Jó 1.1"), "acento distingue Jó de João");
-        assertEquals("Salmos 119", BibliaOnlineService.normalizar("Salmos 119"));
+        assertEquals("Salmos 1:1-6", ReferenciaBiblica.normalizar("Sl 1.1-6"));
+        assertEquals("1 João 4:7-8", ReferenciaBiblica.normalizar("1Jo 4.7-8"));
+        assertEquals("Provérbios 3:5-6", ReferenciaBiblica.normalizar("Pv 3,5-6"));
+        assertEquals("João 3:16", ReferenciaBiblica.normalizar("João 3:16"));
+        assertEquals("Jó 1:1", ReferenciaBiblica.normalizar("Jó 1.1"), "acento distingue Jó de João");
+        assertEquals("Salmos 119", ReferenciaBiblica.normalizar("Salmos 119"));
+    }
+
+    @Test
+    void referenciaMalEscritaNaoPassaNoCadastro() {
+        // formato certo, livro conhecido — em abreviação, por extenso, com ou sem versículo
+        for (String ok : List.of("Sl 1.1-6", "1Jo 4.7-8", "Salmos 119", "1 Coríntios 13:4-7",
+                "Pv 3,5-6", "Jó 1.1", "Sl 1.1-6; Pv 3.5-6", "Sl 1.1-6;")) {
+            assertTrue(ReferenciaBiblica.validar(ok).isEmpty(), () -> "deveria aceitar: " + ok);
+        }
+        // dia sem leitura é válido (o cadastro é opcional)
+        assertTrue(ReferenciaBiblica.validar(null).isEmpty());
+        assertTrue(ReferenciaBiblica.validar("  ").isEmpty());
+
+        // sem capítulo, texto solto, pontuação sobrando
+        for (String ruim : List.of("Salmos", "o salmo de hoje", "Sl", "Sl 1;; Pv 3")) {
+            assertTrue(ReferenciaBiblica.validar(ruim).isPresent(), () -> "deveria recusar: " + ruim);
+        }
+        // livro que não existe (erro de digitação passaria por qualquer regex)
+        assertTrue(ReferenciaBiblica.validar("Slm 1.1").orElse("").contains("não reconheço o livro"));
+        // mais referências do que cabe num e-mail do dia
+        assertTrue(ReferenciaBiblica.validar("Sl 1; Pv 3; Jo 1; At 2").orElse("").contains("no máximo"));
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = "ADMIN")
+    @TestTransaction
+    void referenciaInvalidaNoCadastroViraErroNomeandoODia() {
+        Classe c = fx.classe("Turma Referência Inválida");
+        WebApplicationException e = assertThrows(WebApplicationException.class, () ->
+                aulaService.criar(new AulaRequest(c.getId(), LocalDate.of(2026, 9, 13), "Tema", null,
+                        List.of(new TextoBiblicoRequest(DiaSemanaLeitura.QUARTA, "Slm 1.1")))));
+
+        assertEquals(400, e.getResponse().getStatus());
+        assertTrue(e.getMessage().startsWith("Leitura de quarta-feira:"), e.getMessage());
     }
 
     @Test
