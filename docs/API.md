@@ -64,6 +64,10 @@ não mexe no que já existe. Trocar a referência zera o texto em cache e o cari
 ```
 
 `diaSemana` ∈ `SEGUNDA|TERCA|QUARTA|QUINTA|SEXTA|SABADO|DOMINGO` (a semana começa na segunda).
+A `referencia` é validada (formato *livro capítulo[.versículos]* e livro conhecido; até 3 por dia
+separadas por `;`): inválida → **400** nomeando o dia, ex.: `{"status":400,"message":"Leitura de
+quarta-feira: não reconheço o livro em \"Slm 1.1\" — use a abreviação (Sl, 1Jo, Pv) ou o nome por
+extenso."}`.
 Na resposta cada leitura traz `dataLeitura` — o dia em que ela é enviada, na **semana da lição**,
 que vai de segunda até o **dia da aula** (aula de domingo 23/08 → segunda 17/08, sábado 22/08,
 domingo 23/08) — e `enviadoEm`.
