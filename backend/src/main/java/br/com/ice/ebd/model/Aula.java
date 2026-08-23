@@ -49,6 +49,15 @@ public class Aula {
     private boolean adiada = false;
 
     /**
+     * Quando esta aula foi criada como <b>reposição</b> de uma aula adiada, aponta para a aula
+     * adiada de origem. É o que permite <b>retirar o adiamento</b>: o desfazer sabe qual aula
+     * nasceu do adiamento para removê-la e puxar a agenda da turma de volta -7 dias.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reposicao_de_id")
+    private Aula reposicaoDe;
+
+    /**
      * Último lembrete de chamada pendente enviado ao professor (no dia da aula, de hora em hora
      * a partir das 12h). Serve de dedup: no máximo um lembrete por aula por hora.
      */
@@ -80,6 +89,9 @@ public class Aula {
 
     public boolean isAdiada() { return adiada; }
     public void setAdiada(boolean adiada) { this.adiada = adiada; }
+
+    public Aula getReposicaoDe() { return reposicaoDe; }
+    public void setReposicaoDe(Aula reposicaoDe) { this.reposicaoDe = reposicaoDe; }
 
     public LocalDateTime getChamadaCobradaEm() { return chamadaCobradaEm; }
     public void setChamadaCobradaEm(LocalDateTime chamadaCobradaEm) { this.chamadaCobradaEm = chamadaCobradaEm; }

@@ -2,6 +2,7 @@ package br.com.ice.ebd.service;
 
 import br.com.ice.ebd.dto.AulaComplementarRequest;
 import br.com.ice.ebd.dto.AulaAdiarResponse;
+import br.com.ice.ebd.dto.AulaDesadiarResponse;
 import br.com.ice.ebd.dto.AulaComplementarResponse;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
@@ -14,6 +15,7 @@ import br.com.ice.ebd.repository.UsuarioRepository;
 import br.com.ice.ebd.model.AcaoAuditoria;
 import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.repository.AulaRepository;
+import br.com.ice.ebd.repository.PresencaRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -25,6 +27,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class AulaService {
@@ -40,6 +44,9 @@ public class AulaService {
 
     @Inject
     UsuarioRepository usuarioRepository;
+
+    @Inject
+    PresencaRepository presencaRepository;
 
     @Transactional
     public List<AulaResponse> listar(Long classeId) {
@@ -160,6 +167,7 @@ public class AulaService {
         reposicao.setData(novaData);
         reposicao.setTema(origem.getTema());
         reposicao.setProfessor(origem.getProfessor());
+        reposicao.setReposicaoDe(origem); // é o que permite retirar o adiamento depois
         validarDataUnica(classeId, novaData, null); // sanidade: já deve estar livre após o empurrão
         repository.persist(reposicao);
         copiarTextos(origem, reposicao); // a lição foi só remarcada: as leituras diárias vão junto
@@ -173,6 +181,112 @@ public class AulaService {
                     "empurrão +7d na agenda da turma: " + movidas + " aula(s)");
         }
         return new AulaAdiarResponse(AulaResponse.de(origem), AulaResponse.de(reposicao), movidas);
+    }
+
+    /**
+     * Retira o adiamento de uma aula: desfaz, na medida do possível, tudo o que
+     * {@link #adiar(Long)} fez — a aula volta a valer em toda pontuação e retrospecto, a aula de
+     * <b>reposição</b> criada pelo adiamento é excluída e a agenda seguinte da turma volta
+     * <b>-7 dias</b> (mecânica inversa do empurrão: ASC + flush por item, a mais antiga ocupando
+     * o slot recém-liberado).
+     *
+     * <p>Quando a reposição <b>não pode</b> ser removida com segurança — já tem chamada lançada,
+     * ela própria está adiada, não foi identificada (adiamento anterior ao vínculo) ou a volta da
+     * agenda colidiria com outra aula —, a marca de adiada é retirada assim mesmo e a agenda fica
+     * como está; a resposta traz o motivo em {@code observacao} para o professor ajustar à mão.
+     */
+    @Transactional
+    public AulaDesadiarResponse desadiar(Long id) {
+        Aula origem = obter(id);
+        Long classeId = origem.getClasse().getId();
+        escopo.assertClasse(classeId);
+        if (!origem.isAdiada()) {
+            throw new WebApplicationException("Esta aula não está adiada.", Response.Status.CONFLICT);
+        }
+
+        origem.setAdiada(false);
+        auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, origem.getId(),
+                "adiamento retirado (aula volta a pontuar) · " + rotulo(origem));
+
+        Aula reposicao = repository.reposicaoDe(origem.getId()).orElse(null);
+        String impedimento = motivoParaManterReposicao(reposicao);
+        LocalDate slot = reposicao != null ? reposicao.getData() : null;
+        if (impedimento == null && !podePuxarAgenda(classeId, slot)) {
+            impedimento = "A agenda seguinte não voltou 7 dias porque já existe outra aula "
+                    + "ocupando alguma das datas; a reposição foi mantida.";
+        }
+        if (impedimento != null) {
+            return new AulaDesadiarResponse(AulaResponse.de(origem), false, slot, 0, impedimento);
+        }
+
+        repository.delete(reposicao); // leituras copiadas para a reposição saem em cascata
+        repository.getEntityManager().flush(); // libera o slot antes de puxar a agenda
+        int movidas = puxarAgenda(classeId, slot);
+
+        auditoria.registrar(AcaoAuditoria.EXCLUIR, EntidadeAuditoria.AULA, origem.getId(),
+                "reposição de " + slot + " removida ao retirar o adiamento");
+        if (movidas > 0) {
+            auditoria.registrar(AcaoAuditoria.ATUALIZAR, EntidadeAuditoria.AULA, origem.getId(),
+                    "agenda da turma voltou -7d: " + movidas + " aula(s)");
+        }
+        return new AulaDesadiarResponse(AulaResponse.de(origem), true, slot, movidas, null);
+    }
+
+    /**
+     * Motivo para <b>não</b> excluir a reposição ao retirar o adiamento, ou {@code null} quando
+     * ela pode sair sem perda: sem vínculo (nada a excluir por adivinhação), reposição já adiada
+     * (tem a própria cadeia de remarcação) ou chamada já lançada nela (apagaria presenças reais).
+     */
+    private String motivoParaManterReposicao(Aula reposicao) {
+        if (reposicao == null) {
+            return "A aula de reposição não foi identificada e nada foi excluído; "
+                    + "se ela existir, ajuste a agenda manualmente.";
+        }
+        if (reposicao.isAdiada()) {
+            return "A reposição de " + reposicao.getData() + " também está adiada e foi mantida.";
+        }
+        if (presencaRepository.count("aula.id", reposicao.getId()) > 0) {
+            return "A reposição de " + reposicao.getData() + " já tem chamada lançada e foi mantida; "
+                    + "as duas aulas agora contam na pontuação.";
+        }
+        return null;
+    }
+
+    /**
+     * A agenda só volta -7 dias se todos os destinos estiverem livres: o slot da reposição (que
+     * será excluída) ou datas ocupadas apenas por aulas que também estão voltando. Uma aula
+     * cadastrada depois do adiamento, no meio da janela liberada, bloqueia o retorno.
+     */
+    private boolean podePuxarAgenda(Long classeId, LocalDate slotLiberado) {
+        var movendo = repository.listarPorClasseDesdeAsc(classeId, slotLiberado.plusDays(7));
+        Set<LocalDate> origens = movendo.stream().map(Aula::getData).collect(Collectors.toSet());
+        for (Aula a : movendo) {
+            LocalDate alvo = a.getData().minusDays(7);
+            if (alvo.equals(slotLiberado) || origens.contains(alvo)) {
+                continue;
+            }
+            if (repository.findByClasseAndData(classeId, alvo).isPresent()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Traz de volta -7 dias as aulas empurradas pelo adiamento (as com data &gt;=
+     * {@code slotLiberado + 7d}), da mais antiga para a mais recente com flush por iteração — a
+     * primeira ocupa o slot liberado pela reposição excluída e cada seguinte o recém-liberado,
+     * sem violar a unique {@code uq_aula_classe_data}.
+     *
+     * @return quantas aulas voltaram.
+     */
+    private int puxarAgenda(Long classeId, LocalDate slotLiberado) {
+        var seguintes = repository.listarPorClasseDesdeAsc(classeId, slotLiberado.plusDays(7));
+        for (Aula a : seguintes) {
+            a.setData(a.getData().minusDays(7));
+            repository.getEntityManager().flush();
+        }
+        return seguintes.size();
     }
 
     /**

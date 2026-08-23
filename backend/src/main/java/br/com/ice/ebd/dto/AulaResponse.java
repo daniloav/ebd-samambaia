@@ -15,6 +15,8 @@ public record AulaResponse(
         String professorNome,
         Long professorAlunoId,
         boolean adiada,
+        /** Quando esta aula é a reposição de uma aula adiada, o id da aula adiada de origem. */
+        Long reposicaoDeId,
         /** Leituras bíblicas diárias da lição, de domingo a sábado (vazia se não houver). */
         List<TextoBiblicoResponse> textos) {
 
@@ -30,6 +32,6 @@ public record AulaResponse(
                 .toList();
         return new AulaResponse(a.getId(), a.getData(), a.getTema(),
                 a.getClasse().getId(), a.getClasse().getNome(), profId, profNome, profAlunoId,
-                a.isAdiada(), textos);
+                a.isAdiada(), a.getReposicaoDe() != null ? a.getReposicaoDe().getId() : null, textos);
     }
 }

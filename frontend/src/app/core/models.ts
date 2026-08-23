@@ -59,6 +59,8 @@ export interface Aula {
   professorNome?: string | null;
   professorAlunoId?: number | null;
   adiada?: boolean;
+  /** Quando esta aula é a reposição de uma aula adiada, o id da aula adiada de origem. */
+  reposicaoDeId?: number | null;
   /** Leituras bíblicas diárias da lição (opcional), de domingo a sábado. */
   textos?: TextoBiblico[];
 }
@@ -655,6 +657,15 @@ export interface AulaAdiarResponse {
   aulaAdiada: Aula;
   reposicao: Aula;
   aulasMovidas: number;
+}
+
+/** Resultado de retirar o adiamento: reposição excluída (ou mantida, com o motivo) + agenda -7d. */
+export interface AulaDesadiarResponse {
+  aula: Aula;
+  reposicaoRemovida: boolean;
+  dataReposicao?: string | null;
+  aulasMovidas: number;
+  observacao?: string | null;
 }
 
 // ---------- Estatísticas de uso (painel /uso, ADMIN) ----------

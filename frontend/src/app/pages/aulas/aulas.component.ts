@@ -45,6 +45,8 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
                   <td>
                     @if (a.adiada) {
                       <small class="muted">Adiada — fora de pontuação/retrospecto.</small>
+                      <button class="btn btn-verde btn-sm" (click)="abrirDesadiar(a)"
+                        title="Retirar o adiamento: a aula volta a valer, a reposição é desfeita e a agenda volta -7 dias">Retirar adiamento</button>
                       <button class="btn btn-outline btn-sm" (click)="editar(a)">Editar</button>
                       @if (auth.isAdmin()) {
                         <button class="btn btn-perigo btn-sm" (click)="excluir(a)">Excluir</button>
@@ -137,7 +139,7 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
               Aula de origem:
               <b>{{ origem()?.data | date:'dd/MM/yyyy' }}</b>{{ origem()?.tema ? ' · ' + origem()?.tema : '' }}.
             </p>
-            <div class="card" style="background:var(--cor-fundo-suave,#f7f7f5);padding:.75rem 1rem;margin-bottom:1rem">
+            <div class="card" style="background:var(--superficie-2);padding:.75rem 1rem;margin-bottom:1rem">
               A aula complementar será criada em <b>{{ novaData() | date:'dd/MM/yyyy' }}</b> (próximo domingo).
               @if (qtdMovidas() > 0) {
                 <br>As <b>{{ qtdMovidas() }}</b> aula(s) seguinte(s) da turma serão movidas <b>+7 dias</b>.
@@ -175,7 +177,7 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
               Aula:
               <b>{{ alvoAdiar()?.data | date:'dd/MM/yyyy' }}</b>{{ alvoAdiar()?.tema ? ' · ' + alvoAdiar()?.tema : '' }}.
             </p>
-            <div class="card" style="background:var(--cor-fundo-suave,#f7f7f5);padding:.75rem 1rem;margin-bottom:1rem">
+            <div class="card" style="background:var(--superficie-2);padding:.75rem 1rem;margin-bottom:1rem">
               A aula ficará marcada como <b>Adiada</b> e sairá de <b>toda pontuação e retrospecto</b>
               (chamada, rankings, relatórios, boletim e frequência) — <b>ninguém é penalizado</b> por ela.
               <br>Uma aula de <b>reposição</b> será criada em <b>{{ novaDataAdiar() | date:'dd/MM/yyyy' }}</b>
@@ -192,6 +194,44 @@ import { Aula, AulaRequest, DiaSemanaLeitura, Professor } from '../../core/model
             <button class="btn btn-outline" (click)="fecharAdiar()">Cancelar</button>
             <button class="btn btn-verde" (click)="confirmarAdiar()" [disabled]="adiando()">
               {{ adiando() ? 'Processando...' : 'Adiar e empurrar agenda' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (modalDesadiarAberto()) {
+      <div class="modal-backdrop" (click)="fecharDesadiar()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header"><h3>Retirar adiamento</h3></div>
+          <div class="modal-body">
+            <p class="muted" style="margin-top:0">
+              Aula:
+              <b>{{ alvoDesadiar()?.data | date:'dd/MM/yyyy' }}</b>{{ alvoDesadiar()?.tema ? ' · ' + alvoDesadiar()?.tema : '' }}.
+            </p>
+            <div class="card" style="background:var(--superficie-2);padding:.75rem 1rem;margin-bottom:1rem">
+              A aula deixa de ser <b>Adiada</b> e <b>volta a contar</b> em toda pontuação e retrospecto
+              (chamada, rankings, relatórios, boletim e frequência).
+              @if (reposicaoDe(alvoDesadiar()); as rep) {
+                <br>A aula de <b>reposição</b> de <b>{{ rep.data | date:'dd/MM/yyyy' }}</b> será
+                <b>excluída</b> (com as leituras copiadas para ela).
+                @if (qtdVoltamDesadiar() > 0) {
+                  <br>As <b>{{ qtdVoltamDesadiar() }}</b> aula(s) seguinte(s) da turma voltam <b>-7 dias</b>,
+                  às datas de antes do adiamento.
+                }
+              } @else {
+                <br>A reposição criada pelo adiamento <b>não foi identificada</b> — nada será excluído
+                e a agenda fica como está.
+              }
+              <br><small class="muted">Se a reposição já tiver chamada lançada, ela é mantida: o
+                adiamento sai assim mesmo e a agenda não se mexe.</small>
+            </div>
+            <small class="muted">Use quando o adiamento foi um engano ou o encontro acabou acontecendo.</small>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="fecharDesadiar()">Cancelar</button>
+            <button class="btn btn-verde" (click)="confirmarDesadiar()" [disabled]="desadiando()">
+              {{ desadiando() ? 'Processando...' : 'Retirar adiamento' }}
             </button>
           </div>
         </div>
@@ -241,8 +281,11 @@ export class AulasComponent {
 
   // Adiamento (aula cancelada: sai da pontuação + empurra agenda + reposição)
   modalAdiarAberto = signal(false);
+  modalDesadiarAberto = signal(false);
   adiando = signal(false);
   alvoAdiar = signal<Aula | null>(null);
+  alvoDesadiar = signal<Aula | null>(null);
+  desadiando = signal(false);
 
   constructor() {
     effect(() => { this.classeCtx.selecionadaId(); this.carregar(); this.carregarProfessores(); }, { allowSignalWrites: true });
@@ -423,6 +466,47 @@ export class AulasComponent {
         this.adiando.set(false); this.fecharAdiar(); this.carregar();
       },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao adiar a aula.'); this.adiando.set(false); },
+    });
+  }
+
+  // ---- Retirar adiamento ----
+  abrirDesadiar(a: Aula): void { this.alvoDesadiar.set(a); this.modalDesadiarAberto.set(true); }
+  fecharDesadiar(): void { this.modalDesadiarAberto.set(false); this.alvoDesadiar.set(null); }
+
+  /** Aula de reposição criada pelo adiamento desta aula (a que será excluída), se houver. */
+  reposicaoDe(a: Aula | null): Aula | null {
+    if (!a) { return null; }
+    return this.aulas().find((x) => x.reposicaoDeId === a.id) ?? null;
+  }
+
+  /** Quantas aulas voltam -7 dias: as posteriores à reposição que será excluída. */
+  qtdVoltamDesadiar(): number {
+    const rep = this.reposicaoDe(this.alvoDesadiar());
+    if (!rep) { return 0; }
+    return this.aulas().filter((x) => x.data > rep.data).length;
+  }
+
+  confirmarDesadiar(): void {
+    const a = this.alvoDesadiar();
+    if (!a) { return; }
+    this.desadiando.set(true);
+    this.api.desadiarAula(a.id).subscribe({
+      next: (r) => {
+        if (r.reposicaoRemovida) {
+          const msg = r.aulasMovidas > 0
+            ? `Adiamento retirado; reposição excluída e ${r.aulasMovidas} aula(s) de volta -7 dias.`
+            : 'Adiamento retirado; reposição excluída.';
+          this.toast.sucesso(msg);
+        } else {
+          this.toast.sucesso('Adiamento retirado: a aula volta a contar.');
+          if (r.observacao) { this.toast.erro(r.observacao); }
+        }
+        this.desadiando.set(false); this.fecharDesadiar(); this.carregar();
+      },
+      error: (e) => {
+        this.toast.erro(e?.error?.message || 'Erro ao retirar o adiamento.');
+        this.desadiando.set(false);
+      },
     });
   }
 

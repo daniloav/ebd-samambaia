@@ -164,6 +164,28 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- ↩️ **Retirar o adiamento de uma aula (2026-08-23)** — adiar era caminho só de ida: um clique
+  errado (ou o encontro acontecendo mesmo assim) deixava a aula fora de toda pontuação, com uma
+  reposição sobrando e a agenda da turma 7 dias adiante. Agora a linha adiada em /aulas tem
+  **"Retirar adiamento"**, que desfaz o inverso exato do `adiar`: a aula **volta a valer**, a
+  **reposição é excluída** e a agenda volta **-7 dias** às datas de antes. Migration **V32**
+  (`aula.reposicao_de_id`, FK self `ON DELETE SET NULL`): o `adiar` passa a carimbar de qual aula a
+  reposição nasceu — sem esse vínculo o desfazer teria de adivinhar qual aula excluir —, com
+  **backfill** best-effort das adiadas que já existem (mesma turma, +7 dias, mesmo tema). O desfazer
+  **degrada em vez de destruir**: se a reposição já tem **chamada lançada**, está ela própria adiada,
+  não foi identificada, ou a volta da agenda **colidiria** com outra aula, a marca de adiada sai
+  assim mesmo, a agenda fica como está e a resposta diz o porquê (`observacao`) para o professor
+  ajustar à mão. Backend: `AulaService.desadiar` + `podePuxarAgenda`/`puxarAgenda` (inverso do
+  empurrão: ASC + flush por item, sem violar `uq_aula_classe_data`), DTO `AulaDesadiarResponse`,
+  `POST /api/aulas/{id}/desadiar` (ADMIN/PROFESSOR, respeita escopo; aula não adiada → 409);
+  `AulaResponse` expõe `reposicaoDeId` para a tela montar a prévia. Front: botão + modal dizendo
+  qual reposição sai e quantas aulas voltam. De quebra, o card de prévia dos 3 modais de /aulas
+  (desdobrar/adiar/retirar) usava `var(--cor-fundo-suave)`, que **não existe** — caía no fallback
+  claro e ficava ilegível no tema escuro (~1.1:1); agora usa `--superficie-2`. Validado: `mvn test`
+  (**95** testes, 3 novos em `AulaAdiarServiceTest` — desfaz reposição+agenda, mantém reposição com
+  chamada, 409 em aula não adiada), `ng build`, **e2e 37/37** e smoke ponta-a-ponta contra Postgres
+  real (V32 migrou; adiar → agenda 07/14/21 vira 07(adiada)/14(reposição)/21/28 → desadiar devolveu
+  exatamente 07/14/21 e a tela confirmou).
 - 📖 **Leituras bíblicas diárias da lição (2026-08-17)** — a revista traz um texto por dia da semana
   para preparar a lição, e isso não existia no sistema. Agora o cadastro da aula tem um bloco
   **opcional** com uma referência por dia (segunda→domingo, no máximo uma por dia): migration **V31**
