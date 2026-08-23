@@ -340,6 +340,26 @@ Fonte: `AulaService`.
 - O **professor** da aula, se informado, precisa ser um usuário com `ehProfessor` (senão 400).
 - Excluir a aula remove as presenças em cascata.
 
+**Desdobrar, adiar e retirar o adiamento** (`AulaService`):
+
+- **Desdobrar**: a lição não terminou e continua no domingo seguinte. Cria a continuação em
+  `origem + 7 dias` (tema com sufixo "(continuação)", mesmo professor) e **empurra +7 dias** toda a
+  agenda seguinte da turma.
+- **Adiar**: o encontro foi cancelado (ex.: evento da igreja). A aula fica marcada como **adiada** e
+  sai de **toda pontuação e retrospecto** — ninguém é penalizado —, a agenda seguinte anda **+7
+  dias** e uma aula de **reposição** nasce no domingo liberado, herdando tema, professor e leituras.
+- **Retirar o adiamento**: desfaz o adiamento (engano, ou o encontro acabou acontecendo). A aula
+  **volta a valer**, a reposição criada pelo adiamento é **excluída** e a agenda volta **-7 dias**,
+  às datas de antes. A reposição é achada pelo vínculo `reposicao_de_id` (V32), gravado no adiamento.
+- A reposição é **mantida** (e a agenda não se mexe) quando excluí-la apagaria trabalho real ou
+  exigiria adivinhação: **já tem chamada lançada**, ela própria está **adiada**, **não foi
+  identificada** (adiamento anterior à V32, sem backfill) ou a volta da agenda **colidiria** com
+  outra aula. Nesses casos a marca de adiada sai assim mesmo e a resposta traz o motivo, para o
+  professor ajustar a agenda à mão.
+- O empurrão (+7d) percorre as aulas da **mais recente para a mais antiga** e a volta (-7d) da
+  **mais antiga para a mais recente**, com flush por item: cada aula ocupa o slot recém-liberado,
+  sem violar a unique `(classe, data)`, que não é deferrable.
+
 **Lembrete de chamada pendente** (`LembreteChamadaService`):
 
 - **No dia da aula**, se a aula é **válida** (não adiada) e ainda **não tem chamada registrada**

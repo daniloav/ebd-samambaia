@@ -45,6 +45,9 @@ Só `nome` é obrigatório.
 | GET | `/aulas/{id}` | A, P |
 | POST | `/aulas` | A, P |
 | PUT | `/aulas/{id}` | A, P |
+| POST | `/aulas/{id}/complementar` | A, P |
+| POST | `/aulas/{id}/adiar` | A, P |
+| POST | `/aulas/{id}/desadiar` | A, P |
 | DELETE | `/aulas/{id}` | A |
 
 Corpo: `{ "data": "2026-07-19", "tema": "A graça de Deus" }` (`data` obrigatória e única).
@@ -71,6 +74,23 @@ extenso."}`.
 Na resposta cada leitura traz `dataLeitura` — o dia em que ela é enviada, na **semana da lição**,
 que vai de segunda até o **dia da aula** (aula de domingo 23/08 → segunda 17/08, sábado 22/08,
 domingo 23/08) — e `enviadoEm`.
+
+**Adiar / retirar o adiamento** — `POST /aulas/{id}/adiar` marca a aula como `adiada` (sai de toda
+pontuação e retrospecto), empurra **+7 dias** a agenda seguinte da turma e cria a aula de
+**reposição** no domingo liberado (herda tema, professor e leituras).
+
+`POST /aulas/{id}/desadiar` desfaz isso: a aula volta a valer, a reposição é **excluída** e a
+agenda volta **-7 dias**. Aula que não está adiada → **409**.
+
+```json
+{ "aula": { "id": 18, "data": "2027-03-07", "adiada": false },
+  "reposicaoRemovida": true, "dataReposicao": "2027-03-14", "aulasMovidas": 2, "observacao": null }
+```
+
+Quando a reposição **não pode** sair — já tem chamada lançada, ela própria está adiada, não foi
+identificada (adiamento anterior à V32) ou a volta da agenda colidiria com outra aula — o adiamento
+é retirado assim mesmo, a agenda fica como está e `observacao` explica o motivo
+(`reposicaoRemovida: false`, `aulasMovidas: 0`).
 
 ## Chamada
 

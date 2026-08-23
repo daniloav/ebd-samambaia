@@ -2,6 +2,7 @@ package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.AulaAdiarResponse;
 import br.com.ice.ebd.dto.AulaComplementarRequest;
+import br.com.ice.ebd.dto.AulaDesadiarResponse;
 import br.com.ice.ebd.dto.AulaComplementarResponse;
 import br.com.ice.ebd.dto.AulaRequest;
 import br.com.ice.ebd.dto.AulaResponse;
@@ -74,6 +75,17 @@ public class AulaResource {
     @RolesAllowed({"ADMIN", "PROFESSOR"})
     public AulaAdiarResponse adiar(@PathParam("id") Long id) {
         return service.adiar(id);
+    }
+
+    /**
+     * Retira o adiamento da aula: ela volta a valer, a reposição criada pelo adiamento é
+     * excluída (se ainda não tiver chamada) e a agenda seguinte da turma volta -7 dias.
+     */
+    @POST
+    @Path("/{id}/desadiar")
+    @RolesAllowed({"ADMIN", "PROFESSOR"})
+    public AulaDesadiarResponse desadiar(@PathParam("id") Long id) {
+        return service.desadiar(id);
     }
 
     @DELETE

@@ -42,6 +42,21 @@ public class AulaRepository implements PanacheRepository<Aula> {
     }
 
     /**
+     * Aulas da turma com data &gt;= a informada, <b>em ordem crescente de data</b>. Usado ao
+     * puxar a agenda de volta (-7 dias) quando o adiamento é desfeito: deslocar a partir da mais
+     * antiga (que vai para o slot liberado pela reposição excluída) evita colisão transitória
+     * com a unique {@code uq_aula_classe_data}.
+     */
+    public List<Aula> listarPorClasseDesdeAsc(Long classeId, LocalDate data) {
+        return list("classe.id = ?1 and data >= ?2 order by data asc", classeId, data);
+    }
+
+    /** Aula de reposição criada pelo adiamento da aula informada, se ainda existir. */
+    public Optional<Aula> reposicaoDe(Long aulaId) {
+        return find("reposicaoDe.id", aulaId).firstResultOptional();
+    }
+
+    /**
      * IDs de alunos vinculados a professores que dão <b>alguma</b> aula na data informada
      * (nesta ou em qualquer outra turma). Esses alunos estão dando aula nesse dia e, por isso,
      * não recebem presença como alunos na chamada daquele dia. Num dia em que não dão aula,
