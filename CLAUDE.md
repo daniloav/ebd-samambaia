@@ -164,6 +164,36 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 🔗 **Juntar requisições da tesouraria (2026-09-12)** — o líder às vezes abre dois pedidos que
+  acabam virando a **mesma compra**: o repasse sai num montante só e o valor de cada requisição
+  fica **quebrado** no fechamento (nota e comprovante não batem com nenhuma das duas). Agora a
+  linha aberta em /requisicoes tem **"Juntar"**: escolhem-se os outros pedidos em aberto do mesmo
+  solicitante e eles são **absorvidos** pela principal, que passa a valer a **soma**. Migration
+  **V33** (`requisicao_tesouraria.juntada_na_id` FK self `ON DELETE SET NULL` + `juntada_em`;
+  status novo **JUNTADA**, que cabe no `VARCHAR(12)` sem CHECK). A absorvida **mantém o próprio
+  valor** — é o que torna a junção **reversível**: **"Desfazer junção"** devolve cada uma a ABERTA
+  e subtrai da principal exatamente o que entrou (a junção **não** mexe em ministério, destinação,
+  motivo nem data, então não há nada mais a restaurar). Só junta o que o tesoureiro pagaria de uma
+  vez: **mesma forma de repasse** e, no PIX, mesma chave/tipo/titular (senão 400); só entre
+  **ABERTAS** e do **mesmo solicitante**; dá para somar mais pedidos numa principal que já reúne
+  outros, mas não absorver uma que ela própria já reúne. **Cancelar a principal fica bloqueado**
+  enquanto ela reúne outras — senão as absorvidas ficariam presas a uma requisição morta. Backend:
+  `RequisicaoService.juntar/separar`, `POST /api/requisicoes/{id}/juntar` (corpo `{ids}`) e
+  `/separar` (LIDER/ADMIN, valida o dono), `RequisicaoResponse` expõe `juntadaNaNumero` +
+  `juntadas` (número, valor, destinação, data de cada absorvida) e a listagem as carrega **em
+  lote** (sem N+1). Os tesoureiros, que já receberam o e-mail de cada pedido, recebem um aviso
+  dizendo qual ficou de pé, com que total, e quais saíram de cena. View de integração estendida
+  (append-only) com `juntada_na` e `qtd_juntadas`. Front: botão + modal com prévia do total,
+  selos **🔗 Reúne N pedidos** / **🔗 Juntada em REQ-…**, bloco no detalhe e filtro de status.
+  Validado: `mvn test` (**97** testes, 96 verdes, 2 novos em `RequisicaoFluxoTest` — soma +
+  desfazer exato + cancelar bloqueado; e 400 em repasse diferente/já avaliada), `ng build`,
+  **e2e 37/37** e smoke
+  ponta-a-ponta contra Postgres real (V33 migrou; 120,35 + 79,65 → 200,00, a view mostrou
+  `juntada_na`/`qtd_juntadas`, desfazer devolveu 120,35 e 79,65, e a tela confirmou tudo).
+  ⚠️ A única falha do `mvn test` é **anterior e alheia** a esta branch:
+  `UsoServiceLote3Test.pctForaDoDomingoIgnoraDomingo` ancora os acessos no domingo fixo
+  **2026-08-02**, que saiu da janela de 30 dias da métrica — o teste apodrece com o calendário e
+  precisa de uma data relativa a hoje.
 - ↩️ **Retirar o adiamento de uma aula (2026-08-23)** — adiar era caminho só de ida: um clique
   errado (ou o encontro acontecendo mesmo assim) deixava a aula fora de toda pontuação, com uma
   reposição sobrando e a agenda da turma 7 dias adiante. Agora a linha adiada em /aulas tem

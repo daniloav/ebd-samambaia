@@ -592,13 +592,21 @@ export interface RankingTurmasResponse {
 }
 
 // ---- Tesouraria: requisições ----
-export type StatusRequisicao = 'ABERTA' | 'APROVADA' | 'NEGADA' | 'FINALIZADA' | 'CANCELADA';
+export type StatusRequisicao = 'ABERTA' | 'APROVADA' | 'NEGADA' | 'FINALIZADA' | 'CANCELADA' | 'JUNTADA';
 export type FormaRepasse = 'DINHEIRO' | 'PIX';
 export type TipoChavePix = 'CPF' | 'EMAIL' | 'TELEFONE';
 /** De quem é a chave PIX: do solicitante ou de um terceiro beneficiado (oferta de amor). */
 export type TitularChavePix = 'PROPRIO' | 'TERCEIRO';
 export type CategoriaAnexo = 'NOTA_FISCAL' | 'COMPROVANTE' | 'TROCO';
 export interface RequisicaoAnexoResumo { id: number; nome?: string | null; tipo: string; categoria: CategoriaAnexo; }
+/** Requisição absorvida por outra (junção): guarda o próprio valor, que é o que entrou na soma. */
+export interface RequisicaoJuntada {
+  id: number;
+  numero: string;
+  valorSolicitado: number;
+  destinacao: string;
+  dataNecessidade?: string | null;
+}
 export interface Requisicao {
   id: number;
   numero: string;
@@ -626,6 +634,11 @@ export interface Requisicao {
   pixTitular?: TitularChavePix | null;
   pixBeneficiarioNome?: string | null;
   pixBeneficiarioObs?: string | null;
+  /** Preenchido quando esta requisição foi absorvida por outra. */
+  juntadaNaNumero?: string | null;
+  juntadaNaId?: number | null;
+  /** As requisições que esta absorveu — o valor solicitado já é a soma de todas. */
+  juntadas: RequisicaoJuntada[];
   anexos: RequisicaoAnexoResumo[];
 }
 export interface RequisicaoRequest {

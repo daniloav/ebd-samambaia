@@ -264,6 +264,14 @@ export class ApiService {
   negarRequisicao(id: number, parecer: string | null): Observable<Requisicao> {
     return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/negar`, { parecer });
   }
+  /** Junta requisições em aberto: as de `ids` são absorvidas pela `id`, que passa a valer a soma. */
+  juntarRequisicoes(id: number, ids: number[]): Observable<Requisicao> {
+    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/juntar`, { ids });
+  }
+  /** Desfaz a junção: cada absorvida volta a valer sozinha. */
+  separarRequisicoes(id: number): Observable<Requisicao> {
+    return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/separar`, {});
+  }
   cancelarRequisicao(id: number): Observable<Requisicao> {
     return this.http.post<Requisicao>(`${this.api}/requisicoes/${id}/cancelar`, {});
   }

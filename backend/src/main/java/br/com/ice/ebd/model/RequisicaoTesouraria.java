@@ -106,6 +106,18 @@ public class RequisicaoTesouraria {
     @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm = LocalDateTime.now();
 
+    /**
+     * Quando esta requisição foi absorvida por outra (junção), a principal. O valor próprio
+     * continua em {@code valorSolicitado} — é o que permite desfazer a junção subtraindo da
+     * principal exatamente o que entrou.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "juntada_na_id")
+    private RequisicaoTesouraria juntadaNa;
+
+    @Column(name = "juntada_em")
+    private LocalDateTime juntadaEm;
+
     /** Último dia em que o lembrete de nota fiscal foi enviado (dedup diário). */
     @Column(name = "nota_cobrada_em")
     private LocalDate notaCobradaEm;
@@ -169,6 +181,10 @@ public class RequisicaoTesouraria {
     public void setFinalizadoEm(LocalDateTime finalizadoEm) { this.finalizadoEm = finalizadoEm; }
     public LocalDateTime getCriadoEm() { return criadoEm; }
     public void setCriadoEm(LocalDateTime criadoEm) { this.criadoEm = criadoEm; }
+    public RequisicaoTesouraria getJuntadaNa() { return juntadaNa; }
+    public void setJuntadaNa(RequisicaoTesouraria juntadaNa) { this.juntadaNa = juntadaNa; }
+    public LocalDateTime getJuntadaEm() { return juntadaEm; }
+    public void setJuntadaEm(LocalDateTime juntadaEm) { this.juntadaEm = juntadaEm; }
     public LocalDate getNotaCobradaEm() { return notaCobradaEm; }
     public void setNotaCobradaEm(LocalDate notaCobradaEm) { this.notaCobradaEm = notaCobradaEm; }
 }

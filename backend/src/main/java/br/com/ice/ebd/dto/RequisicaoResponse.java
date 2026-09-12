@@ -37,9 +37,24 @@ public record RequisicaoResponse(
         String pixBeneficiarioNome,
         String pixBeneficiarioObs,
         boolean possuiComprovante,
+        /** Quando esta requisição foi absorvida por outra, o número da principal (senão null). */
+        String juntadaNaNumero,
+        Long juntadaNaId,
+        /** As requisições que esta absorveu (junção) — vazio quando não juntou nenhuma. */
+        List<RequisicaoJuntada> juntadas,
         List<AnexoResumo> anexos) {
 
     public record AnexoResumo(Long id, String nome, String tipo, String categoria) {}
+
+    /** Resumo de uma requisição absorvida, para mostrar do que o valor total é feito. */
+    public record RequisicaoJuntada(Long id, String numero, BigDecimal valorSolicitado,
+            String destinacao, LocalDate dataNecessidade) {
+
+        public static RequisicaoJuntada de(RequisicaoTesouraria r) {
+            return new RequisicaoJuntada(r.getId(), r.getNumero(), r.getValorSolicitado(),
+                    r.getDestinacao(), r.getDataNecessidade());
+        }
+    }
 
     /** Nome de exibição de um usuário: o nome do aluno vinculado, ou o login. */
     public static String nomeDe(Usuario u) {
@@ -50,13 +65,19 @@ public record RequisicaoResponse(
     }
 
     public static RequisicaoResponse de(RequisicaoTesouraria r, List<RequisicaoAnexo> anexos) {
+        return de(r, anexos, List.of());
+    }
+
+    public static RequisicaoResponse de(RequisicaoTesouraria r, List<RequisicaoAnexo> anexos,
+            List<RequisicaoTesouraria> juntadas) {
         boolean temComp = anexos != null && anexos.stream()
                 .anyMatch(a -> a.getCategoria() == CategoriaAnexo.COMPROVANTE);
-        return de(r, anexos, temComp);
+        return de(r, anexos, temComp, juntadas);
     }
 
     /** Variante para a listagem: possuiComprovante vem de uma query leve (sem carregar binário). */
-    public static RequisicaoResponse de(RequisicaoTesouraria r, List<RequisicaoAnexo> anexos, boolean possuiComprovante) {
+    public static RequisicaoResponse de(RequisicaoTesouraria r, List<RequisicaoAnexo> anexos,
+            boolean possuiComprovante, List<RequisicaoTesouraria> juntadas) {
         List<AnexoResumo> as = anexos == null ? List.of()
                 : anexos.stream().map(a -> new AnexoResumo(a.getId(), a.getNome(), a.getTipo(),
                         a.getCategoria().name())).toList();
@@ -75,6 +96,9 @@ public record RequisicaoResponse(
                 r.getPixBeneficiarioNome(),
                 r.getPixBeneficiarioObs(),
                 possuiComprovante,
+                r.getJuntadaNa() != null ? r.getJuntadaNa().getNumero() : null,
+                r.getJuntadaNa() != null ? r.getJuntadaNa().getId() : null,
+                juntadas == null ? List.of() : juntadas.stream().map(RequisicaoJuntada::de).toList(),
                 as);
     }
 }
