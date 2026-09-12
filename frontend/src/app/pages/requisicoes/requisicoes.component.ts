@@ -86,13 +86,13 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               @if (souDono(r) && r.status === 'APROVADA') {
                 <button class="btn btn-dourado btn-sm" (click)="abrirFinalizar(r)">{{ ehOferta(r) ? 'Anexar comprovante / finalizar' : 'Anexar nota / finalizar' }}</button>
               }
+              @if (souDono(r) && podeJuntar(r) && temCandidatos(r)) {
+                <button class="btn btn-outline btn-sm" (click)="abrirJuntar(r)">Juntar</button>
+              }
+              @if (souDono(r) && r.podeSeparar) {
+                <button class="btn btn-outline btn-sm" (click)="desfazerJuncao(r)">Desfazer junção</button>
+              }
               @if (souDono(r) && r.status === 'ABERTA') {
-                @if (temCandidatos(r)) {
-                  <button class="btn btn-outline btn-sm" (click)="abrirJuntar(r)">Juntar</button>
-                }
-                @if (r.juntadas.length) {
-                  <button class="btn btn-outline btn-sm" (click)="desfazerJuncao(r)">Desfazer junção</button>
-                }
                 <button class="btn btn-outline btn-sm" (click)="cancelar(r)">Cancelar</button>
               }
             </div>
@@ -240,18 +240,24 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
           <div class="modal-body">
             <p class="muted" style="margin-top:0">
               Marque os pedidos que acabaram virando a mesma compra. Eles deixam de valer sozinhos e
-              {{ r.numero }} passa a valer a soma, para o tesoureiro repassar de uma vez só.
+              {{ r.numero }} passa a valer a soma,
+              {{ r.status === 'APROVADA' ? 'para uma nota fiscal só prestar contas de tudo.' : 'para o tesoureiro repassar de uma vez só.' }}
             </p>
             @for (c of candidatos(); track c.id) {
               <label class="opt">
                 <input type="checkbox" [attr.aria-label]="'Juntar ' + c.numero" [checked]="selecionadas.has(c.id)" (change)="alternarJuncao(c.id)" />
                 <span class="cresce">{{ c.numero }} · {{ c.destinacao }}</span>
-                <span class="val">{{ brl(c.valorSolicitado) }}</span>
+                <span class="val">{{ brl(valorBase(c)) }}</span>
               </label>
             }
             <p class="soma">
-              {{ r.numero }} passa de {{ brl(r.valorSolicitado) }} para <b>{{ brl(totalJuncao(r)) }}</b>.
-              <br><small class="muted">Dá para desfazer enquanto a tesouraria não avaliar.</small>
+              {{ r.status === 'APROVADA' ? 'O valor aprovado de ' : '' }}{{ r.numero }} passa de
+              {{ brl(valorBase(r)) }} para <b>{{ brl(totalJuncao(r)) }}</b>.
+              <br><small class="muted">
+                {{ r.status === 'APROVADA'
+                  ? 'Dá para desfazer enquanto a prestação de contas não for concluída.'
+                  : 'Dá para desfazer enquanto a tesouraria não avaliar.' }}
+              </small>
             </p>
           </div>
           <div class="modal-footer">
@@ -279,8 +285,8 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               @if (r.juntadas.length) {
                 <dt>Requisições juntadas</dt>
                 <dd>
-                  @for (j of r.juntadas; track j.id) { <div>🔗 {{ j.numero }} · {{ brl(j.valorSolicitado) }} · {{ j.destinacao }}</div> }
-                  <small class="muted">O valor solicitado acima já é a soma destas com a original.</small>
+                  @for (j of r.juntadas; track j.id) { <div>🔗 {{ j.numero }} · {{ brl(j.valorAprovado ?? j.valorSolicitado) }} · {{ j.destinacao }}</div> }
+                  <small class="muted">Os valores acima já são a soma destas com a original.</small>
                 </dd>
               }
               @if (r.juntadaNaNumero) {
@@ -460,9 +466,18 @@ export class RequisicoesComponent {
   // Dois pedidos que viraram a mesma compra: em vez de a tesouraria repassar (e o líder prestar
   // contas de) dois valores quebrados, eles viram um só, com o total redondo.
 
-  /** Outras em aberto do mesmo solicitante que a tesouraria pagaria do mesmo jeito. */
+  /** Junta-se antes da avaliação ou depois dela, enquanto a nota não foi prestada. */
+  podeJuntar(r: Requisicao): boolean { return r.status === 'ABERTA' || r.status === 'APROVADA'; }
+  /** O valor que importa no estágio: o aprovado, quando a tesouraria já liberou. */
+  valorBase(r: Requisicao): number {
+    return r.status === 'APROVADA' ? (r.valorAprovado ?? r.valorSolicitado) : r.valorSolicitado;
+  }
+  /**
+   * Outras do mesmo solicitante que a tesouraria trataria do mesmo jeito: mesmo estágio (juntar
+   * uma aberta a uma aprovada deixaria o valor liberado menor que a soma) e mesma forma de repasse.
+   */
   private compativeis(r: Requisicao): Requisicao[] {
-    return this.itens().filter((c) => c.id !== r.id && c.status === 'ABERTA'
+    return this.itens().filter((c) => c.id !== r.id && c.status === r.status
       && c.solicitanteId === r.solicitanteId && !c.juntadas.length && this.mesmoRepasse(r, c));
   }
   private mesmoRepasse(a: Requisicao, b: Requisicao): boolean {
@@ -486,8 +501,8 @@ export class RequisicoesComponent {
   /** Quanto a principal passa a valer com o que está marcado. */
   totalJuncao(r: Requisicao): number {
     const soma = this.candidatos().filter((c) => this.selecionadas.has(c.id))
-      .reduce((t, c) => t + (c.valorSolicitado ?? 0), 0);
-    return Math.round((r.valorSolicitado + soma) * 100) / 100;
+      .reduce((t, c) => t + this.valorBase(c), 0);
+    return Math.round((this.valorBase(r) + soma) * 100) / 100;
   }
   enviarJuncao(r: Requisicao): void {
     const ids = [...this.selecionadas];
@@ -495,7 +510,7 @@ export class RequisicoesComponent {
     this.juntando.set(true);
     this.api.juntarRequisicoes(r.id, ids).subscribe({
       next: (p) => {
-        this.toast.sucesso(`${ids.length + 1} requisições viraram ${p.numero}, no total de ${this.brl(p.valorSolicitado)}.`);
+        this.toast.sucesso(`${ids.length + 1} requisições viraram ${p.numero}, no total de ${this.brl(this.valorBase(p))}.`);
         this.juntando.set(false); this.juntar.set(null); this.carregar();
       },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao juntar.'); this.juntando.set(false); },
@@ -504,7 +519,8 @@ export class RequisicoesComponent {
   async desfazerJuncao(r: Requisicao): Promise<void> {
     const numeros = r.juntadas.map((j) => j.numero).join(', ');
     const volta = r.juntadas.length === 1 ? 'volta a valer sozinha' : 'voltam a valer sozinhas';
-    const proprio = r.valorSolicitado - r.juntadas.reduce((t, j) => t + j.valorSolicitado, 0);
+    const proprio = this.valorBase(r)
+      - r.juntadas.reduce((t, j) => t + (j.valorAprovado ?? j.valorSolicitado), 0);
     if (!(await this.confirm.pedir({
       titulo: 'Desfazer junção',
       mensagem: `${numeros} ${volta} e ${r.numero} volta a ${this.brl(Math.round(proprio * 100) / 100)}.`,
