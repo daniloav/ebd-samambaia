@@ -119,7 +119,7 @@ export interface ChamadaResponse {
   alertas?: string[];
 }
 
-export type TipoProva = 'OFFLINE' | 'ONLINE';
+export type TipoProva = 'OFFLINE' | 'ONLINE' | 'RECUPERACAO';
 export type TipoQuestao = 'MULTIPLA' | 'VF';
 
 export interface Prova {
@@ -133,6 +133,10 @@ export interface Prova {
   abreEm?: string | null;
   fechaEm?: string | null;
   numQuestoes?: number;
+  /** Aula coberta pela prova de recuperação. */
+  aulaId?: number | null;
+  aulaData?: string | null;
+  aulaTema?: string | null;
 }
 
 export interface ProvaRequest {
@@ -141,6 +145,7 @@ export interface ProvaRequest {
   data: string;
   notaMaxima: number;
   tipo?: TipoProva;
+  aulaId?: number | null;
   abreEm?: string | null;
   fechaEm?: string | null;
 }
@@ -170,7 +175,15 @@ export interface MinhaProva {
   status: StatusProva;
   abreEm: string | null;
   fechaEm: string | null;
+  /** Melhor nota entre as tentativas. */
   nota: number | null;
+  tipo: TipoProva;
+  tentativasUsadas: number;
+  tentativasMax: number;
+  aulaData: string | null;
+  aulaTema: string | null;
+  /** Recuperação: quanto da melhor nota vira presença (0 a 1). */
+  presencaEquivalente: number | null;
 }
 
 export interface AlternativaResponder {
@@ -189,6 +202,12 @@ export interface QuizParaResponder {
   titulo: string;
   notaMaxima: number;
   questoes: QuestaoResponder[];
+  tipo: TipoProva;
+  /** Número da tentativa que será enviada. */
+  tentativa: number;
+  tentativasMax: number;
+  aulaData: string | null;
+  aulaTema: string | null;
 }
 
 export interface RespostaIn {
@@ -211,6 +230,12 @@ export interface ResultadoProva {
   acertos: number;
   total: number;
   questoes: ResultadoQuestao[];
+  tipo: TipoProva;
+  tentativa: number;
+  tentativasMax: number;
+  melhorNota: number;
+  presencaEquivalente: number | null;
+  podeTentarDeNovo: boolean;
 }
 
 export interface NotaItem {
@@ -227,6 +252,8 @@ export interface NotasProvaResponse {
   /** true = a grade lista só os alunos presentes na aula da data (prova offline). */
   somentePresentes?: boolean;
   itens: NotaItem[];
+  /** Na RECUPERACAO a grade é só leitura: a melhor nota das tentativas do aluno. */
+  tipo?: TipoProva;
 }
 
 export interface RelatorioPresencaItem {

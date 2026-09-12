@@ -29,6 +29,10 @@ import { NotasProvaResponse, NotaItem } from '../../core/models';
           <div class="box">Alunos: <b>{{ itens().length }}</b></div>
         </div>
 
+        @if (d.tipo === 'RECUPERACAO') {
+          <p class="muted" style="margin-top:-.4rem">Prova de <b>recuperação</b>: a nota é a <b>melhor</b> das tentativas de
+            cada aluno (até 3), lançada sozinha. A nota máxima vale 1 presença na aula; abaixo disso, o proporcional.</p>
+        }
         @if (d.somentePresentes) {
           <p class="muted" style="margin-top:-.4rem">Prova offline: só entram os alunos <b>presentes</b> na aula desta data.</p>
         }
@@ -38,21 +42,28 @@ import { NotasProvaResponse, NotaItem } from '../../core/models';
         } @else {
           <div class="tabela-scroll">
             <table class="tabela">
-              <thead><tr><th>Aluno</th><th style="width:140px">Nota (0 a {{ d.notaMaxima }})</th></tr></thead>
+              <thead><tr><th>Aluno</th><th style="width:140px">{{ d.tipo === 'RECUPERACAO' ? 'Melhor nota' : 'Nota' }} (0 a {{ d.notaMaxima }})</th>
+                @if (d.tipo === 'RECUPERACAO') { <th style="width:140px">Vale em presença</th> }</tr></thead>
               <tbody>
                 @for (i of itens(); track i.alunoId) {
                   <tr>
                     <td>{{ i.alunoNome }}</td>
-                    <td>
-                      <input class="nota" type="number" min="0" [max]="d.notaMaxima" step="0.1"
-                             [class.invalida]="invalida(i)" [(ngModel)]="i.nota"
-                             placeholder="—" />
-                    </td>
+                    @if (d.tipo === 'RECUPERACAO') {
+                      <td>{{ i.nota ?? 'não fez' }}</td>
+                      <td>{{ i.nota != null ? fracaoPresenca(i.nota, d.notaMaxima) : '—' }}</td>
+                    } @else {
+                      <td>
+                        <input class="nota" type="number" min="0" [max]="d.notaMaxima" step="0.1"
+                               [class.invalida]="invalida(i)" [(ngModel)]="i.nota"
+                               placeholder="—" />
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
             </table>
           </div>
+          @if (d.tipo !== 'RECUPERACAO') {
           <p class="muted mt">Deixe em branco para não lançar nota do aluno.</p>
           <div class="mt" style="display:flex;gap:.6rem;flex-wrap:wrap">
             <button class="btn btn-verde" (click)="salvar()" [disabled]="salvando()">
@@ -63,6 +74,7 @@ import { NotasProvaResponse, NotaItem } from '../../core/models';
             </button>
           </div>
           <p class="muted mt">"Lançar e notificar" envia a cada aluno (com e-mail e que aceitou receber avisos) o seu desempenho. Salve as notas antes.</p>
+          }
         }
       </div>
     } @else if (carregando()) {
@@ -98,6 +110,12 @@ export class NotasComponent {
       },
       error: () => { this.toast.erro('Falha ao carregar notas.'); this.carregando.set(false); },
     });
+  }
+
+  /** Mesma conta do backend (Recuperacao.fracaoPresenca): nota ÷ máxima, até 1, 2 casas. */
+  fracaoPresenca(nota: number, max: number): string {
+    const f = max > 0 ? Math.min(1, Math.max(0, nota / max)) : 0;
+    return f.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
   }
 
   invalida(i: NotaItem): boolean {

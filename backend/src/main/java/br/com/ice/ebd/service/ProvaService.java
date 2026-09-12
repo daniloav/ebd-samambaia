@@ -6,23 +6,28 @@ import br.com.ice.ebd.dto.ProvaRequest;
 import br.com.ice.ebd.dto.ProvaResponse;
 import br.com.ice.ebd.dto.SalvarNotasRequest;
 import br.com.ice.ebd.model.Aluno;
+import br.com.ice.ebd.model.Aula;
 import br.com.ice.ebd.model.NotaProva;
 import br.com.ice.ebd.model.Prova;
 import br.com.ice.ebd.model.AcaoAuditoria;
 import br.com.ice.ebd.model.EntidadeAuditoria;
 import br.com.ice.ebd.model.TipoProva;
 import br.com.ice.ebd.repository.AlunoRepository;
+import br.com.ice.ebd.repository.AulaRepository;
 import br.com.ice.ebd.repository.NotaProvaRepository;
 import br.com.ice.ebd.repository.PresencaRepository;
 import br.com.ice.ebd.repository.ProvaRepository;
 import br.com.ice.ebd.repository.QuestaoRepository;
+import br.com.ice.ebd.repository.SubmissaoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import br.com.ice.ebd.model.Submissao;
 import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +47,8 @@ public class ProvaService {
     @Inject AlunoRepository alunoRepository;
     @Inject PresencaRepository presencaRepository;
     @Inject NotificacaoService notificacaoService;
+    @Inject AulaRepository aulaRepository;
+    @Inject SubmissaoRepository submissaoRepository;
 
     // ---------- CRUD da prova ----------
 
@@ -94,20 +101,32 @@ public class ProvaService {
         Prova prova = obter(provaId);
         escopo.assertClasse(prova.getClasse().getId());
         Map<Long, BigDecimal> notasPorAluno = new LinkedHashMap<>();
-        for (NotaProva n : notaRepository.listarPorProva(provaId)) {
-            notasPorAluno.put(n.getAluno().getId(), n.getNota());
+        if (prova.getTipo() == TipoProva.RECUPERACAO) {
+            // Recuperação não grava NotaProva: a nota é a melhor das tentativas do aluno.
+            for (Submissao s : submissaoRepository.listarPorProva(provaId)) {
+                notasPorAluno.merge(s.getAluno().getId(), s.getNota(), BigDecimal::max);
+            }
+        } else {
+            for (NotaProva n : notaRepository.listarPorProva(provaId)) {
+                notasPorAluno.put(n.getAluno().getId(), n.getNota());
+            }
         }
         List<NotaItem> itens = alunosElegiveis(prova).stream()
                 .map(a -> new NotaItem(a.getId(), a.getNome(), notasPorAluno.get(a.getId())))
                 .toList();
         return new NotasProvaResponse(prova.getId(), prova.getTitulo(), prova.getData(),
-                prova.getNotaMaxima(), prova.getTipo() == TipoProva.OFFLINE, itens);
+                prova.getNotaMaxima(), prova.getTipo() == TipoProva.OFFLINE, itens, prova.getTipo().name());
     }
 
     @Transactional
     public NotasProvaResponse salvarNotas(Long provaId, SalvarNotasRequest req) {
         Prova prova = obter(provaId);
         escopo.assertClasse(prova.getClasse().getId());
+        if (prova.getTipo() == TipoProva.RECUPERACAO) {
+            throw new WebApplicationException(
+                    "A nota da recuperação vem das tentativas do aluno e não é lançada à mão.",
+                    Response.Status.BAD_REQUEST);
+        }
 
         // Prova OFFLINE: só é permitido lançar nota para quem esteve presente na aula da data.
         Set<Long> presentes = prova.getTipo() == TipoProva.OFFLINE
@@ -206,12 +225,65 @@ public class ProvaService {
     }
 
     private void aplicar(Prova p, ProvaRequest req) {
+        TipoProva tipo = tipoDe(req.tipo());
+        boolean respondida = p.getId() != null && submissaoRepository.count("prova.id", p.getId()) > 0;
+        if (respondida && tipo != p.getTipo()) {
+            throw bad("Esta prova já foi respondida por alunos; não dá para mudar o tipo.");
+        }
         p.setClasse(classeService.obter(req.classeId()));
         p.setTitulo(req.titulo().trim());
-        p.setData(req.data());
         p.setNotaMaxima(req.notaMaxima());
-        p.setTipo(req.tipo() != null && req.tipo().equalsIgnoreCase("ONLINE") ? TipoProva.ONLINE : TipoProva.OFFLINE);
+        p.setTipo(tipo);
         p.setAbreEm(req.abreEm());
         p.setFechaEm(req.fechaEm());
+        if (tipo != TipoProva.RECUPERACAO) {
+            p.setAula(null);
+            p.setData(req.data());
+            return;
+        }
+        Aula aula = aulaDaRecuperacao(req);
+        if (respondida && p.getAula() != null && !p.getAula().getId().equals(aula.getId())) {
+            throw bad("Esta recuperação já foi respondida por alunos; não dá para trocar a aula.");
+        }
+        Prova outra = provaRepository.find("aula.id = ?1 and tipo = ?2", aula.getId(), TipoProva.RECUPERACAO).firstResult();
+        if (outra != null && !outra.getId().equals(p.getId())) {
+            throw bad("A aula de " + aula.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    + " já tem a recuperação \"" + outra.getTitulo() + "\".");
+        }
+        p.setAula(aula);
+        p.setData(aula.getData()); // a data da recuperação é a da aula que ela cobre
+    }
+
+    /** A aula que a recuperação cobre: obrigatória, da mesma turma e valendo pontuação. */
+    private Aula aulaDaRecuperacao(ProvaRequest req) {
+        if (req.aulaId() == null) {
+            throw bad("Escolha a aula que a recuperação cobre.");
+        }
+        Aula aula = aulaRepository.findById(req.aulaId());
+        if (aula == null) {
+            throw new NotFoundException("Aula não encontrada: " + req.aulaId());
+        }
+        if (!aula.getClasse().getId().equals(req.classeId())) {
+            throw bad("A aula escolhida é de outra turma.");
+        }
+        if (aula.isAdiada()) {
+            throw bad("Esta aula foi adiada e não vale pontuação; escolha a aula de reposição.");
+        }
+        return aula;
+    }
+
+    private static TipoProva tipoDe(String tipo) {
+        if (tipo == null || tipo.isBlank()) {
+            return TipoProva.OFFLINE;
+        }
+        try {
+            return TipoProva.valueOf(tipo.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw bad("Tipo de prova inválido (use OFFLINE, ONLINE ou RECUPERACAO).");
+        }
+    }
+
+    private static WebApplicationException bad(String msg) {
+        return new WebApplicationException(msg, Response.Status.BAD_REQUEST);
     }
 }

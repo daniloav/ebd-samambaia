@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { ToastService } from '../../core/toast.service';
 import { ConfirmService } from '../../core/confirm.service';
 import { ClasseContextService } from '../../core/classe-context.service';
-import { Prova, ProvaRequest } from '../../core/models';
+import { Aula, Prova, ProvaRequest } from '../../core/models';
 
 @Component({
   selector: 'app-provas',
@@ -15,7 +15,7 @@ import { Prova, ProvaRequest } from '../../core/models';
   imports: [FormsModule, DatePipe, RouterLink],
   template: `
     <div class="flex-between" style="margin-bottom:1.25rem">
-      <div><h2>Provas</h2><p class="muted">Avaliações da classe — offline (nota à mão) ou quiz online (auto-corrigido).</p></div>
+      <div><h2>Provas</h2><p class="muted">Avaliações da classe — offline (nota à mão), quiz online (auto-corrigido) ou recuperação de aula.</p></div>
       @if (auth.isAdmin() || auth.isProfessor()) {
         <button class="btn" (click)="abrirNovo()">+ Nova prova</button>
       }
@@ -39,12 +39,17 @@ import { Prova, ProvaRequest } from '../../core/models';
                   <td>
                     @if (p.tipo === 'ONLINE') {
                       <span class="badge badge-dourado">🧠 Quiz · {{ p.numQuestoes }} q</span>
+                    } @else if (p.tipo === 'RECUPERACAO') {
+                      <span class="badge badge-dourado">🔁 Recuperação · {{ p.numQuestoes }} q</span>
                     } @else { <span class="badge badge-cinza">Offline</span> }
                   </td>
-                  <td>{{ p.data | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    {{ (p.aulaData || p.data) | date:'dd/MM/yyyy' }}
+                    @if (p.tipo === 'RECUPERACAO') { <div class="muted" style="font-size:.8rem">aula: {{ p.aulaTema || 'sem tema' }}</div> }
+                  </td>
                   <td>{{ p.notaMaxima }}</td>
                   <td>
-                    @if (p.tipo === 'ONLINE') {
+                    @if (p.tipo === 'ONLINE' || p.tipo === 'RECUPERACAO') {
                       <a class="btn btn-sm" [routerLink]="['/provas', p.id, 'questoes']">Editar questões</a>
                     }
                     <a class="btn btn-dourado btn-sm" [routerLink]="['/provas', p.id, 'notas']">Notas</a>
@@ -74,11 +79,29 @@ import { Prova, ProvaRequest } from '../../core/models';
               <select aria-label="Tipo de prova" [(ngModel)]="form.tipo">
                 <option value="OFFLINE">Offline (nota lançada à mão)</option>
                 <option value="ONLINE">Online (quiz respondido pelo aluno)</option>
+                <option value="RECUPERACAO">Recuperação de aula (quiz que vale presença)</option>
               </select>
             </div>
-            <div class="form-group"><label>Data *</label>
-              <input type="date" [(ngModel)]="form.data" /></div>
-            @if (form.tipo === 'ONLINE') {
+            @if (form.tipo === 'RECUPERACAO') {
+              <div class="form-group"><label>Aula que a recuperação cobre *</label>
+                <select aria-label="Aula da recuperação" [(ngModel)]="form.aulaId">
+                  <option [ngValue]="null">Selecione a aula...</option>
+                  @for (a of aulas(); track a.id) {
+                    <option [ngValue]="a.id">{{ a.data | date:'dd/MM/yyyy' }}{{ a.tema ? ' — ' + a.tema : '' }}</option>
+                  }
+                </select>
+              </div>
+              <p class="muted" style="font-size:.82rem">
+                Todos da turma podem fazer, inclusive quem esteve presente. São <b>3 tentativas</b>, com as questões
+                embaralhadas a cada uma e o gabarito ao final de cada envio; vale a <b>melhor nota</b>.
+                Nota máxima = <b>1 presença</b> na aula; abaixo disso, o proporcional
+                (na falta justificada, vale o maior entre 0,3 e o proporcional).
+              </p>
+            } @else {
+              <div class="form-group"><label>Data *</label>
+                <input type="date" [(ngModel)]="form.data" /></div>
+            }
+            @if (form.tipo === 'ONLINE' || form.tipo === 'RECUPERACAO') {
               <div class="form-group"><label>Disponível a partir de (opcional)</label>
                 <input type="datetime-local" [(ngModel)]="form.abreEm" /></div>
               <div class="form-group"><label>Fecha em (opcional)</label>
@@ -112,12 +135,14 @@ export class ProvasComponent {
   modalAberto = signal(false);
   salvando = signal(false);
   editando = signal<Prova | null>(null);
+  /** Aulas da turma que podem receber recuperação (as adiadas não valem pontuação). */
+  aulas = signal<Aula[]>([]);
   form: ProvaRequest = this.formVazio();
 
   constructor() { effect(() => { this.classeCtx.selecionadaId(); this.carregar(); }, { allowSignalWrites: true }); }
 
   private formVazio(): ProvaRequest {
-    return { titulo: '', data: '', notaMaxima: 10, tipo: 'OFFLINE', abreEm: null, fechaEm: null };
+    return { titulo: '', data: '', notaMaxima: 10, tipo: 'OFFLINE', aulaId: null, abreEm: null, fechaEm: null };
   }
 
   carregar(): void {
@@ -128,28 +153,46 @@ export class ProvasComponent {
     });
   }
 
-  abrirNovo(): void { this.editando.set(null); this.form = this.formVazio(); this.modalAberto.set(true); }
+  abrirNovo(): void { this.editando.set(null); this.form = this.formVazio(); this.carregarAulas(); this.modalAberto.set(true); }
+
+  private carregarAulas(): void {
+    const classeId = this.classeCtx.selecionadaId();
+    if (!classeId) { this.aulas.set([]); return; }
+    this.api.listarAulas(classeId).subscribe({
+      next: (l) => this.aulas.set(l.filter((a) => !a.adiada).sort((x, y) => y.data.localeCompare(x.data))),
+      error: () => this.aulas.set([]),
+    });
+  }
   editar(p: Prova): void {
     this.editando.set(p);
     this.form = {
       titulo: p.titulo, data: p.data, notaMaxima: p.notaMaxima,
       tipo: p.tipo ?? 'OFFLINE',
+      aulaId: p.aulaId ?? null,
       abreEm: p.abreEm ? p.abreEm.slice(0, 16) : null,
       fechaEm: p.fechaEm ? p.fechaEm.slice(0, 16) : null,
     };
+    this.carregarAulas();
     this.modalAberto.set(true);
   }
   fechar(): void { this.modalAberto.set(false); }
 
   salvar(): void {
-    if (!this.form.titulo?.trim() || !this.form.data) { this.toast.erro('Preencha título e data.'); return; }
+    const recuperacao = this.form.tipo === 'RECUPERACAO';
+    if (recuperacao) {
+      const aula = this.aulas().find((a) => a.id === this.form.aulaId);
+      if (!this.form.titulo?.trim() || !aula) { this.toast.erro('Preencha o título e escolha a aula.'); return; }
+      this.form.data = aula.data;
+    } else if (!this.form.titulo?.trim() || !this.form.data) { this.toast.erro('Preencha título e data.'); return; }
     const classeId = this.classeCtx.selecionadaId();
     if (!classeId) { this.toast.erro('Selecione uma turma no menu.'); return; }
     this.salvando.set(true);
+    const quiz = this.form.tipo === 'ONLINE' || recuperacao;
     const payload: ProvaRequest = {
       ...this.form, classeId,
-      abreEm: this.form.tipo === 'ONLINE' ? (this.form.abreEm || null) : null,
-      fechaEm: this.form.tipo === 'ONLINE' ? (this.form.fechaEm || null) : null,
+      aulaId: recuperacao ? this.form.aulaId : null,
+      abreEm: quiz ? (this.form.abreEm || null) : null,
+      fechaEm: quiz ? (this.form.fechaEm || null) : null,
     };
     const alvo = this.editando();
     const req$ = alvo ? this.api.atualizarProva(alvo.id, payload) : this.api.criarProva(payload);
@@ -157,7 +200,7 @@ export class ProvasComponent {
       next: () => {
         this.salvando.set(false); this.fechar(); this.carregar();
         this.toast.sucesso(alvo ? 'Prova atualizada!'
-          : (this.form.tipo === 'ONLINE' ? 'Prova online criada! Agora monte as questões.' : 'Prova criada!'));
+          : (quiz ? 'Prova criada! Agora monte as questões.' : 'Prova criada!'));
       },
       error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao salvar prova.'); this.salvando.set(false); },
     });

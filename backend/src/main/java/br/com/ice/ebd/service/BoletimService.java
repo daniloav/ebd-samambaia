@@ -72,6 +72,7 @@ public class BoletimService {
                         "select pr.titulo, pr.data, pr.notaMaxima, "
                         + "(select np.nota from NotaProva np where np.prova = pr and np.aluno.id = :aid) "
                         + "from Prova pr where pr.classe.id = :cid and pr.data between :ini and :fim "
+                        + "and pr.tipo <> br.com.ice.ebd.model.TipoProva.RECUPERACAO "
                         + "order by pr.data asc", Object[].class)
                 .setParameter("aid", aid).setParameter("cid", cid)
                 .setParameter("ini", ini).setParameter("fim", fim)

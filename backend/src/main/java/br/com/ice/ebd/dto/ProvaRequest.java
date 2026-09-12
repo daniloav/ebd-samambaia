@@ -19,8 +19,10 @@ public record ProvaRequest(
         @NotNull(message = "A nota máxima é obrigatória")
         @DecimalMin(value = "0.01", message = "A nota máxima deve ser maior que zero")
         BigDecimal notaMaxima,
-        /** OFFLINE (padrão) ou ONLINE (quiz). Nulo = OFFLINE. */
+        /** OFFLINE (padrão), ONLINE (quiz) ou RECUPERACAO (quiz que vale presença). Nulo = OFFLINE. */
         String tipo,
+        /** Aula coberta pela recuperação — obrigatória só quando tipo = RECUPERACAO. */
+        Long aulaId,
         /** Janela da prova online (opcional). */
         LocalDateTime abreEm,
         LocalDateTime fechaEm) {
