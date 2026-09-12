@@ -164,6 +164,23 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 🔁 **Prova de recuperação (vale presença) (2026-09-12)** — novo tipo de prova **RECUPERACAO**,
+  criado pelo professor para **uma aula** (ex.: a lição de 07/09): um quiz **só de múltipla
+  escolha** que devolve pontos de **presença** — nota máxima = **1 presença**, abaixo disso o
+  **proporcional**. **Todos da turma** podem fazer (quem esteve presente ganha o bônus somado); na
+  **falta justificada** vale o **maior** entre 0,3 e o proporcional. **3 tentativas**, com
+  **questões e alternativas embaralhadas** a cada uma, **gabarito ao fim de cada tentativa** e vale
+  a **melhor nota**; quem gabarita não refaz. Migration **V34** (`prova.tipo` → `VARCHAR(12)`,
+  `prova.aula_id` FK `ON DELETE CASCADE` + unique parcial **uma recuperação por aula**;
+  `submissao.tentativa` e unique `(prova, aluno, tentativa)`). A recuperação **não grava
+  `NotaProva`** — fica fora de boletim, média/pontos de notas e contagem de provas; a pontuação sai
+  das submissões direto no `DesafiosService` (menos faltou, classificação geral e ranking por
+  turma), com as regras num lugar só (`Recuperacao`). Front: tipo + seletor de aula em /provas,
+  editor sem V/F, grade de notas **só leitura** (melhor nota + presença equivalente) e, para o
+  aluno, "tentativa X de 3", **"Tentar de novo"** e "Ver resultado" em /minhas-provas. Validado:
+  `mvn test` (3 novos em `RecuperacaoProvaTest` — 3 tentativas/melhor nota/meia presença sem
+  `NotaProva`; justificada vale o maior e presente soma; cadastro exige aula única e múltipla
+  escolha) e `ng build`.
 - 🔗 **Juntar também as requisições aprovadas (2026-09-12)** — a junção valia só entre ABERTAS, mas
   o caso real do Danilo era outro: ele tinha pedidos **"aprovada · aguardando nota"** da mesma
   compra, com o dinheiro já repassado em dois PIX, e o botão nem aparecia. Agora a junção vale em

@@ -19,7 +19,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Montagem/edição das questões de uma prova ONLINE (quiz). Correção fica no aluno (Etapa 2). */
+/**
+ * Montagem/edição das questões de uma prova respondida pela tela (ONLINE ou RECUPERACAO).
+ * Correção fica no aluno ({@link QuizAlunoService}).
+ */
 @ApplicationScoped
 public class QuizService {
 
@@ -42,12 +45,15 @@ public class QuizService {
         return out;
     }
 
-    /** Substitui todas as questões da prova e a marca como ONLINE (nota máxima = soma dos pontos). */
+    /**
+     * Substitui todas as questões da prova (nota máxima = soma dos pontos). Prova OFFLINE vira
+     * ONLINE; a de RECUPERACAO continua RECUPERACAO e só aceita múltipla escolha.
+     */
     @Transactional
     public void salvarQuestoes(Long provaId, QuizDto.Salvar req) {
         Prova p = obter(provaId);
         escopo.assertClasse(p.getClasse().getId());
-        validar(req);
+        validar(req, p.getTipo() == TipoProva.RECUPERACAO);
 
         questaoRepository.apagarPorProva(provaId); // alternativas/respostas caem por cascade no banco
         questaoRepository.flush();
@@ -75,11 +81,13 @@ public class QuizService {
                 alternativaRepository.persist(a);
             }
         }
-        p.setTipo(TipoProva.ONLINE);
+        if (p.getTipo() != TipoProva.RECUPERACAO) {
+            p.setTipo(TipoProva.ONLINE);
+        }
         p.setNotaMaxima(total);
     }
 
-    private void validar(QuizDto.Salvar req) {
+    private void validar(QuizDto.Salvar req, boolean recuperacao) {
         if (req == null || req.questoes() == null || req.questoes().isEmpty()) {
             throw bad("Adicione ao menos uma questão.");
         }
@@ -93,6 +101,9 @@ public class QuizService {
                 tipo = TipoQuestao.valueOf(q.tipo());
             } catch (Exception e) {
                 throw bad("Tipo inválido na questão " + n + " (use MULTIPLA ou VF).");
+            }
+            if (recuperacao && tipo != TipoQuestao.MULTIPLA) {
+                throw bad("A prova de recuperação só aceita questões de múltipla escolha (questão " + n + ").");
             }
             List<QuizDto.AlternativaIn> alts = q.alternativas();
             if (alts == null || alts.isEmpty()) {

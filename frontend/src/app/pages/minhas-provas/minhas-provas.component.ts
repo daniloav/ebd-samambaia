@@ -5,7 +5,7 @@ import { ApiService } from '../../core/api.service';
 import { ToastService } from '../../core/toast.service';
 import { MinhaProva, StatusProva } from '../../core/models';
 
-/** Lista das provas online (quiz) da turma do aluno, com status e nota. */
+/** Lista das provas online (quiz e recuperação) da turma do aluno, com status, tentativas e nota. */
 @Component({
   selector: 'app-minhas-provas',
   standalone: true,
@@ -23,10 +23,12 @@ import { MinhaProva, StatusProva } from '../../core/models';
     .b-fech { background: #fee2e2; color: #991b1b; }
     .b-fut  { background: #fef9c3; color: #854d0e; }
     .nota { font-weight: 800; color: var(--titulo); font-size: 1.05rem; }
+    .nota small { display: block; font-size: .75rem; font-weight: 600; color: var(--cinza-texto); }
+    .acoes { display: flex; gap: .5rem; flex-wrap: wrap; }
   `],
   template: `
     <h2>Minhas provas</h2>
-    <p class="muted">Quizzes online da sua turma — respondidos pela tela e corrigidos na hora.</p>
+    <p class="muted">Quizzes online e recuperações de aula da sua turma — respondidos pela tela e corrigidos na hora.</p>
 
     @if (carregando()) {
       <div class="card muted">Carregando...</div>
@@ -37,20 +39,32 @@ import { MinhaProva, StatusProva } from '../../core/models';
         @for (p of provas(); track p.id) {
           <div class="prova">
             <div class="info">
-              <div class="titulo">{{ p.titulo }}</div>
+              <div class="titulo">@if (p.tipo === 'RECUPERACAO') { 🔁 } {{ p.titulo }}</div>
               <div class="sub">
-                {{ p.data | date:'dd/MM/yyyy' }} · {{ p.numQuestoes }} questão(ões) · vale {{ p.notaMaxima }}
+                @if (p.tipo === 'RECUPERACAO') {
+                  Recuperação da aula de {{ p.aulaData | date:'dd/MM/yyyy' }} · {{ p.numQuestoes }} questão(ões)
+                  · nota máxima vale 1 presença · tentativas {{ p.tentativasUsadas }} de {{ p.tentativasMax }}
+                } @else {
+                  {{ p.data | date:'dd/MM/yyyy' }} · {{ p.numQuestoes }} questão(ões) · vale {{ p.notaMaxima }}
+                }
                 @if (p.fechaEm && p.status === 'DISPONIVEL') { · fecha {{ p.fechaEm | date:'dd/MM HH:mm' }} }
                 @if (p.abreEm && p.status === 'FUTURA') { · abre {{ p.abreEm | date:'dd/MM HH:mm' }} }
               </div>
             </div>
             <span class="badge" [class]="classeBadge(p.status)">{{ rotulo(p.status) }}</span>
-            @if (p.status === 'RESPONDIDA') {
-              <span class="nota">{{ p.nota }} / {{ p.notaMaxima }}</span>
-              <a class="btn btn-outline btn-sm" [routerLink]="['/minhas-provas', p.id]">Ver resultado</a>
-            } @else if (p.status === 'DISPONIVEL') {
-              <a class="btn" [routerLink]="['/minhas-provas', p.id]">Responder</a>
+            @if (p.nota != null) {
+              <span class="nota">{{ p.nota }} / {{ p.notaMaxima }}
+                @if (p.presencaEquivalente != null) { <small>= {{ p.presencaEquivalente }} presença</small> }
+              </span>
             }
+            <div class="acoes">
+              @if (p.tentativasUsadas > 0) {
+                <a class="btn btn-outline btn-sm" [routerLink]="['/minhas-provas', p.id]" [queryParams]="{ ver: 'resultado' }">Ver resultado</a>
+              }
+              @if (p.status === 'DISPONIVEL') {
+                <a class="btn" [routerLink]="['/minhas-provas', p.id]">{{ p.tentativasUsadas > 0 ? 'Tentar de novo' : 'Responder' }}</a>
+              }
+            </div>
           </div>
         }
       </div>

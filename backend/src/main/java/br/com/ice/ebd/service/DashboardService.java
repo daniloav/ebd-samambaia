@@ -36,7 +36,7 @@ public class DashboardService {
                         "select count(a) from Aula a where a.adiada = false and (:cid = -1 or a.classe.id = :cid)")
                 .setParameter("cid", cid).getSingleResult()).longValue();
         long totalProvas = ((Number) em.createQuery(
-                        "select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid)")
+                        "select count(p) from Prova p where p.tipo <> br.com.ice.ebd.model.TipoProva.RECUPERACAO and (:cid = -1 or p.classe.id = :cid)")
                 .setParameter("cid", cid).getSingleResult()).longValue();
 
         // Frequência por aula (últimas N aulas), presentes / total de alunos ativos.
