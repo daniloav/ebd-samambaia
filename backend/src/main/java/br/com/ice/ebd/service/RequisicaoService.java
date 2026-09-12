@@ -24,7 +24,11 @@ import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Requisições da tesouraria: abertura (líder), avaliação (tesoureiro), finalização com nota
@@ -70,10 +74,13 @@ public class RequisicaoService {
         List<RequisicaoTesouraria> reqs = podeVerTodas(u)
                 ? repository.listar(status)
                 : repository.listarDoSolicitante(u.getId(), status);
-        java.util.Set<Long> comComprovante = new java.util.HashSet<>(
-                anexoRepository.idsComComprovante(reqs.stream().map(RequisicaoTesouraria::getId).toList()));
+        List<Long> ids = reqs.stream().map(RequisicaoTesouraria::getId).toList();
+        java.util.Set<Long> comComprovante = new java.util.HashSet<>(anexoRepository.idsComComprovante(ids));
+        Map<Long, List<RequisicaoTesouraria>> juntadas = repository.juntadasEm(ids).stream()
+                .collect(Collectors.groupingBy(x -> x.getJuntadaNa().getId()));
         return reqs.stream()
-                .map(r -> RequisicaoResponse.de(r, List.of(), comComprovante.contains(r.getId())))
+                .map(r -> RequisicaoResponse.de(r, List.of(), comComprovante.contains(r.getId()),
+                        juntadas.getOrDefault(r.getId(), List.of())))
                 .toList();
     }
 
@@ -81,7 +88,7 @@ public class RequisicaoService {
     public RequisicaoResponse buscar(Long id) {
         RequisicaoTesouraria r = obter(id);
         assertPodeVer(r);
-        return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(id));
+        return resposta(r);
     }
 
     @Transactional
@@ -101,7 +108,7 @@ public class RequisicaoService {
             persistAnexo(r, comprovante);
         }
         notificacao.avisarRequisicaoAvaliada(r);
-        return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(id));
+        return resposta(r);
     }
 
     @Transactional
@@ -113,7 +120,7 @@ public class RequisicaoService {
         r.setAvaliadoEm(LocalDateTime.now());
         r.setStatus(StatusRequisicao.NEGADA);
         notificacao.avisarRequisicaoAvaliada(r);
-        return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(id));
+        return resposta(r);
     }
 
     @Transactional
@@ -156,7 +163,7 @@ public class RequisicaoService {
         r.setStatus(StatusRequisicao.FINALIZADA);
         r.setFinalizadoEm(LocalDateTime.now());
         notificacao.avisarRequisicaoFinalizada(r, usuarioRepository.emailsDeTesoureirosAtivos());
-        return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(id));
+        return resposta(r);
     }
 
     /** Troco a devolver: valor aprovado − valor gasto (0 se gastou tudo, mais, ou não informou). */
@@ -174,8 +181,82 @@ public class RequisicaoService {
         RequisicaoTesouraria r = obter(id);
         assertDonoOuAdmin(r);
         exigirStatus(r, StatusRequisicao.ABERTA, "Só é possível cancelar uma requisição em aberto.");
+        // Cancelar a principal deixaria as absorvidas apontando para uma requisição morta —
+        // e elas não voltariam sozinhas a valer. O líder desfaz a junção e decide uma a uma.
+        if (!repository.juntadasEm(id).isEmpty()) {
+            throw bad("Esta requisição reúne outras — desfaça a junção antes de cancelar.");
+        }
         r.setStatus(StatusRequisicao.CANCELADA);
-        return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(id));
+        return resposta(r);
+    }
+
+    /**
+     * Junta requisições ABERTAS do mesmo solicitante numa só: a principal passa a valer a
+     * <b>soma</b> dos valores solicitados e as demais ficam com status {@code JUNTADA},
+     * apontando para ela. Resolve o caso de o líder ter aberto dois pedidos para a mesma
+     * compra: o repasse (e a nota) vêm num montante só, e o valor de cada requisição ficaria
+     * quebrado no fechamento. Cada absorvida <b>mantém o próprio valor</b>, que é o que torna
+     * a junção reversível em {@link #separar(Long)}.
+     */
+    @Transactional
+    public RequisicaoResponse juntar(Long principalId, List<Long> ids) {
+        RequisicaoTesouraria principal = obter(principalId);
+        assertDonoOuAdmin(principal);
+        exigirStatus(principal, StatusRequisicao.ABERTA, "Só é possível juntar requisições em aberto.");
+        List<Long> alvos = ids == null ? List.of()
+                : ids.stream().filter(Objects::nonNull).distinct().filter(i -> !i.equals(principalId)).toList();
+        if (alvos.isEmpty()) {
+            throw bad("Selecione ao menos uma outra requisição para juntar.");
+        }
+        BigDecimal total = principal.getValorSolicitado();
+        List<RequisicaoTesouraria> absorvidas = new ArrayList<>();
+        for (Long id : alvos) {
+            RequisicaoTesouraria outra = obter(id);
+            // Sem o número na mensagem: quem chuta ids aprenderia os números alheios.
+            if (!outra.getSolicitante().getId().equals(principal.getSolicitante().getId())) {
+                throw bad("Só dá para juntar requisições do mesmo solicitante.");
+            }
+            exigirStatus(outra, StatusRequisicao.ABERTA,
+                    "Só é possível juntar requisições em aberto — " + outra.getNumero() + " não está.");
+            if (!repository.juntadasEm(outra.getId()).isEmpty()) {
+                throw bad(outra.getNumero() + " já reúne outras requisições — desfaça a junção dela primeiro.");
+            }
+            exigirRepasseCompativel(principal, outra);
+            outra.setStatus(StatusRequisicao.JUNTADA);
+            outra.setJuntadaNa(principal);
+            outra.setJuntadaEm(LocalDateTime.now());
+            total = total.add(outra.getValorSolicitado());
+            absorvidas.add(outra);
+        }
+        principal.setValorSolicitado(total);
+        notificacao.avisarRequisicoesJuntadas(principal, absorvidas, usuarioRepository.emailsDeTesoureirosAtivos());
+        return resposta(principal);
+    }
+
+    /**
+     * Desfaz a junção: cada absorvida volta a ABERTA com o seu valor e a principal devolve
+     * exatamente o que entrou. Só enquanto a principal ainda não foi avaliada — depois disso o
+     * tesoureiro já decidiu (e talvez pagou) sobre o valor somado.
+     */
+    @Transactional
+    public RequisicaoResponse separar(Long principalId) {
+        RequisicaoTesouraria principal = obter(principalId);
+        assertDonoOuAdmin(principal);
+        exigirStatus(principal, StatusRequisicao.ABERTA,
+                "Só dá para desfazer a junção enquanto a requisição está em aberto.");
+        List<RequisicaoTesouraria> absorvidas = repository.juntadasEm(principalId);
+        if (absorvidas.isEmpty()) {
+            throw bad("Esta requisição não reúne nenhuma outra.");
+        }
+        BigDecimal total = principal.getValorSolicitado();
+        for (RequisicaoTesouraria r : absorvidas) {
+            total = total.subtract(r.getValorSolicitado());
+            r.setStatus(StatusRequisicao.ABERTA);
+            r.setJuntadaNa(null);
+            r.setJuntadaEm(null);
+        }
+        principal.setValorSolicitado(total);
+        return resposta(principal);
     }
 
     /** Anexo (binário) para download; valida o acesso. */
@@ -190,6 +271,40 @@ public class RequisicaoService {
     }
 
     // ---------- helpers ----------
+
+    /** Resposta completa de uma requisição: anexos + as requisições que ela absorveu. */
+    private RequisicaoResponse resposta(RequisicaoTesouraria r) {
+        return RequisicaoResponse.de(r, anexoRepository.listarPorRequisicao(r.getId()),
+                repository.juntadasEm(r.getId()));
+    }
+
+    /**
+     * Juntar só faz sentido quando o dinheiro sai do mesmo jeito: mesma forma de repasse e, no
+     * PIX, a mesma chave do mesmo titular. Senão o tesoureiro teria de fazer dois pagamentos a
+     * partir de uma requisição só — exatamente o que a junção veio evitar.
+     */
+    private void exigirRepasseCompativel(RequisicaoTesouraria principal, RequisicaoTesouraria outra) {
+        if (principal.getFormaRepasse() != outra.getFormaRepasse()) {
+            throw bad("As formas de repasse são diferentes — " + outra.getNumero()
+                    + " não pode ser juntada a " + principal.getNumero() + ".");
+        }
+        if (principal.getFormaRepasse() != FormaRepasse.PIX) {
+            return;
+        }
+        boolean mesmaChave = principal.getPixTipo() == outra.getPixTipo()
+                && principal.getPixTitular() == outra.getPixTitular()
+                && chaveNormalizada(principal).equals(chaveNormalizada(outra));
+        if (!mesmaChave) {
+            throw bad("As chaves PIX são diferentes — " + outra.getNumero()
+                    + " não pode ser juntada a " + principal.getNumero() + ".");
+        }
+    }
+
+    /** Chave PIX comparável: e-mail em minúsculas, CPF/telefone só nos dígitos. */
+    private static String chaveNormalizada(RequisicaoTesouraria r) {
+        String chave = r.getPixChave() == null ? "" : r.getPixChave().trim();
+        return r.getPixTipo() == TipoChavePix.EMAIL ? chave.toLowerCase() : digitos(chave);
+    }
 
     private void persistAnexo(RequisicaoTesouraria r, AnexoData ad) {
         RequisicaoAnexo a = new RequisicaoAnexo();

@@ -1,6 +1,7 @@
 package br.com.ice.ebd.resource;
 
 import br.com.ice.ebd.dto.AvaliarRequest;
+import br.com.ice.ebd.dto.JuntarRequisicoesRequest;
 import br.com.ice.ebd.model.CategoriaAnexo;
 import br.com.ice.ebd.dto.RequisicaoRequest;
 import br.com.ice.ebd.dto.RequisicaoResponse;
@@ -119,6 +120,26 @@ public class RequisicaoResource {
     @RolesAllowed({"LIDER", "ADMIN"})
     public RequisicaoResponse cancelar(@PathParam("id") Long id) {
         return service.cancelar(id);
+    }
+
+    /**
+     * Junta requisições em aberto do mesmo solicitante: as do corpo são absorvidas pela do
+     * caminho, que passa a valer a soma. Para quando dois pedidos viraram uma compra só.
+     */
+    @POST
+    @Path("/{id}/juntar")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"LIDER", "ADMIN"})
+    public RequisicaoResponse juntar(@PathParam("id") Long id, @Valid JuntarRequisicoesRequest req) {
+        return service.juntar(id, req.ids());
+    }
+
+    /** Desfaz a junção: cada absorvida volta a valer sozinha e a principal devolve o valor. */
+    @POST
+    @Path("/{id}/separar")
+    @RolesAllowed({"LIDER", "ADMIN"})
+    public RequisicaoResponse separar(@PathParam("id") Long id) {
+        return service.separar(id);
     }
 
     /** Disparo manual do lembrete diário (teste/operacional). */

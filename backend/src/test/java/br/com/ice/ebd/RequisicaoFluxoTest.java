@@ -214,6 +214,80 @@ class RequisicaoFluxoTest {
         assertEquals(sequencia(segunda) + 1, sequencia(terceira));
     }
 
+    /**
+     * Duas requisições da mesma compra viram uma só: a principal passa a valer a soma (o valor
+     * redondo que o tesoureiro vai repassar) e a outra sai de cena com status JUNTADA. Como a
+     * absorvida guarda o próprio valor, desfazer devolve exatamente o que entrou.
+     */
+    @Test
+    @TestSecurity(user = "lider.junta", roles = "ADMIN")
+    @TestTransaction
+    void juntarSomaOsValoresEDesfazerDevolveCadaUm() {
+        fx.usuario("lider.junta", Role.ADMIN, "lider.junta@ebd.test");
+        RequisicaoResponse a = service.criar(new RequisicaoRequest(
+                "Louvor", null, "Cordas", "Instrumento", new BigDecimal("120.35"), null,
+                "DINHEIRO", null, null, null, null, null));
+        RequisicaoResponse b = service.criar(new RequisicaoRequest(
+                "Louvor", null, "Palhetas", "Mesma compra", new BigDecimal("79.65"), null,
+                "DINHEIRO", null, null, null, null, null));
+
+        RequisicaoResponse principal = service.juntar(a.id(), List.of(b.id()));
+        assertEquals(0, new BigDecimal("200.00").compareTo(principal.valorSolicitado()), "valor vira a soma");
+        assertEquals(1, principal.juntadas().size());
+        assertEquals(b.numero(), principal.juntadas().get(0).numero());
+
+        RequisicaoResponse absorvida = service.buscar(b.id());
+        assertEquals("JUNTADA", absorvida.status());
+        assertEquals(a.numero(), absorvida.juntadaNaNumero());
+        assertEquals(0, new BigDecimal("79.65").compareTo(absorvida.valorSolicitado()), "absorvida guarda o próprio valor");
+
+        // cancelar a principal deixaria a absorvida órfã -> bloqueado
+        WebApplicationException cancelar = assertThrows(WebApplicationException.class, () -> service.cancelar(a.id()));
+        assertEquals(400, cancelar.getResponse().getStatus());
+
+        RequisicaoResponse separada = service.separar(a.id());
+        assertEquals(0, new BigDecimal("120.35").compareTo(separada.valorSolicitado()), "principal devolve o que entrou");
+        assertTrue(separada.juntadas().isEmpty());
+        assertEquals("ABERTA", service.buscar(b.id()).status());
+    }
+
+    /**
+     * Juntar só vale para pedidos ainda em aberto e que o tesoureiro possa pagar de uma vez:
+     * mesma forma de repasse (e, no PIX, a mesma chave).
+     */
+    @Test
+    @TestSecurity(user = "lider.junta2", roles = "ADMIN")
+    @TestTransaction
+    void naoJuntaAvaliadaNemComRepasseDiferente() {
+        fx.usuario("lider.junta2", Role.ADMIN, "lider.junta2@ebd.test");
+        RequisicaoResponse dinheiro = service.criar(new RequisicaoRequest(
+                "Infantil", null, "Material", "Aula", new BigDecimal("50.00"), null,
+                "DINHEIRO", null, null, null, null, null));
+        RequisicaoResponse pix = service.criar(new RequisicaoRequest(
+                "Infantil", null, "Lanche", "Aula", new BigDecimal("30.00"), null,
+                "PIX", "EMAIL", "lider.junta2@ebd.test", null, null, null));
+
+        // formas de repasse diferentes -> 400
+        WebApplicationException formas = assertThrows(WebApplicationException.class,
+                () -> service.juntar(dinheiro.id(), List.of(pix.id())));
+        assertEquals(400, formas.getResponse().getStatus());
+
+        // já avaliada -> 400 (o tesoureiro decidiu sobre o valor de cada uma)
+        RequisicaoResponse outra = service.criar(new RequisicaoRequest(
+                "Infantil", null, "Material 2", "Aula", new BigDecimal("20.00"), null,
+                "DINHEIRO", null, null, null, null, null));
+        service.aprovar(outra.id(), null, null, null);
+        WebApplicationException avaliada = assertThrows(WebApplicationException.class,
+                () -> service.juntar(dinheiro.id(), List.of(outra.id())));
+        assertEquals(400, avaliada.getResponse().getStatus());
+
+        // e a própria principal precisa estar em aberto
+        service.aprovar(dinheiro.id(), null, null, null);
+        WebApplicationException principalAvaliada = assertThrows(WebApplicationException.class,
+                () -> service.juntar(dinheiro.id(), List.of(pix.id())));
+        assertEquals(400, principalAvaliada.getResponse().getStatus());
+    }
+
     /** Parte numérica de REQ-&lt;ano&gt;-&lt;seq&gt;. */
     private static int sequencia(RequisicaoResponse r) {
         return Integer.parseInt(r.numero().substring(r.numero().lastIndexOf('-') + 1));

@@ -304,6 +304,45 @@ public class NotificacaoService {
         }
     }
 
+    /**
+     * Aviso aos tesoureiros: o líder juntou requisições. Eles já receberam um e-mail de cada
+     * uma; este diz qual ficou de pé, com que total, e quais deixaram de valer sozinhas.
+     */
+    public void avisarRequisicoesJuntadas(RequisicaoTesouraria principal,
+            List<RequisicaoTesouraria> absorvidas, List<String> emailsTesoureiros) {
+        if (!habilitado || emailsTesoureiros == null || emailsTesoureiros.isEmpty()
+                || absorvidas == null || absorvidas.isEmpty()) {
+            return;
+        }
+        StringBuilder itens = new StringBuilder();
+        StringBuilder numeros = new StringBuilder();
+        for (RequisicaoTesouraria a : absorvidas) {
+            itens.append("<li>").append(esc(a.getNumero())).append(" — ").append(moeda(a.getValorSolicitado()))
+                 .append(" (").append(esc(a.getDestinacao())).append(")</li>");
+            numeros.append(numeros.length() == 0 ? "" : ", ").append(a.getNumero());
+        }
+        String corpo = "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Requisições juntadas em "
+                + esc(principal.getNumero()) + "</h1>"
+                + "<p style=\"margin:0 0 6px;\"><b>" + nomeSolicitante(principal) + "</b> ("
+                + esc(principal.getMinisterio()) + ") juntou pedidos que eram da mesma compra.</p>"
+                + "<p style=\"margin:0 0 6px;\">Avalie apenas <b>" + esc(principal.getNumero())
+                + "</b>, agora no total de <b>" + moeda(principal.getValorSolicitado()) + "</b>.</p>"
+                + "<p style=\"margin:12px 0 4px;\"><b>Deixaram de valer sozinhas:</b></p>"
+                + "<ul style=\"margin:0 0 12px;padding-left:18px;\">" + itens + "</ul>"
+                + "<p style=\"margin:12px 0 0;\"><a href=\"" + SITE + "\">Abrir o app</a></p>";
+        String texto = "Requisições " + numeros + " foram juntadas em " + principal.getNumero()
+                + ", que agora vale " + moeda(principal.getValorSolicitado()) + ". Avalie só essa.";
+        for (String em : emailsTesoureiros) {
+            try {
+                dispatcher.enfileirar(Mail.withHtml(em,
+                        "Tesouraria — requisições juntadas em " + principal.getNumero(), shell(TES, corpo))
+                        .setText(texto));
+            } catch (Exception e) {
+                LOG.warnf("Falha ao avisar tesoureiro %s: %s", em, e.getMessage());
+            }
+        }
+    }
+
     /** Aviso ao solicitante: requisição aprovada ou negada. */
     public void avisarRequisicaoAvaliada(RequisicaoTesouraria r) {
         var u = r.getSolicitante();

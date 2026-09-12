@@ -25,7 +25,10 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
     .badge { font-size: .72rem; font-weight: 800; padding: .15rem .6rem; border-radius: 999px; white-space: nowrap; }
     .b-aberta { background: #fef3c7; color: #92400e; } .b-aprovada { background: #dbeafe; color: #1e40af; }
     .b-negada { background: #fee2e2; color: #991b1b; } .b-finalizada { background: #dcfce7; color: #166534; }
-    .b-cancelada { background: #e7ebf1; color: #5b6b80; }
+    .b-cancelada { background: #e7ebf1; color: #5b6b80; } .b-juntada { background: #ede9fe; color: #5b21b6; }
+    .opt { display: flex; align-items: center; gap: .6rem; padding: .5rem .1rem; border-bottom: 1px solid var(--cinza-borda); }
+    .opt .cresce { flex: 1; } .opt .val { font-weight: 700; color: var(--titulo); white-space: nowrap; }
+    .soma { margin: .8rem 0 0; padding: .6rem .8rem; border-radius: 9px; background: var(--superficie-2); }
     .ff { margin-bottom: .7rem; } .ff label { display:block; font-size:.82rem; color:var(--cinza-texto); margin-bottom:.2rem; }
     .ff small { display: block; margin-top: .25rem; }
     .det dt { font-size:.75rem; color:var(--cinza-texto); text-transform:uppercase; letter-spacing:.04em; margin-top:.6rem; }
@@ -50,6 +53,7 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
             <option value="FINALIZADA">Finalizadas</option>
             <option value="NEGADA">Negadas</option>
             <option value="CANCELADA">Canceladas</option>
+            <option value="JUNTADA">Juntadas em outra</option>
           </select>
         </div>
       </div>
@@ -66,6 +70,8 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               <span class="badge" [class]="classe(r.status)">{{ rotulo(r.status) }}</span>
               @if (r.possuiComprovante) { <span class="badge b-aprovada" title="Comprovante de transferência anexado — abra os Detalhes para ver">🧾 Comprovante</span> }
               @if (ehOferta(r)) { <span class="badge b-finalizada" title="PIX para a conta do beneficiado">❤️ Oferta de amor</span> }
+              @if (r.juntadas.length) { <span class="badge b-juntada" title="O valor é a soma destes pedidos">🔗 Reúne {{ r.juntadas.length + 1 }} pedidos</span> }
+              @if (r.juntadaNaNumero) { <span class="badge b-juntada">🔗 Juntada em {{ r.juntadaNaNumero }}</span> }
               <span class="val">{{ brl(r.valorSolicitado) }}</span>
             </div>
             <div class="meta">
@@ -81,6 +87,12 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
                 <button class="btn btn-dourado btn-sm" (click)="abrirFinalizar(r)">{{ ehOferta(r) ? 'Anexar comprovante / finalizar' : 'Anexar nota / finalizar' }}</button>
               }
               @if (souDono(r) && r.status === 'ABERTA') {
+                @if (temCandidatos(r)) {
+                  <button class="btn btn-outline btn-sm" (click)="abrirJuntar(r)">Juntar</button>
+                }
+                @if (r.juntadas.length) {
+                  <button class="btn btn-outline btn-sm" (click)="desfazerJuncao(r)">Desfazer junção</button>
+                }
                 <button class="btn btn-outline btn-sm" (click)="cancelar(r)">Cancelar</button>
               }
             </div>
@@ -220,6 +232,38 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
       </div>
     }
 
+    <!-- Juntar -->
+    @if (juntar(); as r) {
+      <div class="modal-backdrop" (click)="juntar.set(null)">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header"><h3>Juntar em {{ r.numero }}</h3></div>
+          <div class="modal-body">
+            <p class="muted" style="margin-top:0">
+              Marque os pedidos que acabaram virando a mesma compra. Eles deixam de valer sozinhos e
+              {{ r.numero }} passa a valer a soma, para o tesoureiro repassar de uma vez só.
+            </p>
+            @for (c of candidatos(); track c.id) {
+              <label class="opt">
+                <input type="checkbox" [attr.aria-label]="'Juntar ' + c.numero" [checked]="selecionadas.has(c.id)" (change)="alternarJuncao(c.id)" />
+                <span class="cresce">{{ c.numero }} · {{ c.destinacao }}</span>
+                <span class="val">{{ brl(c.valorSolicitado) }}</span>
+              </label>
+            }
+            <p class="soma">
+              {{ r.numero }} passa de {{ brl(r.valorSolicitado) }} para <b>{{ brl(totalJuncao(r)) }}</b>.
+              <br><small class="muted">Dá para desfazer enquanto a tesouraria não avaliar.</small>
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="juntar.set(null)">Cancelar</button>
+            <button class="btn btn-verde" (click)="enviarJuncao(r)" [disabled]="juntando() || selecionadas.size === 0">
+              {{ juntando() ? 'Juntando...' : 'Juntar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Detalhe -->
     @if (detalhe(); as r) {
       <div class="modal-backdrop" (click)="detalhe.set(null)">
@@ -232,6 +276,17 @@ import { Requisicao, RequisicaoRequest, StatusRequisicao } from '../../core/mode
               <dt>Destinação</dt><dd>{{ r.destinacao }}</dd>
               <dt>Motivo</dt><dd>{{ r.motivo }}</dd>
               <dt>Valor solicitado</dt><dd>{{ brl(r.valorSolicitado) }}</dd>
+              @if (r.juntadas.length) {
+                <dt>Requisições juntadas</dt>
+                <dd>
+                  @for (j of r.juntadas; track j.id) { <div>🔗 {{ j.numero }} · {{ brl(j.valorSolicitado) }} · {{ j.destinacao }}</div> }
+                  <small class="muted">O valor solicitado acima já é a soma destas com a original.</small>
+                </dd>
+              }
+              @if (r.juntadaNaNumero) {
+                <dt>Juntada em</dt>
+                <dd>🔗 {{ r.juntadaNaNumero }} — este valor foi somado lá e só aquela requisição é avaliada.</dd>
+              }
               @if (r.dataNecessidade) { <dt>Data necessária</dt><dd>{{ r.dataNecessidade | date:'dd/MM/yyyy' }}</dd> }
               <dt>Solicitante</dt><dd>{{ r.solicitanteNome }} · {{ r.criadoEm | date:'dd/MM/yyyy HH:mm' }}</dd>
               <dt>Forma de repasse</dt>
@@ -290,6 +345,11 @@ export class RequisicoesComponent {
   arquivos: File[] = [];
   comprovanteTroco: File | null = null;
   finalizando = signal(false);
+
+  juntar = signal<Requisicao | null>(null);
+  candidatos = signal<Requisicao[]>([]);
+  selecionadas = new Set<number>();
+  juntando = signal(false);
 
   detalhe = signal<Requisicao | null>(null);
 
@@ -396,6 +456,66 @@ export class RequisicoesComponent {
     });
   }
 
+  // ---------- juntar requisições ----------
+  // Dois pedidos que viraram a mesma compra: em vez de a tesouraria repassar (e o líder prestar
+  // contas de) dois valores quebrados, eles viram um só, com o total redondo.
+
+  /** Outras em aberto do mesmo solicitante que a tesouraria pagaria do mesmo jeito. */
+  private compativeis(r: Requisicao): Requisicao[] {
+    return this.itens().filter((c) => c.id !== r.id && c.status === 'ABERTA'
+      && c.solicitanteId === r.solicitanteId && !c.juntadas.length && this.mesmoRepasse(r, c));
+  }
+  private mesmoRepasse(a: Requisicao, b: Requisicao): boolean {
+    if (a.formaRepasse !== b.formaRepasse) { return false; }
+    if (a.formaRepasse !== 'PIX') { return true; }
+    return a.pixTipo === b.pixTipo && a.pixTitular === b.pixTitular && this.chavePix(a) === this.chavePix(b);
+  }
+  private chavePix(r: Requisicao): string {
+    const chave = (r.pixChave || '').trim();
+    return r.pixTipo === 'EMAIL' ? chave.toLowerCase() : chave.replace(/\D/g, '');
+  }
+  temCandidatos(r: Requisicao): boolean { return this.compativeis(r).length > 0; }
+  abrirJuntar(r: Requisicao): void {
+    this.selecionadas = new Set<number>();
+    this.candidatos.set(this.compativeis(r));
+    this.juntar.set(r);
+  }
+  alternarJuncao(id: number): void {
+    if (this.selecionadas.has(id)) { this.selecionadas.delete(id); } else { this.selecionadas.add(id); }
+  }
+  /** Quanto a principal passa a valer com o que está marcado. */
+  totalJuncao(r: Requisicao): number {
+    const soma = this.candidatos().filter((c) => this.selecionadas.has(c.id))
+      .reduce((t, c) => t + (c.valorSolicitado ?? 0), 0);
+    return Math.round((r.valorSolicitado + soma) * 100) / 100;
+  }
+  enviarJuncao(r: Requisicao): void {
+    const ids = [...this.selecionadas];
+    if (!ids.length) { this.toast.erro('Marque ao menos uma requisição para juntar.'); return; }
+    this.juntando.set(true);
+    this.api.juntarRequisicoes(r.id, ids).subscribe({
+      next: (p) => {
+        this.toast.sucesso(`${ids.length + 1} requisições viraram ${p.numero}, no total de ${this.brl(p.valorSolicitado)}.`);
+        this.juntando.set(false); this.juntar.set(null); this.carregar();
+      },
+      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao juntar.'); this.juntando.set(false); },
+    });
+  }
+  async desfazerJuncao(r: Requisicao): Promise<void> {
+    const numeros = r.juntadas.map((j) => j.numero).join(', ');
+    const volta = r.juntadas.length === 1 ? 'volta a valer sozinha' : 'voltam a valer sozinhas';
+    const proprio = r.valorSolicitado - r.juntadas.reduce((t, j) => t + j.valorSolicitado, 0);
+    if (!(await this.confirm.pedir({
+      titulo: 'Desfazer junção',
+      mensagem: `${numeros} ${volta} e ${r.numero} volta a ${this.brl(Math.round(proprio * 100) / 100)}.`,
+      confirmar: 'Desfazer junção',
+    }))) { return; }
+    this.api.separarRequisicoes(r.id).subscribe({
+      next: () => { this.toast.sucesso('Junção desfeita.'); this.carregar(); },
+      error: (e) => this.toast.erro(e?.error?.message || 'Erro ao desfazer a junção.'),
+    });
+  }
+
   async cancelar(r: Requisicao): Promise<void> {
     if (!(await this.confirm.pedir({ titulo: 'Cancelar requisição', mensagem: `Cancelar a requisição ${r.numero}?`, confirmar: 'Cancelar requisição', perigo: true }))) { return; }
     this.api.cancelarRequisicao(r.id).subscribe({
@@ -438,9 +558,11 @@ export class RequisicoesComponent {
     return 'R$ ' + v.toFixed(2).replace('.', ',');
   }
   rotulo(s: StatusRequisicao): string {
-    return { ABERTA: 'Aguardando', APROVADA: 'Aprovada · aguardando nota', NEGADA: 'Negada', FINALIZADA: 'Finalizada', CANCELADA: 'Cancelada' }[s];
+    return { ABERTA: 'Aguardando', APROVADA: 'Aprovada · aguardando nota', NEGADA: 'Negada', FINALIZADA: 'Finalizada',
+      CANCELADA: 'Cancelada', JUNTADA: 'Juntada em outra' }[s];
   }
   classe(s: StatusRequisicao): string {
-    return { ABERTA: 'b-aberta', APROVADA: 'b-aprovada', NEGADA: 'b-negada', FINALIZADA: 'b-finalizada', CANCELADA: 'b-cancelada' }[s];
+    return { ABERTA: 'b-aberta', APROVADA: 'b-aprovada', NEGADA: 'b-negada', FINALIZADA: 'b-finalizada',
+      CANCELADA: 'b-cancelada', JUNTADA: 'b-juntada' }[s];
   }
 }

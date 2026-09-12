@@ -412,14 +412,18 @@ Fonte: `RequisicaoService`. Papéis: **LIDER** abre, **TESOUREIRO** avalia.
 ABERTA ──aprovar──▶ APROVADA ──finalizar──▶ FINALIZADA
    │
    ├──negar────▶ NEGADA
-   └──cancelar──▶ CANCELADA
+   ├──cancelar──▶ CANCELADA
+   └──juntar───▶ JUNTADA ──separar──▶ ABERTA   (absorvida por outra requisição)
 ```
 
 - **Número** único por ano: `REQ-<ano>-<seq4>` (ex.: `REQ-2026-0007`).
 - **Aprovar** (tesoureiro, só de ABERTA): define valor aprovado (default = solicitado; deve ser
   > 0), parecer opcional e comprovante opcional. → APROVADA.
 - **Negar** (só de ABERTA): parecer opcional. → NEGADA.
-- **Cancelar** (só o dono/ADMIN, só de ABERTA). → CANCELADA.
+- **Cancelar** (só o dono/ADMIN, só de ABERTA). → CANCELADA. **Bloqueado** enquanto a
+  requisição reúne outras (junção, 14.4): o líder desfaz a junção primeiro, senão as absorvidas
+  ficariam presas a uma requisição morta.
+- **Juntar / separar** (só o dono/ADMIN, só de ABERTA) — ver 14.4. → JUNTADA / volta a ABERTA.
 - **Finalizar** (só o dono/ADMIN, só de APROVADA): exige **ao menos 1 anexo de nota fiscal** +
   valor gasto. → FINALIZADA. *Exceção*: em **oferta de amor** (PIX de terceiro, 14.3) não há nota
   fiscal — a prestação de contas é o **comprovante da transferência**.
@@ -451,7 +455,32 @@ ABERTA ──aprovar──▶ APROVADA ──finalizar──▶ FINALIZADA
     **tesoureiro confere o nome no comprovante do banco**;
   - a requisição aparece marcada como **oferta de amor** na lista, na avaliação e no detalhe.
 
-### 14.4 Visibilidade e anexos
+### 14.4 Juntar requisições (dois pedidos, uma compra só)
+
+Às vezes o líder abre dois pedidos que acabam virando a mesma compra: o repasse sai num montante
+só e o valor de cada requisição fica quebrado no fechamento (nota e comprovante não batem com
+nenhuma das duas). **Juntar** resolve isso antes de o dinheiro sair.
+
+- **Quem**: o **solicitante** das requisições (ou ADMIN). Todas precisam ser **do mesmo
+  solicitante**.
+- **Quando**: só entre requisições **ABERTAS** — depois da avaliação o tesoureiro já decidiu (e
+  talvez pagou) sobre cada valor.
+- **Como**: uma delas é a **principal** e as demais são absorvidas. A principal passa a valer a
+  **soma dos valores solicitados**; cada absorvida vai para o status **JUNTADA**, apontando para
+  a principal (`juntadaNa`), e **mantém o próprio valor** — é o que torna a junção reversível.
+- **Compatibilidade**: só junta o que o tesoureiro pagaria de uma vez — **mesma forma de
+  repasse** e, no PIX, **mesma chave, mesmo tipo e mesmo titular** (senão 400).
+- **Encadeamento**: dá para juntar mais pedidos numa principal que já reúne outros; o que não se
+  permite é absorver uma requisição que ela própria já reúne outras (400 — desfaça a dela antes).
+- **Desfazer** (`separar`, só enquanto a principal está ABERTA): cada absorvida volta a **ABERTA**
+  com o seu valor e a principal **subtrai exatamente o que entrou**.
+- **Não se mexe em mais nada**: ministério, destinação, motivo e data de necessidade da principal
+  ficam como estavam; o que veio de cada pedido aparece na lista de juntadas (número, valor,
+  destinação, data), no detalhe e no e-mail.
+- **Aviso**: os tesoureiros já receberam o e-mail de cada requisição, então a junção dispara um
+  e-mail dizendo qual ficou de pé, com que total, e quais deixaram de valer sozinhas.
+
+### 14.5 Visibilidade e anexos
 
 - **ADMIN e TESOUREIRO** veem todas as requisições; o **líder** vê só as próprias.
 - Anexos têm categoria **NOTA_FISCAL**, **COMPROVANTE** ou **TROCO**, guardados como binário
@@ -461,7 +490,7 @@ ABERTA ──aprovar──▶ APROVADA ──finalizar──▶ FINALIZADA
 - Cada transição dispara e-mail: nova → tesoureiros; avaliação → solicitante; finalização →
   tesoureiros.
 
-### 14.5 Cobrança de nota fiscal
+### 14.6 Cobrança de nota fiscal
 
 - Rotina diária (`CobrancaNotaService`, seção 16): cobra por e-mail o solicitante de cada
   requisição **APROVADA sem nota**. **Dedup por dia** (`notaCobradaEm`): no máx. 1 e-mail por
