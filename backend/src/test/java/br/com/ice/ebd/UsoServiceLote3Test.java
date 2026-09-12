@@ -15,8 +15,10 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -99,9 +101,12 @@ class UsoServiceLote3Test {
     @TestTransaction
     void pctForaDoDomingoIgnoraDomingo() {
         Usuario u = fx.usuario("fora.domingo", Role.PROFESSOR, null);
-        // Âncora num domingo recente e conhecido (2026-08-02 é domingo).
-        LocalDate domingo = LocalDate.of(2026, 8, 2);
-        acesso(u, domingo.atTime(10, 0));            // domingo
+        // A métrica só olha os últimos 30 dias, então a âncora tem de ser relativa a hoje: uma data
+        // fixa sai da janela com o passar do calendário e o teste passa a falhar sozinho. Usamos o
+        // domingo retrasado — de 8 a 14 dias atrás, qualquer que seja o dia da semana de hoje —,
+        // assim os 3 dias seguintes também caem no passado e dentro da janela.
+        LocalDate domingo = LocalDate.now().with(TemporalAdjusters.previous(DayOfWeek.SUNDAY)).minusWeeks(1);
+        acesso(u, domingo.atTime(10, 0));             // domingo
         acesso(u, domingo.plusDays(1).atTime(10, 0)); // segunda
         acesso(u, domingo.plusDays(2).atTime(10, 0)); // terça
         acesso(u, domingo.plusDays(3).atTime(10, 0)); // quarta
