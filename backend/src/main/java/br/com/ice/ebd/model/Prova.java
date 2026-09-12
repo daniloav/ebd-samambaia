@@ -32,9 +32,9 @@ public class Prova {
     @Column(name = "nota_maxima", nullable = false, precision = 5, scale = 2)
     private BigDecimal notaMaxima = new BigDecimal("10.00");
 
-    /** OFFLINE (nota à mão) ou ONLINE (quiz auto-corrigido). */
+    /** OFFLINE (nota à mão), ONLINE (quiz auto-corrigido) ou RECUPERACAO (quiz que vale presença). */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 12)
     private TipoProva tipo = TipoProva.OFFLINE;
 
     /** Janela da prova online (opcional). */
@@ -47,6 +47,10 @@ public class Prova {
     @JoinColumn(name = "classe_id", nullable = false)
     private Classe classe;
 
+    /** Aula coberta pela prova de RECUPERACAO (null nos demais tipos). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "aula_id")
+    private Aula aula;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -71,4 +75,7 @@ public class Prova {
 
     public Classe getClasse() { return classe; }
     public void setClasse(Classe classe) { this.classe = classe; }
+
+    public Aula getAula() { return aula; }
+    public void setAula(Aula aula) { this.aula = aula; }
 }

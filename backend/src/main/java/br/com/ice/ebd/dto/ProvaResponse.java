@@ -15,16 +15,24 @@ public record ProvaResponse(
         String tipo,
         LocalDateTime abreEm,
         LocalDateTime fechaEm,
-        long numQuestoes) {
+        long numQuestoes,
+        /** Aula coberta pela recuperação (null nos demais tipos). */
+        Long aulaId,
+        LocalDate aulaData,
+        String aulaTema) {
 
     public static ProvaResponse de(Prova p) {
         return de(p, 0);
     }
 
     public static ProvaResponse de(Prova p, long numQuestoes) {
+        var aula = p.getAula();
         return new ProvaResponse(p.getId(), p.getTitulo(), p.getData(), p.getNotaMaxima(),
                 p.getClasse().getId(), p.getClasse().getNome(),
                 p.getTipo() != null ? p.getTipo().name() : "OFFLINE",
-                p.getAbreEm(), p.getFechaEm(), numQuestoes);
+                p.getAbreEm(), p.getFechaEm(), numQuestoes,
+                aula != null ? aula.getId() : null,
+                aula != null ? aula.getData() : null,
+                aula != null ? aula.getTema() : null);
     }
 }

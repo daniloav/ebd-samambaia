@@ -13,10 +13,13 @@ import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/** Envio (1 tentativa) de um aluno a uma prova ONLINE, já com a nota auto-corrigida. */
+/**
+ * Uma tentativa de um aluno numa prova respondida pela tela, já com a nota auto-corrigida.
+ * Prova ONLINE tem só a tentativa 1; a de RECUPERACAO aceita até 3.
+ */
 @Entity
 @Table(name = "submissao", uniqueConstraints = @UniqueConstraint(
-        name = "uq_submissao", columnNames = {"prova_id", "aluno_id"}))
+        name = "uq_submissao_tentativa", columnNames = {"prova_id", "aluno_id", "tentativa"}))
 public class Submissao {
 
     @Id
@@ -30,6 +33,10 @@ public class Submissao {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "aluno_id", nullable = false)
     private Aluno aluno;
+
+    /** Número da tentativa do aluno nesta prova (1, 2, 3...). */
+    @Column(nullable = false)
+    private short tentativa = 1;
 
     @Column(name = "enviada_em", nullable = false)
     private LocalDateTime enviadaEm = LocalDateTime.now();
@@ -45,6 +52,9 @@ public class Submissao {
 
     public Aluno getAluno() { return aluno; }
     public void setAluno(Aluno aluno) { this.aluno = aluno; }
+
+    public int getTentativa() { return tentativa; }
+    public void setTentativa(int tentativa) { this.tentativa = (short) tentativa; }
 
     public LocalDateTime getEnviadaEm() { return enviadaEm; }
     public void setEnviadaEm(LocalDateTime enviadaEm) { this.enviadaEm = enviadaEm; }

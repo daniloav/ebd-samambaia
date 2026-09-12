@@ -146,6 +146,7 @@ Soma de todos os quesitos por aluno:
 ```
 total = presenças
       + 0,3 × faltas_justificadas
+      + pontos_de_recuperação
       + bíblia + revista + lição
       + 2 × visitantes
       + pontos_de_notas
@@ -153,6 +154,8 @@ total = presenças
 
 - **1 ponto** por presença, Bíblia, revista e lição.
 - **0,3 ponto** por falta justificada.
+- **Pontos de recuperação** (seção 6.3): até 1 por aula com prova de recuperação; também entram
+  no *menos faltou* e no ranking por turma.
 - **2 pontos** por visitante trazido.
 - **Pontos de notas**: `Σ (nota / notaMáxima) × 5` sobre as provas do período (cada prova vale
   até 5 pontos, independentemente da escala da nota).
@@ -210,6 +213,26 @@ Fontes: `QuizService` (professor monta) e `QuizAlunoService` (aluno responde).
   boletim, rankings e e-mail de nota.
 - **E-mail de desempenho** ao aluno respeita o opt-in; se enviado, marca dedup (`notificadaNota`).
 - O aluno pode reabrir o **resultado** já respondido (nota + gabarito).
+
+### 6.3 Prova de recuperação (vale presença)
+
+Fontes: `ProvaService` (cadastro), `QuizAlunoService` (tentativas), `Recuperacao` (regras) e
+`DesafiosService` (pontuação).
+
+- Tipo `RECUPERACAO`, vinculada a **uma aula** da turma (obrigatória; aula adiada não pode;
+  **uma recuperação por aula**). A data da prova é a da aula.
+- **Só múltipla escolha** (V/F é recusado com 400). A nota máxima é a soma dos pontos, como no quiz.
+- **Todos da turma podem fazer** — quem faltou e quem esteve presente.
+- **3 tentativas**; a cada uma as **questões e as alternativas vêm embaralhadas**. O **gabarito**
+  aparece ao fim de **cada** tentativa. Quem tira a nota máxima não refaz (400).
+- Vale a **melhor nota**. Não grava `NotaProva`: não entra em boletim, média de notas, pontos de
+  notas nem na contagem de provas, e a nota não se lança à mão (400).
+- **Pontuação**: `fração = melhor_nota ÷ nota_máxima` (0 a 1, 2 casas) = pontos de presença na aula.
+  - Faltou (ou sem registro na chamada): ganha a fração.
+  - **Falta justificada**: vale o **maior** entre 0,3 e a fração (o bônus é `max(0, fração − 0,3)`).
+  - **Esteve presente**: a fração soma à presença (até 2 na aula).
+- Mesmos filtros da presença: aula não adiada, até hoje, dentro do período (pela **data da aula**)
+  e o aluno-professor não pontua na aula que ele mesmo dá.
 
 ---
 

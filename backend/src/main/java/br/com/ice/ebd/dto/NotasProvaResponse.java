@@ -12,5 +12,7 @@ public record NotasProvaResponse(
         BigDecimal notaMaxima,
         /** true = a grade lista só os alunos presentes na aula da data (prova offline). */
         boolean somentePresentes,
-        List<NotaItem> itens) {
+        List<NotaItem> itens,
+        /** Tipo da prova; na RECUPERACAO a grade é só leitura (melhor nota das tentativas). */
+        String tipo) {
 }

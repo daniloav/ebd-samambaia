@@ -1,15 +1,19 @@
 import { Component, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { ConfirmService } from '../../core/confirm.service';
 import { ToastService } from '../../core/toast.service';
 import { QuizParaResponder, ResultadoProva } from '../../core/models';
 
-/** Responder um quiz online e ver o resultado (nota + gabarito). 1 tentativa. */
+/**
+ * Responder um quiz e ver o resultado (nota + gabarito). Quiz online: 1 tentativa. Recuperação:
+ * até 3, com questões embaralhadas a cada uma (pelo backend) e "Tentar de novo" no resultado.
+ */
 @Component({
   selector: 'app-responder-prova',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe],
   styles: [`
     .q { border: 1px solid var(--cinza-borda); border-radius: 10px; padding: 1rem 1.1rem; margin-bottom: 1rem; }
     .q .enun { font-weight: 600; color: var(--titulo); margin-bottom: .2rem; }
@@ -40,6 +44,17 @@ import { QuizParaResponder, ResultadoProva } from '../../core/models';
           <div class="placar">
             <div class="n">{{ r.nota }} <span style="font-size:1.1rem;color:var(--cinza-texto)">/ {{ r.notaMaxima }}</span></div>
             <div class="muted">Você acertou {{ r.acertos }} de {{ r.total }} questão(ões).</div>
+            @if (r.tipo === 'RECUPERACAO') {
+              <div class="muted" style="margin-top:.4rem">
+                Tentativa {{ r.tentativa }} de {{ r.tentativasMax }} · melhor nota <b>{{ r.melhorNota }}</b>
+                = <b>{{ r.presencaEquivalente }}</b> presença na aula
+              </div>
+              @if (r.podeTentarDeNovo) {
+                <button class="btn" style="margin-top:.8rem" (click)="novaTentativa()">
+                  Tentar de novo (resta{{ restantes(r) > 1 ? 'm' : '' }} {{ restantes(r) }})
+                </button>
+              }
+            }
           </div>
           @for (q of r.questoes; track q.questaoId; let i = $index) {
             <div class="q">
@@ -61,7 +76,15 @@ import { QuizParaResponder, ResultadoProva } from '../../core/models';
       } @else {
         @if (quiz(); as quiz) {
           <h2 style="margin-top:.5rem">{{ quiz.titulo }}</h2>
-          <p class="muted">Vale {{ quiz.notaMaxima }} pontos · {{ quiz.questoes.length }} questão(ões). Você tem 1 tentativa.</p>
+          @if (quiz.tipo === 'RECUPERACAO') {
+            <p class="muted">
+              Recuperação da aula de {{ quiz.aulaData | date:'dd/MM/yyyy' }}{{ quiz.aulaTema ? ' — ' + quiz.aulaTema : '' }}.
+              <b>Tentativa {{ quiz.tentativa }} de {{ quiz.tentativasMax }}</b> · {{ quiz.questoes.length }} questão(ões).
+              Acertando tudo você ganha 1 presença; senão, o proporcional. Vale a melhor tentativa.
+            </p>
+          } @else {
+            <p class="muted">Vale {{ quiz.notaMaxima }} pontos · {{ quiz.questoes.length }} questão(ões). Você tem 1 tentativa.</p>
+          }
           <div class="card">
             @for (q of quiz.questoes; track q.id; let i = $index) {
               <div class="q">
@@ -109,16 +132,39 @@ export class ResponderProvaComponent {
 
   constructor() {
     this.provaId = Number(this.route.snapshot.paramMap.get('id'));
-    // Tenta abrir para responder; se já respondida/fechada, mostra o resultado salvo.
+    if (this.route.snapshot.queryParamMap.get('ver') === 'resultado') {
+      this.carregarResultado();
+    } else {
+      this.abrirParaResponder();
+    }
+  }
+
+  /** Tenta abrir para responder; se não há tentativa disponível, mostra o resultado salvo. */
+  private abrirParaResponder(): void {
+    this.carregando.set(true);
     this.api.obterProvaParaResponder(this.provaId).subscribe({
       next: (q) => { this.quiz.set(q); this.titulo.set(q.titulo); this.carregando.set(false); },
-      error: () => {
-        this.api.obterResultadoProva(this.provaId).subscribe({
-          next: (r) => { this.resultado.set(r); this.titulo.set(r.titulo); this.carregando.set(false); },
-          error: (e) => { this.toast.erro(e?.error?.message || 'Prova indisponível.'); this.carregando.set(false); },
-        });
-      },
+      error: () => this.carregarResultado(),
     });
+  }
+
+  private carregarResultado(): void {
+    this.carregando.set(true);
+    this.api.obterResultadoProva(this.provaId).subscribe({
+      next: (r) => { this.resultado.set(r); this.titulo.set(r.titulo); this.carregando.set(false); },
+      error: (e) => { this.toast.erro(e?.error?.message || 'Prova indisponível.'); this.carregando.set(false); },
+    });
+  }
+
+  restantes(r: ResultadoProva): number { return r.tentativasMax - r.tentativa; }
+
+  /** Nova tentativa da recuperação: o backend devolve as questões numa ordem nova. */
+  novaTentativa(): void {
+    this.escolhas = {};
+    this.resultado.set(null);
+    this.quiz.set(null);
+    this.abrirParaResponder();
+    window.scrollTo({ top: 0 });
   }
 
   escolher(questaoId: number, alternativaId: number): void {
@@ -129,16 +175,19 @@ export class ResponderProvaComponent {
     const q = this.quiz();
     if (!q) { return; }
     const faltam = q.questoes.length - this.respondidas();
+    const restam = q.tentativasMax - q.tentativa;
+    const depois = restam > 0
+      ? `Esta é a tentativa ${q.tentativa} de ${q.tentativasMax}; ainda restará${restam > 1 ? 'ão' : ''} ${restam}.`
+      : 'Você não poderá refazer esta prova.';
     const msg = faltam > 0
-      ? `Você deixou ${faltam} questão(ões) sem resposta. Enviar mesmo assim? Você não poderá refazer.`
-      : 'Enviar suas respostas? Você não poderá refazer esta prova.';
+      ? `Você deixou ${faltam} questão(ões) sem resposta. Enviar mesmo assim? ${depois}`
+      : `Enviar suas respostas? ${depois}`;
     if (!(await this.confirm.pedir({ mensagem: msg, titulo: 'Enviar respostas', confirmar: 'Enviar' }))) { return; }
 
     const respostas = q.questoes.map((qq) => ({ questaoId: qq.id, alternativaId: this.escolhas[qq.id] ?? null }));
     this.enviando.set(true);
-    // Guarda as alternativas para renderizar o gabarito na tela de resultado.
     this.api.submeterProva(this.provaId, respostas).subscribe({
-      next: (r) => { this.resultado.set(r); this.enviando.set(false); this.toast.sucesso('Respostas enviadas!'); },
+      next: (r) => { this.resultado.set(r); this.enviando.set(false); this.toast.sucesso('Respostas enviadas!'); window.scrollTo({ top: 0 }); },
       error: (e) => { this.toast.erro(e?.error?.message || 'Não foi possível enviar.'); this.enviando.set(false); },
     });
   }

@@ -25,6 +25,10 @@ import { Prova, QuizQuestaoEdit } from '../../core/models';
     <a routerLink="/provas" class="muted">← Voltar para provas</a>
     <h2 style="margin-top:.5rem">Montar quiz{{ prova() ? ' — ' + prova()?.titulo : '' }}</h2>
     <p class="muted">Cada questão tem 1 alternativa correta. A nota máxima será a soma dos pontos.</p>
+    @if (recuperacao()) {
+      <p class="muted">Prova de <b>recuperação</b>: só múltipla escolha. O aluno tem 3 tentativas, com questões e
+        alternativas embaralhadas a cada uma, e a nota máxima vale 1 presença na aula.</p>
+    }
 
     @if (carregando()) {
       <div class="spinner-wrap muted">Carregando...</div>
@@ -36,7 +40,7 @@ import { Prova, QuizQuestaoEdit } from '../../core/models';
               <span class="num">{{ qi + 1 }}.</span>
               <select aria-label="Tipo de questão" [ngModel]="q.tipo" (ngModelChange)="mudarTipo(qi, $event)">
                 <option value="MULTIPLA">Múltipla escolha</option>
-                <option value="VF">Verdadeiro / Falso</option>
+                @if (!recuperacao()) { <option value="VF">Verdadeiro / Falso</option> }
               </select>
               <label style="margin:0;font-size:.8rem">Pontos</label>
               <input type="number" min="0.5" step="0.5" [(ngModel)]="q.pontos" />
@@ -66,7 +70,9 @@ import { Prova, QuizQuestaoEdit } from '../../core/models';
 
         <div style="display:flex;gap:.6rem;flex-wrap:wrap">
           <button class="btn btn-outline" (click)="adicionarQuestao('MULTIPLA')">+ Múltipla escolha</button>
-          <button class="btn btn-outline" (click)="adicionarQuestao('VF')">+ Verdadeiro/Falso</button>
+          @if (!recuperacao()) {
+            <button class="btn btn-outline" (click)="adicionarQuestao('VF')">+ Verdadeiro/Falso</button>
+          }
         </div>
 
         <div class="rodape">
@@ -90,6 +96,7 @@ export class QuizEditorComponent {
   carregando = signal(true);
   salvando = signal(false);
   questoes: QuizQuestaoEdit[] = [];
+  recuperacao = () => this.prova()?.tipo === 'RECUPERACAO';
 
   totalPontos = () => this.questoes.reduce((s, q) => s + (Number(q.pontos) || 0), 0);
 

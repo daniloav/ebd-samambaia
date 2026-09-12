@@ -34,14 +34,19 @@ public class DesafiosService {
     @Inject ClasseRepository classeRepository;
 
     /** Métricas de presença acumuladas por aluno. */
-    private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante, long justificadas) {}
+    /** {@code recuperacao} = pontos de presença ganhos em provas de recuperação (ver {@link Recuperacao}). */
+    private record MetricasPresenca(long presencas, long biblia, long revista, long licao, long visitante, long justificadas,
+                                    double recuperacao) {}
 
-    private static final MetricasPresenca ZERO = new MetricasPresenca(0, 0, 0, 0, 0, 0);
+    private static final MetricasPresenca ZERO = new MetricasPresenca(0, 0, 0, 0, 0, 0, 0.0);
 
     /** Métricas de presença somadas por TURMA (mesmos quesitos, agregados por classe). */
-    private record MetricasTurma(long presencas, long biblia, long revista, long licao, long justificadas) {}
+    private record MetricasTurma(long presencas, long biblia, long revista, long licao, long justificadas, double recuperacao) {}
 
-    private static final MetricasTurma ZERO_TURMA = new MetricasTurma(0, 0, 0, 0, 0);
+    private static final MetricasTurma ZERO_TURMA = new MetricasTurma(0, 0, 0, 0, 0, 0.0);
+
+    /** Bônus de uma prova de recuperação para um aluno, já descontado o que a chamada deu à aula. */
+    private record LinhaRecuperacao(Long alunoId, Long classeId, double bonus) {}
 
     public DesafiosResponse gerar(Long classeId, Integer ano, Integer trimestre) {
         escopo.assertClasse(classeId);
@@ -86,17 +91,18 @@ public class DesafiosService {
 
         LocalDate hoje = LocalDate.now();
         long totalAulas = ((Number) em.createQuery("select count(a) from Aula a where a.adiada = false and (:cid = -1 or a.classe.id = :cid) and a.data <= :hoje and a.data between :ini and :fim").setParameter("cid", cid).setParameter("hoje", hoje).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
-        long totalProvas = ((Number) em.createQuery("select count(p) from Prova p where (:cid = -1 or p.classe.id = :cid) and p.data between :ini and :fim").setParameter("cid", cid).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
+        long totalProvas = ((Number) em.createQuery("select count(p) from Prova p where p.tipo <> br.com.ice.ebd.model.TipoProva.RECUPERACAO and (:cid = -1 or p.classe.id = :cid) and p.data between :ini and :fim").setParameter("cid", cid).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
 
         Map<Long, MetricasPresenca> presenca = carregarPresencas(cid, ini, fim);
         Map<Long, Double> medias = carregarMediasNotas(cid, ini, fim);
 
         List<RankingItem> menosFaltou = ranking(nomes, presenca,
-                m -> arred1(m.presencas() + 0.3 * m.justificadas()),
-                (valor, m) -> m.justificadas() > 0
+                m -> arred1(m.presencas() + 0.3 * m.justificadas() + m.recuperacao()),
+                (valor, m) -> (m.justificadas() > 0
                         ? String.format("%d presença(s) + %d falta(s) justificada(s) de %d aula(s)",
                                 m.presencas(), m.justificadas(), totalAulas)
-                        : String.format("%d presença(s) de %d aula(s)", m.presencas(), totalAulas),
+                        : String.format("%d presença(s) de %d aula(s)", m.presencas(), totalAulas))
+                        + detalheRecuperacao(m),
                 false);
 
         List<RankingItem> maisBiblia = ranking(nomes, presenca,
@@ -166,9 +172,55 @@ public class DesafiosService {
             Long alunoId = (Long) l[0];
             mapa.put(alunoId, new MetricasPresenca(
                     toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]),
-                    visitantes.getOrDefault(alunoId, 0L), toLong(l[5])));
+                    visitantes.getOrDefault(alunoId, 0L), toLong(l[5]), 0.0));
         }
+        // Recuperação soma à parte: o aluno pode tê-la feito sem registro nenhum na chamada.
+        Map<Long, Double> recuperacao = new LinkedHashMap<>();
+        for (LinhaRecuperacao r : carregarLinhasRecuperacao(cid, ini, fim)) {
+            recuperacao.merge(r.alunoId(), r.bonus(), Double::sum);
+        }
+        recuperacao.forEach((alunoId, bonus) -> {
+            MetricasPresenca m = mapa.getOrDefault(alunoId, ZERO);
+            mapa.put(alunoId, new MetricasPresenca(m.presencas(), m.biblia(), m.revista(), m.licao(),
+                    m.visitante(), m.justificadas(), bonus));
+        });
         return mapa;
+    }
+
+    /**
+     * Uma linha por (aluno, prova de recuperação) com o bônus da melhor tentativa. Mesmos filtros
+     * da presença: aula não adiada, até hoje, no período, e o aluno-professor não pontua na aula
+     * que ele dá. A presença da chamada entra para não acumular com a falta justificada.
+     */
+    private List<LinhaRecuperacao> carregarLinhasRecuperacao(long cid, LocalDate ini, LocalDate fim) {
+        List<Object[]> linhas = em.createQuery(
+                        "select s.aluno.id, aula.classe.id, max(s.nota), pr.notaMaxima, pres.presente, pres.justificada "
+                        + "from Submissao s join s.prova pr join pr.aula aula "
+                        + "left join Presenca pres on pres.aula = aula and pres.aluno = s.aluno "
+                        + "left join aula.professor prof left join prof.aluno profAluno "
+                        + "where pr.tipo = br.com.ice.ebd.model.TipoProva.RECUPERACAO and aula.adiada = false "
+                        + "and (:cid = -1 or aula.classe.id = :cid) and aula.data <= :hoje "
+                        + "and aula.data between :ini and :fim "
+                        + "and (profAluno is null or profAluno.id <> s.aluno.id) "
+                        + "group by s.aluno.id, aula.classe.id, pr.id, pr.notaMaxima, pres.presente, pres.justificada",
+                        Object[].class)
+                .setParameter("cid", cid)
+                .setParameter("hoje", LocalDate.now())
+                .setParameter("ini", ini).setParameter("fim", fim)
+                .getResultList();
+        List<LinhaRecuperacao> out = new ArrayList<>();
+        for (Object[] l : linhas) {
+            double fracao = Recuperacao.fracaoPresenca((java.math.BigDecimal) l[2], (java.math.BigDecimal) l[3]).doubleValue();
+            double bonus = Recuperacao.bonus(fracao, (Boolean) l[4], (Boolean) l[5]);
+            if (bonus > 0) {
+                out.add(new LinhaRecuperacao((Long) l[0], (Long) l[1], bonus));
+            }
+        }
+        return out;
+    }
+
+    private static String detalheRecuperacao(MetricasPresenca m) {
+        return m.recuperacao() > 0 ? " + " + formatarPontos(arred1(m.recuperacao())) + " de recuperação" : "";
     }
 
     /** Visitantes trazidos por aluno — fonte única: cadastro de visitantes. */
@@ -306,7 +358,7 @@ public class DesafiosService {
         for (Map.Entry<Long, String> e : nomes.entrySet()) {
             MetricasPresenca m = presenca.getOrDefault(e.getKey(), ZERO);
             double notas = notasPontos.getOrDefault(e.getKey(), 0.0);
-            double total = m.presencas() + 0.3 * m.justificadas() + m.biblia() + m.revista() + m.licao()
+            double total = m.presencas() + 0.3 * m.justificadas() + m.recuperacao() + m.biblia() + m.revista() + m.licao()
                     + 2.0 * m.visitante() + notas;
             total = Math.round(total * 10.0) / 10.0;
             pares.add(new Par(e.getKey(), total, m.presencas(), m.visitante(), Math.round(notas * 10.0) / 10.0, m));
@@ -322,8 +374,10 @@ public class DesafiosService {
             Par p = pares.get(i);
             String just = p.m().justificadas() > 0
                     ? " (+" + p.m().justificadas() + " just.)" : "";
-            String det = String.format("%d presença(s)%s · %d visitante(s) · %.0f pts de notas",
-                    p.pres(), just, p.vis(), p.notas());
+            String rec = p.m().recuperacao() > 0
+                    ? " (+" + formatarPontos(arred1(p.m().recuperacao())) + " recup.)" : "";
+            String det = String.format("%d presença(s)%s%s · %d visitante(s) · %.0f pts de notas",
+                    p.pres(), just, rec, p.vis(), p.notas());
             out.add(new RankingItem(pos, p.id(), nomes.get(p.id()), p.total(), det));
         }
         return out;
@@ -367,7 +421,7 @@ public class DesafiosService {
         if (!ids.isEmpty()) {
             totalAulas = ((Number) em.createQuery("select count(a) from Aula a where a.adiada = false and a.classe.id in :ids and a.data <= :hoje and a.data between :ini and :fim")
                     .setParameter("ids", ids).setParameter("hoje", hoje).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
-            totalProvas = ((Number) em.createQuery("select count(p) from Prova p where p.classe.id in :ids and p.data between :ini and :fim")
+            totalProvas = ((Number) em.createQuery("select count(p) from Prova p where p.tipo <> br.com.ice.ebd.model.TipoProva.RECUPERACAO and p.classe.id in :ids and p.data between :ini and :fim")
                     .setParameter("ids", ids).setParameter("ini", ini).setParameter("fim", fim).getSingleResult()).longValue();
         }
 
@@ -390,7 +444,7 @@ public class DesafiosService {
             MetricasTurma m = pres.getOrDefault(c.getId(), ZERO_TURMA);
             long vis = visitantes.getOrDefault(c.getId(), 0L);
             double pontosNotas = notas.getOrDefault(c.getId(), 0.0);
-            double total = m.presencas() + 0.3 * m.justificadas() + m.biblia() + m.revista() + m.licao()
+            double total = m.presencas() + 0.3 * m.justificadas() + m.recuperacao() + m.biblia() + m.revista() + m.licao()
                     + 2.0 * vis + pontosNotas;
             total = arred1(total);
             double media = Math.round((total / alunos) * 100.0) / 100.0;
@@ -431,8 +485,16 @@ public class DesafiosService {
                 .getResultList();
         for (Object[] l : linhas) {
             mapa.put((Long) l[0], new MetricasTurma(
-                    toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]), toLong(l[5])));
+                    toLong(l[1]), toLong(l[2]), toLong(l[3]), toLong(l[4]), toLong(l[5]), 0.0));
         }
+        Map<Long, Double> recuperacao = new LinkedHashMap<>();
+        for (LinhaRecuperacao r : carregarLinhasRecuperacao(-1L, ini, fim)) {
+            recuperacao.merge(r.classeId(), r.bonus(), Double::sum);
+        }
+        recuperacao.forEach((classeId, bonus) -> {
+            MetricasTurma m = mapa.getOrDefault(classeId, ZERO_TURMA);
+            mapa.put(classeId, new MetricasTurma(m.presencas(), m.biblia(), m.revista(), m.licao(), m.justificadas(), bonus));
+        });
         return mapa;
     }
 
