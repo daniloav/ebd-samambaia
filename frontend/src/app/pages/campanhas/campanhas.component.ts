@@ -218,7 +218,7 @@ export class CampanhasComponent {
         this.enviando.set(false);
         this.carregar();
       },
-      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao enviar campanha.'); this.enviando.set(false); },
+      error: (e) => { this.toast.erro(e?.status === 413 ? 'Imagem grande demais — o limite é 16 MB.' : (e?.error?.message || 'Erro ao enviar campanha.')); this.enviando.set(false); },
     });
   }
 }
