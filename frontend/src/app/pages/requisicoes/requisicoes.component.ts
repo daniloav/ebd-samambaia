@@ -428,7 +428,7 @@ export class RequisicoesComponent {
     this.avaliando.set(true);
     this.api.aprovarRequisicao(r.id, this.valorAprovado, this.parecer || null, this.comprovante).subscribe({
       next: () => { this.toast.sucesso('Requisição aprovada.'); this.avaliando.set(false); this.avaliar.set(null); this.carregar(); },
-      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao aprovar.'); this.avaliando.set(false); },
+      error: (e) => { this.toast.erro(e?.status === 413 ? 'Arquivo grande demais — o limite é 16 MB.' : (e?.error?.message || 'Erro ao aprovar.')); this.avaliando.set(false); },
     });
   }
   negar(r: Requisicao): void {
@@ -458,7 +458,7 @@ export class RequisicoesComponent {
     this.finalizando.set(true);
     this.api.finalizarRequisicao(r.id, this.valorGasto, this.obsFinal || null, this.arquivos, this.comprovanteTroco).subscribe({
       next: () => { this.toast.sucesso('Prestação de contas concluída!'); this.finalizando.set(false); this.finalizar.set(null); this.carregar(); },
-      error: (e) => { this.toast.erro(e?.error?.message || 'Erro ao finalizar.'); this.finalizando.set(false); },
+      error: (e) => { this.toast.erro(e?.status === 413 ? 'Arquivo grande demais — o limite é 16 MB.' : (e?.error?.message || 'Erro ao finalizar.')); this.finalizando.set(false); },
     });
   }
 
