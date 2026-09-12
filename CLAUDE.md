@@ -164,6 +164,23 @@ Esses usuários são criados no 1º boot pelo `DataInitializer` (troque as senha
 
 ## 9. Estado do projeto (atualizar aqui a cada avanço)
 
+- 🔗 **Juntar também as requisições aprovadas (2026-09-12)** — a junção valia só entre ABERTAS, mas
+  o caso real do Danilo era outro: ele tinha pedidos **"aprovada · aguardando nota"** da mesma
+  compra, com o dinheiro já repassado em dois PIX, e o botão nem aparecia. Agora a junção vale em
+  **dois estágios** — entre abertas (antes da avaliação) e entre **aprovadas** (aí a soma inclui o
+  **valor aprovado**, e **uma nota fiscal só presta contas de tudo**; é esse total que vira a base
+  do troco na finalização). **Nunca entre estágios diferentes**: juntar uma aberta a uma aprovada
+  deixaria o valor já liberado menor que a soma sem avisar o tesoureiro (400). O **desfazer**
+  ficou mais esperto: cada absorvida volta ao **estágio em que estava**, e só enquanto a principal
+  segue nesse mesmo estágio — se a tesouraria avaliou depois de uma junção de abertas, o aprovado
+  já nasceu somado e separar deixaria as partes sem cobertura (o novo campo `podeSeparar` diz se
+  ainda dá, e o botão some sozinho). **Sem migration**: o estágio de origem se infere de
+  `avaliadoEm`, já que só ABERTA e APROVADA se juntam e o carimbo só existe depois de avaliar. De
+  quebra, um comprovante anexado numa absorvida passa a contar para a principal (badge na lista e
+  finalização da oferta de amor), e a cobrança diária de nota some junto com a absorvida. Validado:
+  `mvn test` (**99** testes, 2 novos em `RequisicaoFluxoTest` — soma do aprovado + desfazer, e
+  estágios diferentes/separar travado após a avaliação), `ng build`, **e2e 37/37** e smoke
+  ponta-a-ponta contra Postgres real (140 + 60 = 200 aprovados, finalizados com **uma** nota).
 - 🔗 **Juntar requisições da tesouraria (2026-09-12)** — o líder às vezes abre dois pedidos que
   acabam virando a **mesma compra**: o repasse sai num montante só e o valor de cada requisição
   fica **quebrado** no fechamento (nota e comprovante não batem com nenhuma das duas). Agora a

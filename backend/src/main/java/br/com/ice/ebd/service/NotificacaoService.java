@@ -317,21 +317,34 @@ public class NotificacaoService {
         StringBuilder itens = new StringBuilder();
         StringBuilder numeros = new StringBuilder();
         for (RequisicaoTesouraria a : absorvidas) {
-            itens.append("<li>").append(esc(a.getNumero())).append(" — ").append(moeda(a.getValorSolicitado()))
+            itens.append("<li>").append(esc(a.getNumero())).append(" — ")
+                 .append(moeda(a.getValorAprovado() != null ? a.getValorAprovado() : a.getValorSolicitado()))
                  .append(" (").append(esc(a.getDestinacao())).append(")</li>");
             numeros.append(numeros.length() == 0 ? "" : ", ").append(a.getNumero());
         }
+        // Aprovada: o tesoureiro já liberou o dinheiro, então o que muda para ele é a prestação
+        // de contas (uma nota só, sobre o valor aprovado somado), não a avaliação.
+        boolean aprovada = principal.getStatus() == br.com.ice.ebd.model.StatusRequisicao.APROVADA;
+        String total = moeda(aprovada && principal.getValorAprovado() != null
+                ? principal.getValorAprovado() : principal.getValorSolicitado());
+        String chamada = aprovada
+                ? "<p style=\"margin:0 0 6px;\">A prestação de contas passa a ser uma só: <b>"
+                    + esc(principal.getNumero()) + "</b>, no valor aprovado de <b>" + total
+                    + "</b>, com uma " + docPrestacao(principal) + " cobrindo tudo.</p>"
+                : "<p style=\"margin:0 0 6px;\">Avalie apenas <b>" + esc(principal.getNumero())
+                    + "</b>, agora no total de <b>" + total + "</b>.</p>";
         String corpo = "<h1 style=\"margin:0 0 12px;font-size:20px;color:#1b3a5b;\">Requisições juntadas em "
                 + esc(principal.getNumero()) + "</h1>"
                 + "<p style=\"margin:0 0 6px;\"><b>" + nomeSolicitante(principal) + "</b> ("
                 + esc(principal.getMinisterio()) + ") juntou pedidos que eram da mesma compra.</p>"
-                + "<p style=\"margin:0 0 6px;\">Avalie apenas <b>" + esc(principal.getNumero())
-                + "</b>, agora no total de <b>" + moeda(principal.getValorSolicitado()) + "</b>.</p>"
+                + chamada
                 + "<p style=\"margin:12px 0 4px;\"><b>Deixaram de valer sozinhas:</b></p>"
                 + "<ul style=\"margin:0 0 12px;padding-left:18px;\">" + itens + "</ul>"
                 + "<p style=\"margin:12px 0 0;\"><a href=\"" + SITE + "\">Abrir o app</a></p>";
         String texto = "Requisições " + numeros + " foram juntadas em " + principal.getNumero()
-                + ", que agora vale " + moeda(principal.getValorSolicitado()) + ". Avalie só essa.";
+                + ", que agora vale " + total + "."
+                + (aprovada ? " Uma " + docPrestacao(principal) + " presta contas de todas."
+                            : " Avalie só essa.");
         for (String em : emailsTesoureiros) {
             try {
                 dispatcher.enfileirar(Mail.withHtml(em,

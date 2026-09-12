@@ -414,6 +414,8 @@ ABERTA ──aprovar──▶ APROVADA ──finalizar──▶ FINALIZADA
    ├──negar────▶ NEGADA
    ├──cancelar──▶ CANCELADA
    └──juntar───▶ JUNTADA ──separar──▶ ABERTA   (absorvida por outra requisição)
+
+APROVADA ──juntar──▶ JUNTADA ──separar──▶ APROVADA   (idem, já com o dinheiro liberado)
 ```
 
 - **Número** único por ano: `REQ-<ano>-<seq4>` (ex.: `REQ-2026-0007`).
@@ -463,22 +465,36 @@ nenhuma das duas). **Juntar** resolve isso antes de o dinheiro sair.
 
 - **Quem**: o **solicitante** das requisições (ou ADMIN). Todas precisam ser **do mesmo
   solicitante**.
-- **Quando**: só entre requisições **ABERTAS** — depois da avaliação o tesoureiro já decidiu (e
-  talvez pagou) sobre cada valor.
+- **Quando**: em dois estágios — entre **ABERTAS** (antes da avaliação) ou entre **APROVADAS**
+  aguardando nota (o dinheiro já saiu em dois repasses e uma nota fiscal só presta contas de
+  tudo). **Nunca entre estágios diferentes**: juntar uma aberta a uma aprovada deixaria o valor
+  já liberado menor que a soma, sem nada avisar o tesoureiro (400).
 - **Como**: uma delas é a **principal** e as demais são absorvidas. A principal passa a valer a
-  **soma dos valores solicitados**; cada absorvida vai para o status **JUNTADA**, apontando para
-  a principal (`juntadaNa`), e **mantém o próprio valor** — é o que torna a junção reversível.
+  **soma dos valores solicitados** e, entre aprovadas, também a **soma dos valores aprovados** —
+  é esse total que a nota fiscal presta contas e que serve de base para o troco. Cada absorvida
+  vai para o status **JUNTADA**, apontando para a principal (`juntadaNa`), e **mantém os próprios
+  valores** — é o que torna a junção reversível.
 - **Compatibilidade**: só junta o que o tesoureiro pagaria de uma vez — **mesma forma de
   repasse** e, no PIX, **mesma chave, mesmo tipo e mesmo titular** (senão 400).
 - **Encadeamento**: dá para juntar mais pedidos numa principal que já reúne outros; o que não se
   permite é absorver uma requisição que ela própria já reúne outras (400 — desfaça a dela antes).
-- **Desfazer** (`separar`, só enquanto a principal está ABERTA): cada absorvida volta a **ABERTA**
-  com o seu valor e a principal **subtrai exatamente o que entrou**.
+- **Desfazer** (`separar`): cada absorvida volta ao **estágio em que estava** (ABERTA ou APROVADA)
+  com os seus valores e a principal **subtrai exatamente o que entrou**. Só vale enquanto a
+  principal continua **no mesmo estágio da junção**: se ela foi avaliada depois de juntar pedidos
+  em aberto, o valor aprovado já nasceu somado e separar deixaria as partes sem cobertura (400).
+  O campo `podeSeparar` da resposta diz se ainda dá.
+  O estágio de origem não precisa de coluna: só ABERTA e APROVADA se juntam, e `avaliadoEm` só é
+  carimbado ao avaliar, então uma absorvida com avaliação era, necessariamente, uma aprovada.
 - **Não se mexe em mais nada**: ministério, destinação, motivo e data de necessidade da principal
   ficam como estavam; o que veio de cada pedido aparece na lista de juntadas (número, valor,
   destinação, data), no detalhe e no e-mail.
 - **Aviso**: os tesoureiros já receberam o e-mail de cada requisição, então a junção dispara um
-  e-mail dizendo qual ficou de pé, com que total, e quais deixaram de valer sozinhas.
+  e-mail dizendo qual ficou de pé, com que total, e quais deixaram de valer sozinhas. Entre
+  aprovadas o texto fala de **prestação de contas** (uma nota só), não de avaliação.
+- **Cobrança de nota** (14.6): a absorvida sai de APROVADA, então deixa de ser cobrada — a
+  cobrança passa a ser uma só, a da principal.
+- **Comprovante nas absorvidas**: um comprovante que o tesoureiro anexou antes da junção conta
+  para a principal (badge na lista e finalização da oferta de amor).
 
 ### 14.5 Visibilidade e anexos
 

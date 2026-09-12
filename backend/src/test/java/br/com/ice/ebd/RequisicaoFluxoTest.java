@@ -281,11 +281,87 @@ class RequisicaoFluxoTest {
                 () -> service.juntar(dinheiro.id(), List.of(outra.id())));
         assertEquals(400, avaliada.getResponse().getStatus());
 
-        // e a própria principal precisa estar em aberto
+        // principal já aprovada + alvo ainda em aberto = estágios diferentes -> 400
         service.aprovar(dinheiro.id(), null, null, null);
-        WebApplicationException principalAvaliada = assertThrows(WebApplicationException.class,
+        WebApplicationException estagios = assertThrows(WebApplicationException.class,
                 () -> service.juntar(dinheiro.id(), List.of(pix.id())));
-        assertEquals(400, principalAvaliada.getResponse().getStatus());
+        assertEquals(400, estagios.getResponse().getStatus());
+    }
+
+    /**
+     * Duas requisições já aprovadas também se juntam: o líder recebeu dois repasses da mesma
+     * compra e vai prestar contas com uma nota só. Aí a soma é do <b>valor aprovado</b>, que é o
+     * que a nota precisa cobrir (e a base do troco).
+     */
+    @Test
+    @TestSecurity(user = "lider.aprov", roles = "ADMIN")
+    @TestTransaction
+    void juntarAprovadasSomaOValorAprovadoEDesfazerDevolve() {
+        fx.usuario("lider.aprov", Role.ADMIN, "lider.aprov@ebd.test");
+        RequisicaoResponse a = service.criar(new RequisicaoRequest(
+                "Diaconia", null, "Cesta básica", "Família", new BigDecimal("150.00"), null,
+                "DINHEIRO", null, null, null, null, null));
+        RequisicaoResponse b = service.criar(new RequisicaoRequest(
+                "Diaconia", null, "Leite e pão", "Mesma compra", new BigDecimal("60.00"), null,
+                "DINHEIRO", null, null, null, null, null));
+        service.aprovar(a.id(), new BigDecimal("140.00"), "ok", null);
+        service.aprovar(b.id(), new BigDecimal("60.00"), "ok", null);
+
+        RequisicaoResponse principal = service.juntar(a.id(), List.of(b.id()));
+        assertEquals("APROVADA", principal.status());
+        assertEquals(0, new BigDecimal("200.00").compareTo(principal.valorAprovado()), "aprovado vira a soma");
+        assertEquals(0, new BigDecimal("210.00").compareTo(principal.valorSolicitado()), "solicitado também soma");
+        assertTrue(principal.podeSeparar(), "ainda dá para desfazer");
+
+        RequisicaoResponse absorvida = service.buscar(b.id());
+        assertEquals("JUNTADA", absorvida.status());
+        assertEquals(0, new BigDecimal("60.00").compareTo(absorvida.valorAprovado()), "absorvida guarda o próprio aprovado");
+
+        // uma nota fiscal só presta contas dos 200 juntos
+        var nota = new RequisicaoService.AnexoData("nota.pdf", "application/pdf", "n".getBytes(), CategoriaAnexo.NOTA_FISCAL);
+        RequisicaoResponse separada = service.separar(a.id());
+        assertEquals(0, new BigDecimal("140.00").compareTo(separada.valorAprovado()), "principal devolve o aprovado");
+        assertEquals("APROVADA", service.buscar(b.id()).status(), "absorvida volta ao estágio de antes");
+
+        RequisicaoResponse dnv = service.juntar(a.id(), List.of(b.id()));
+        RequisicaoResponse fim = service.finalizar(dnv.id(), new BigDecimal("200.00"), "Comprei tudo", List.of(nota), null);
+        assertEquals("FINALIZADA", fim.status());
+    }
+
+    /**
+     * Juntar uma aberta a uma aprovada faria o valor já liberado ficar menor que a soma, sem nada
+     * avisar o tesoureiro — e, depois que ele avalia uma junção de abertas, separar deixaria as
+     * partes sem cobertura, porque o aprovado nasceu somado.
+     */
+    @Test
+    @TestSecurity(user = "lider.estagio", roles = "ADMIN")
+    @TestTransaction
+    void estagiosDiferentesNaoJuntamESepararTravaDepoisDaAvaliacao() {
+        fx.usuario("lider.estagio", Role.ADMIN, "lider.estagio@ebd.test");
+        RequisicaoResponse aberta = service.criar(new RequisicaoRequest(
+                "Jovens", null, "Lanche", "Encontro", new BigDecimal("40.00"), null,
+                "DINHEIRO", null, null, null, null, null));
+        RequisicaoResponse aprovada = service.criar(new RequisicaoRequest(
+                "Jovens", null, "Bolo", "Encontro", new BigDecimal("30.00"), null,
+                "DINHEIRO", null, null, null, null, null));
+        service.aprovar(aprovada.id(), null, null, null);
+
+        WebApplicationException mistura = assertThrows(WebApplicationException.class,
+                () -> service.juntar(aberta.id(), List.of(aprovada.id())));
+        assertEquals(400, mistura.getResponse().getStatus());
+
+        // junta duas abertas e deixa a tesouraria aprovar o total: separar deixa de ser possível
+        RequisicaoResponse outra = service.criar(new RequisicaoRequest(
+                "Jovens", null, "Refrigerante", "Encontro", new BigDecimal("20.00"), null,
+                "DINHEIRO", null, null, null, null, null));
+        RequisicaoResponse juntada = service.juntar(aberta.id(), List.of(outra.id()));
+        assertTrue(juntada.podeSeparar(), "antes da avaliação dá para desfazer");
+
+        service.aprovar(aberta.id(), new BigDecimal("60.00"), "total", null);
+        assertTrue(!service.buscar(aberta.id()).podeSeparar(), "depois da avaliação, não");
+        WebApplicationException separar = assertThrows(WebApplicationException.class,
+                () -> service.separar(aberta.id()));
+        assertEquals(400, separar.getResponse().getStatus());
     }
 
     /** Parte numérica de REQ-&lt;ano&gt;-&lt;seq&gt;. */
