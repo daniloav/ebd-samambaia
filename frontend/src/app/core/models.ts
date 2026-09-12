@@ -604,6 +604,7 @@ export interface RequisicaoJuntada {
   id: number;
   numero: string;
   valorSolicitado: number;
+  valorAprovado?: number | null;
   destinacao: string;
   dataNecessidade?: string | null;
 }
@@ -639,6 +640,8 @@ export interface Requisicao {
   juntadaNaId?: number | null;
   /** As requisições que esta absorveu — o valor solicitado já é a soma de todas. */
   juntadas: RequisicaoJuntada[];
+  /** Ainda dá para desfazer a junção (a principal segue no estágio em que ela aconteceu). */
+  podeSeparar?: boolean;
   anexos: RequisicaoAnexoResumo[];
 }
 export interface RequisicaoRequest {
