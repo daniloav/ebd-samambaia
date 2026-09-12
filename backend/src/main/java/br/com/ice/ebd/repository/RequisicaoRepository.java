@@ -43,6 +43,17 @@ public class RequisicaoRepository implements PanacheRepository<RequisicaoTesoura
         return max == null ? 0L : max;
     }
 
+    /** As requisições absorvidas por esta (junção), da mais antiga para a mais nova. */
+    public List<RequisicaoTesouraria> juntadasEm(Long principalId) {
+        return list("juntadaNa.id = ?1 order by criadoEm", principalId);
+    }
+
+    /** As absorvidas de várias principais de uma vez (para a listagem, sem N+1). */
+    public List<RequisicaoTesouraria> juntadasEm(List<Long> principaisIds) {
+        return principaisIds.isEmpty() ? List.of()
+                : list("juntadaNa.id in ?1 order by criadoEm", principaisIds);
+    }
+
     /** Quantas requisições este usuário abriu (solicitante) — bloqueia a exclusão do usuário. */
     public long contarComoSolicitante(Long usuarioId) {
         return count("solicitante.id", usuarioId);

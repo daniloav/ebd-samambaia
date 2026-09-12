@@ -47,6 +47,8 @@ cria a view **`vw_requisicoes_integracao`**, com uma linha por requisição:
 | `possui_comprovante_troco` | se o comprovante da devolução do troco foi anexado |
 | `pix_titular` | `PROPRIO` (chave do solicitante) ou `TERCEIRO` (**oferta de amor** — o PIX vai para a conta do beneficiado) |
 | `pix_beneficiario_nome`, `pix_beneficiario_obs` | quem recebe o PIX e o contexto, quando `pix_titular = 'TERCEIRO'` (nulos nos demais casos) |
+| `juntada_na` | número da requisição que absorveu esta (junção) — quando preenchido, o valor desta já está somado lá e só aquela é avaliada |
+| `qtd_juntadas` | quantas requisições esta absorveu (0 na maioria); o `valor_solicitado` já é a soma |
 
 **Nunca é exposto:** `senha_hash`, o **conteúdo binário** das notas fiscais (`bytea`),
 nem qualquer outra tabela. A view roda com a permissão do **dono** (`ebd`), então o usuário

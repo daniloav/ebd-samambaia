@@ -6,5 +6,6 @@ public enum StatusRequisicao {
     APROVADA,     // aprovada, aguardando prestação de contas (nota fiscal)
     NEGADA,       // rejeitada (terminal)
     FINALIZADA,   // nota fiscal anexada (terminal)
-    CANCELADA     // cancelada pelo solicitante (terminal)
+    CANCELADA,    // cancelada pelo solicitante (terminal)
+    JUNTADA       // absorvida por outra requisição do mesmo solicitante (terminal, reversível)
 }
